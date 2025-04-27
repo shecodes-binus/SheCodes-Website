@@ -1,51 +1,59 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+@import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+* {
+  /* font-family: 'Montserrat', sans-serif; */
+  font-family: "Poppins", sans-serif;
+  padding: 0;
+  margin: 0;
+}
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 270 95% 55%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 270 95% 55%;
+    --background: #FDF0FD; /* Background */
+    --foreground: #1C2730; /* Black */
+    --card: #FFFFFF; /* White */
+    --card-foreground: #1C2730; /* Black */
+    --popover: #FFFFFF; /* White */
+    --popover-foreground: #1C2730; /* Black */
+    --primary: #A56CC1; /* Purple 2 */
+    --primary-foreground: #FFFFFF; /* White */
+    --secondary: #D8D8D8; /* Grey 2 */
+    --secondary-foreground: #1C2730; /* Black */
+    --muted: #F4F4F4; /* Grey 1 */
+    --muted-foreground: #848484; /* Grey 3 */
+    --accent: #F4F4F4; /* Grey 1 */
+    --accent-foreground: #1C2730; /* Black */
+    --destructive: #FF334B; /* Red */
+    --destructive-foreground: #FFFFFF; /* White */
+    --border: #D8D8D8; /* Grey 2 */
+    --input: #D8D8D8; /* Grey 2 */
+    --ring: #A56CC1; /* Purple 2 */
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 270 95% 65%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 270 95% 65%;
+    --background: #1C2730; /* Black */
+    --foreground: #FFFFFF; /* White */
+    --card: #4B2B4E; /* Purple 1 */
+    --card-foreground: #FFFFFF; /* White */
+    --popover: #4B2B4E; /* Purple 1 */
+    --popover-foreground: #FFFFFF; /* White */
+    --primary: #E0D0FF; /* Purple 3 */
+    --primary-foreground: #1C2730; /* Black */
+    --secondary: #848484; /* Grey 3 */
+    --secondary-foreground: #FFFFFF; /* White */
+    --muted: #D8D8D8; /* Grey 2 */
+    --muted-foreground: #F4F4F4; /* Grey 1 */
+    --accent: #848484; /* Grey 3 */
+    --accent-foreground: #FFFFFF; /* White */
+    --destructive: #BE123C; /* Darker shade of Red - adjust if needed */
+    --destructive-foreground: #FFFFFF; /* White */
+    --border: #848484; /* Grey 3 */
+    --input: #848484; /* Grey 3 */
+    --ring: #E0D0FF; /* Purple 3 */
   }
 }
 
@@ -55,5 +63,41 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .timeline-item {
+    @apply relative pl-10; /* Padding for line/dot space */
+  }
+
+  /* The line segment for each item */
+  .timeline-item::before {
+    content: '';
+    @apply absolute left-[1.25rem] /* Center in pl-10 (2.5rem / 2) */
+           w-0.5 /* Line width */
+           bg-gray-300 /* Line color */
+           top-0 /* Default start: top of the item */
+           bottom-0 /* Default end: bottom of the item */
+           transform -translate-x-1/2; /* Center the line horizontally */
+  }
+
+  /* Adjust the START of the line for the FIRST item */
+  .timeline-item:first-child::before {
+     /* Start the line at the vertical center of the dot */
+     /* Adjust 'top-5' (1.25rem) if your dot's vertical position changes */
+    @apply top-5;
+  }
+
+  /* Adjust the END of the line for the LAST item */
+  .timeline-item:last-child::before {
+     /* End the line at the vertical center of the dot */
+     /* Adjust 'h-5' (1.25rem) if your dot's vertical position changes */
+    @apply h-5 bottom-auto; /* Set height, override bottom:0 */
+  }
+
+  /* Hide the line completely if there's only one item */
+  .timeline-item:only-child::before {
+    @apply hidden;
   }
 }
