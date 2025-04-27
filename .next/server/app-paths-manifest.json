@@ -1,9 +1,6 @@
 {
-  "/app/alumni/page": "app/app/alumni/page.js",
-  "/app/dashboard/page": "app/app/dashboard/page.js",
-  "/app/mentorship/page": "app/app/mentorship/page.js",
-  "/app/page": "app/app/page.js",
-  "/app/success-story-alumni/[id]/page": "app/app/success-story-alumni/[id]/page.js",
-  "/app/events/page": "app/app/events/page.js",
-  "/app/blog/page": "app/app/blog/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/app/blog/page": "app/app/blog/page.js",
+  "/app/articles/page": "app/app/articles/page.js",
+  "/app/article/[slug]/page": "app/app/article/[slug]/page.js"
 }

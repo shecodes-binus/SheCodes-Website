@@ -19,35 +19,36 @@ import type { BlogArticle, ArticleCategory } from "@/types/blog"; // Adjust path
 import { dummyArticles } from "@/data/dummyBlogs"; // Adjust path if needed
 import type { Documentation} from '@/types/documentation'; 
 import { dummyDocumentation } from '@/data/dummyDocumentation'; 
+import { FaArrowAltCircleRight, FaArrowRight, FaLongArrowAltRight } from "react-icons/fa"
 
 export default function BlogPage() {
   const getCategoryStyles = (category: ArticleCategory): { badge: string; button: string; title: string } => {
     switch (category) {
-      case "Tech Trends":
+      case "Career Growth":
         return {
-          badge: "bg-red-500 text-white hover:bg-red-500/90",
+          badge: "bg-[#EE7373] text-white hover:bg-[#EE7373]/90",
           button: "text-red-500 hover:text-white hover:bg-red-500",
           title: "text-red-500"
         };
-      case "Career Growth":
+      case "Community":
         return {
-          badge: "bg-yellow-500/90 text-white hover:bg-yellow-500/80",
+          badge: "bg-[#FAC57A] text-white hover:bg-[#FAC57A]/90",
           button: "text-yellow-500 hover:text-white hover:bg-yellow-500",
           title: "text-yellow-500"
         };
-      case "Community":
+      case "Event":
         return {
           badge: "bg-purple-2 text-white hover:bg-purple-2/90", // Assuming purple-3 exists
           button: "text-purple-2 hover:text-white hover:bg-purple-2",
           title: "text-purple-2"
         };
-      case "Other":
+      case "Others":
         return {
-          badge: "bg-gray-500 text-white hover:bg-gray-700",
+          badge: "bg-[#48CFE7] text-white hover:bg-[#48CFE7]/80",
           button: "text-gray-600 hover:text-white hover:bg-gray-600",
           title: "text-gray-800"
         };
-      case "Events":
+      case "Tech & Innovation":
         return {
           badge: "bg-blueSky text-white hover:bg-blueSky/90",
           button: "text-blueSky hover:text-white hover:bg-blueSky",
@@ -71,37 +72,103 @@ export default function BlogPage() {
   const initialArticleCount = 6;
   const articlesToShow = dummyArticles.slice(0, initialArticleCount);
 
-  const eventArticles = dummyArticles.filter(article => article.category === "Events");
-  eventArticles.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const eventArticles = dummyArticles.filter(article => article.category === "Event");
+  eventArticles.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
   const recentEvents = eventArticles.slice(0, 3);
 
   const documentation = dummyDocumentation;
 
   return (
-    <div className="mx-auto space-y-20 mb-20 min-h-screen">
+    <div className="mx-auto space-y-16 mb-20 min-h-screen">
+
+      {/* --- Recent Events Section --- */}
+      <section className="space-y-16 relative w-4/5 mx-auto py-12 md:py-16" id="team">
+        <div className="text-center">
+          <h3 className="text-xl font-bold sm:text-3xl xl:text-4xl/none text-blueSky">
+            SheCodes Current Update
+          </h3>
+        </div>
+        {recentEvents.map((event, index) => {
+        const isImageLeft = index % 2 === 0;
+        const styles = getCategoryStyles(event.category);
+        const date = new Date(event.publishedAt).toLocaleDateString();
+        const time = new Date(event.publishedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        return (
+          <div className="md:px-6" key={event.id}> 
+            <div className="grid gap-5 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_580px]">
+              <div
+                className={`w-full h-96 relative rounded-lg overflow-hidden shadow-lg order-1 ${
+                  isImageLeft ? 'lg:order-1' : 'lg:order-2'
+                }`}
+              >
+                <Image
+                  src={event.featuredImageUrl} 
+                  alt={event.title}    
+                  fill
+                  sizes="(max-width: 768px) 90vw, (max-width: 1200px) 50vw, 600px"
+                  className="object-cover"
+                  priority={index === 0} 
+                />
+                <Badge className={`absolute top-4 right-4 ${styles.badge} px-5 py-1.5`}>{event.category}</Badge>
+              </div>
+
+              {/* Text Content Container */}
+              <div
+                className={`flex flex-col justify-center space-y-4 leading-normal order-2  text-left`} 
+              >
+                 <Link href={`/app/article/${event.slug}`} passHref legacyBehavior={false} className="group">
+                    <div className="space-y-4 lg:space-y-5">
+                        <h4 className="text-xl font-bold sm:text-2xl xl:text-3xl/[40px] text-black">
+                            {event.title} 
+                        </h4>
+                        <p className="text-black md:text-base line-clamp-3">
+                            {event.content}
+                        </p>
+                        <div className="flex">
+                          <p className="text-sm text-grey-3 flex-1">
+                            {new Date(date).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })} | {time}        
+                          </p>
+                          <p className="text-sm text-purple-1 font-semibold  group-hover:underline">
+                            Read more
+                          </p>
+                        </div>
+                        
+                    </div>
+                 </Link>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+      </section>
 
       {/* --- Blog and News Section --- */}
-      <section className="space-y-12 md:space-y-16 py-12 md:py-16 px-12 sm:px-8 md:px-12 lg:px-32"> 
+      <section className="space-y-12 md:space-y-16 px-12 sm:px-8 md:px-12 lg:px-32 pb-16"> 
         <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
           <div className="space-y-6">
               <h2 className="text-3xl font-bold tracking-normal sm:text-4xl md:text-5xl text-pink">
                 Blog & News
               </h2>
-              <p className="max-w-[800px] text-black md:text-lg lg:text-base xl:text-lg">
-                Stay updated with our latest contents and activities.
-              </p>
           </div>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {articlesToShow.map((article: BlogArticle) => {
                 const styles = getCategoryStyles(article.category);
+                const date = new Date(article.publishedAt).toLocaleDateString();
+                const time = new Date(article.publishedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
                 return (
-                    <Card key={article.id} className="bg-white shadow-lg flex flex-col"> 
+                    <Card key={article.id} className="bg-white shadow flex flex-col"> 
                     <CardHeader className="p-0">
                         <div className="relative h-64 w-full">
                         <Image
-                            src={article.imageSrc || "/placeholder.svg?text=Image"} 
+                            src={article.featuredImageUrl || "/placeholder.svg?text=Image"} 
                             alt={article.title}
                             fill
                             sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
@@ -115,19 +182,24 @@ export default function BlogPage() {
                         <CardTitle className={`text-xl text-black`}>
                         {article.title}
                         </CardTitle>
-                        <CardDescription className="text-black/95 text-sm/[21px]">
-                        {article.description}
+                        <CardDescription className="text-black/95 text-sm/[21px] line-clamp-3">
+                        {article.content}
                         </CardDescription>
                     </CardContent>
                     <CardFooter className="flex justify-between items-center ">
-                        <div className="flex items-center text-sm text-gray-600">
-                            <Calendar className="mr-1 h-4 w-4" />
-                            <span>{article.date}</span>
+                        <div className="flex items-center text-sm text-grey-3">
+                            {/* <Calendar className="mr-1 h-4 w-4" /> */}
+                            <span>{new Date(date).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })} | {time}  
+                            </span>
                         </div>
-                        <Link href={article.link}>
-                        <button className="rounded-md text-xs font-semibold bg-blueSky px-3 py-1.5 text-white hover:bg-blueSky/90 hover:text-white">
-                            Read More
-                        </button>
+                        <Link href={`/app/article/${article.slug}`} passHref legacyBehavior={false} className="group">
+                        <p className="text-sm text-purple-1 font-semibold  group-hover:underline">
+                            Read more
+                          </p>
                         </Link>
                     </CardFooter>
                     </Card>
@@ -136,66 +208,14 @@ export default function BlogPage() {
           </div>
           {dummyArticles.length > initialArticleCount && (
             <div className="text-center pt-4"> 
-                <Link href="/blog">
-                <Button className="bg-pink text-white rounded-xl px-16 py-4 font-bold text-lg shadow-lg hover:bg-pink/90 transition-all duration-300"> {/* Adjusted styles to match image button */}
-                    View More Articles
+                <Link href="/app/articles">
+                <Button className="bg-white text-purple-1 rounded-xl px-16 py-4 font-bold text-lg hover:underline transition-all duration-300"> 
+                    View More <FaArrowRight className="ml-2" />
                 </Button>
                 </Link>
             </div>
           )}
 
-      </section>
-      
-      {/* --- Recent Events Section --- */}
-      <section className="space-y-16 relative w-4/5 mx-auto" id="team">
-        <div className="text-center">
-          <h3 className="text-xl font-bold sm:text-3xl xl:text-4xl/none text-blueSky">
-            SheCodes Current Update
-          </h3>
-        </div>
-        {recentEvents.map((event, index) => {
-        const isImageLeft = index % 2 === 0;
-
-        return (
-          <div className="md:px-6" key={event.id}> 
-            <div className="grid gap-5 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_580px]">
-              <div
-                className={`w-full h-96 relative rounded-lg overflow-hidden shadow-lg order-1 ${
-                  isImageLeft ? 'lg:order-1' : 'lg:order-2'
-                }`}
-              >
-                <Image
-                  src={event.imageSrc} 
-                  alt={event.title}    
-                  fill
-                  sizes="(max-width: 768px) 90vw, (max-width: 1200px) 50vw, 600px"
-                  className="object-cover"
-                  priority={index === 0} 
-                />
-              </div>
-
-              {/* Text Content Container */}
-              <div
-                className={`flex flex-col justify-center space-y-4 leading-normal order-2  text-left`} 
-              >
-                 <a href={event.link} className="group">
-                    <div className="space-y-3 lg:space-y-4">
-                        <h4 className="text-xl font-bold sm:text-2xl xl:text-3xl/[40px] text-black group-hover:underline">
-                            {event.title} 
-                        </h4>
-                        <p className="text-gray-600 md:text-base">
-                            {event.description}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                            {event.date}
-                        </p>
-                    </div>
-                 </a>
-              </div>
-            </div>
-          </div>
-        );
-      })}
       </section>
 
       { /* --- Documentation Section --- */}
