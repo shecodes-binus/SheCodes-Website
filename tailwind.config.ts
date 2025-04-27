@@ -13,10 +13,10 @@ const config = {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
+      // padding: "2rem",
+      // screens: {
+      //   "2xl": "1400px",
+      // },
     },
     extend: {
       colors: {
@@ -53,44 +53,42 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        black: {
+          DEFAULT: "#1C2730",
+        },
+        white: {
+          DEFAULT: "#FFFFFF",
+        },
+        grey: {
+          1: "#F4F4F4",
+          2: "#D8D8D8",
+          3: "#848484",
+        },
         purple: {
-          50: "#f5f3ff",
-          100: "#ede9fe",
-          200: "#ddd6fe",
-          300: "#c4b5fd",
-          400: "#a78bfa",
-          500: "#8b5cf6",
-          600: "#7c3aed",
-          700: "#6d28d9",
-          800: "#5b21b6",
-          900: "#4c1d95",
-          950: "#2e1065",
+          1: "#4B2B4E",
+          2: "#A56CC1",
+          3: "#E0D0FF",
         },
-        teal: {
-          50: "#f0fdfa",
-          100: "#ccfbf1",
-          200: "#99f6e4",
-          300: "#5eead4",
-          400: "#2dd4bf",
-          500: "#14b8a6",
-          600: "#0d9488",
-          700: "#0f766e",
-          800: "#115e59",
-          900: "#134e4a",
-          950: "#042f2e",
+        blueSky: {
+          DEFAULT: "#7AADEB",
         },
-        rose: {
-          50: "#fff1f2",
-          100: "#ffe4e6",
-          200: "#fecdd3",
-          300: "#fda4af",
-          400: "#fb7185",
-          500: "#f43f5e",
-          600: "#e11d48",
-          700: "#be123c",
-          800: "#9f1239",
-          900: "#881337",
-          950: "#4c0519",
+        pink: {
+          DEFAULT: "#F47CA6",
+        },
+        backgroundShade: {
+          DEFAULT: "#FDF0FD",
+        },
+        green: {
+          DEFAULT: "#06C755",
+        },
+        blue: {
+          DEFAULT: "#4D73FF",
+        },
+        red: {
+          DEFAULT: "#FF334B",
+        },
+        yellow: {
+          DEFAULT: "#EED202",
         },
       },
       borderRadius: {
