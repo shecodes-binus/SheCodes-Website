@@ -4,6 +4,7 @@ import React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from 'next/image';
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import {
@@ -22,80 +23,64 @@ export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Link href="/" className="font-bold text-xl text-purple-800">
-            SheCodes Society
+    <header className="sticky top-0 z-50 w-full bg-white px-10">
+      <div className="container flex h-16 items-center justify-between ">
+        <div className="flex items-center">
+          <Link href="/app/" className="font-bold text-xl text-purple-800">
+            <Image src="/logos/shecodeslogo.svg" alt="SheCodes Logo" width={120} height={120} />
           </Link>
         </div>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex">
-          <NavigationMenu>
+        <div className="hidden md:flex flex-1 items-center">
+          <NavigationMenu className="flex-1 justify-center">
             <NavigationMenuList>
               <NavigationMenuItem>
-                <Link href="/about" legacyBehavior passHref>
+                <Link href="/app/" legacyBehavior passHref>
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>About Us</NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link href="/events" legacyBehavior passHref>
+                <Link href="/app/events" legacyBehavior passHref>
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>Events</NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <NavigationMenuTrigger>Programs</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                    <li className="row-span-3">
-                      <NavigationMenuLink asChild>
-                        <a
-                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-purple-500 to-purple-700 p-6 no-underline outline-none focus:shadow-md"
-                          href="/mentorship"
-                        >
-                          <div className="mt-4 mb-2 text-lg font-medium text-white">Mentorship Program</div>
-                          <p className="text-sm leading-tight text-white/90">
-                            Connect with industry experts who can guide your tech journey
-                          </p>
-                        </a>
-                      </NavigationMenuLink>
-                    </li>
-                    <ListItem href="/workshops" title="Workshops">
-                      Hands-on learning experiences for all skill levels
-                    </ListItem>
-                    <ListItem href="/hackathons" title="Hackathons">
-                      Collaborative coding events to build solutions
-                    </ListItem>
-                    <ListItem href="/courses" title="Courses">
-                      Structured learning paths for various tech skills
-                    </ListItem>
-                  </ul>
-                </NavigationMenuContent>
+                <Link href="/app/mentorship" legacyBehavior passHref>
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>Partnership & Mentorship</NavigationMenuLink>
+                </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link href="/blog" legacyBehavior passHref>
+                <Link href="/app/alumni" legacyBehavior passHref>
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>Alumni Hub</NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link href="/app/blog" legacyBehavior passHref>
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>Blog</NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link href="/contact" legacyBehavior passHref>
+                <Link href="/app/contact" legacyBehavior passHref>
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>Contact</NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
+          
+          <div className="flex items-center"> 
+             <Link href="/auth/login">
+               <Button className="bg-transparent hover:bg-purple-2 rounded-3xl px-8 text-blueSky border-blueSky border-2 hover:bg-blueSky hover:text-white">Login</Button>
+             </Link>
+           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Link href="/dashboard" className="hidden md:block">
+        <div className="flex items-center gap-2 md:hidden">
+          {/* <Link href="/dashboard" className="hidden md:block">
             <Button variant="outline" className="border-purple-200 text-purple-600 hover:bg-purple-50">
               Member Dashboard
             </Button>
-          </Link>
-          <Link href="/contact" className="hidden md:block">
-            <Button className="bg-purple-600 hover:bg-purple-700">Join Us</Button>
-          </Link>
+          </Link> */}
 
           {/* Mobile Menu */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -107,37 +92,37 @@ export default function Header() {
             </SheetTrigger>
             <SheetContent side="right">
               <div className="flex flex-col gap-6 pt-6">
-                <Link href="/" className="font-bold text-xl text-purple-800" onClick={() => setIsOpen(false)}>
-                  SheCodes Society
+                <Link href="/app/" className="font-bold text-xl text-purple-2" onClick={() => setIsOpen(false)}>
+                  <Image src="/shecodeslogo.svg" alt="SheCodes Logo" width={180} height={180} />
                 </Link>
                 <nav className="flex flex-col gap-4">
-                  <Link href="/about" onClick={() => setIsOpen(false)}>
+                  <Link href="/app/" onClick={() => setIsOpen(false)}>
                     About Us
                   </Link>
-                  <Link href="/events" onClick={() => setIsOpen(false)}>
+                  <Link href="/app/events" onClick={() => setIsOpen(false)}>
                     Events
                   </Link>
-                  <Link href="/mentorship" onClick={() => setIsOpen(false)}>
-                    Mentorship
+                  <Link href="/app/mentorship" onClick={() => setIsOpen(false)}>
+                    Partnership & Mentorship
                   </Link>
-                  <Link href="/workshops" onClick={() => setIsOpen(false)}>
-                    Workshops
+                  <Link href="/app/alumni" onClick={() => setIsOpen(false)}>
+                    Alumni Hub
                   </Link>
-                  <Link href="/blog" onClick={() => setIsOpen(false)}>
+                  <Link href="/app/blog" onClick={() => setIsOpen(false)}>
                     Blog
                   </Link>
-                  <Link href="/contact" onClick={() => setIsOpen(false)}>
+                  <Link href="/app/contact" onClick={() => setIsOpen(false)}>
                     Contact
                   </Link>
                 </nav>
                 <div className="flex flex-col gap-2 mt-4">
-                  <Link href="/dashboard" onClick={() => setIsOpen(false)}>
+                  {/* <Link href="/dashboard" onClick={() => setIsOpen(false)}>
                     <Button variant="outline" className="w-full border-purple-200 text-purple-600 hover:bg-purple-50">
                       Member Dashboard
                     </Button>
-                  </Link>
-                  <Link href="/contact" onClick={() => setIsOpen(false)}>
-                    <Button className="w-full bg-purple-600 hover:bg-purple-700">Join Us</Button>
+                  </Link> */}
+                  <Link href="/app/contact" onClick={() => setIsOpen(false)}>
+                    <Button className="w-2/5 bg-blueSky text-white hover:bg-blue">Join Us</Button>
                   </Link>
                 </div>
               </div>
