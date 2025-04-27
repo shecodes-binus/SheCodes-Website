@@ -12,10 +12,41 @@
       "static/css/app/app/layout.css",
       "static/chunks/app/app/layout.js"
     ],
-    "/app/my-dashboard/page": [
+    "/app/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/app/my-dashboard/page.js"
+      "static/chunks/app/app/dashboard/page.js"
+    ],
+    "/app/mentorship/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/app/mentorship/page.js"
+    ],
+    "/app/alumni/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/app/alumni/page.css",
+      "static/chunks/app/app/alumni/page.js"
+    ],
+    "/app/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/app/page.js"
+    ],
+    "/app/success-story-alumni/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/app/success-story-alumni/[id]/page.js"
+    ],
+    "/app/events/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/app/events/page.js"
+    ],
+    "/app/blog/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/app/blog/page.js"
     ]
   }
 }

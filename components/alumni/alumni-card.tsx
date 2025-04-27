@@ -25,9 +25,9 @@ const AlumniCard: React.FC<AlumniCardProps> = ({ alumni }) => {
       {/* Optional: Display batch or short title */}
       {/* <p className="text-sm text-gray-500 mb-3">Batch {alumni.batch}</p> */}
       <div className="flex space-x-4">
-        {alumni.email && (
-          <a href={`mailto:${alumni.email}`} target="_blank" rel="noopener noreferrer" aria-label={`${alumni.name}'s Email`} className={iconColor}>
-            <FaEnvelope size={iconSize} className=''/>
+        {alumni.instagram && (
+          <a href={alumni.instagram} target="_blank" rel="noopener noreferrer" aria-label={`${alumni.name}'s Email`} className={iconColor}>
+            <FaInstagram size={iconSize} className=''/>
           </a>
         )}
         {alumni.linkedin && (

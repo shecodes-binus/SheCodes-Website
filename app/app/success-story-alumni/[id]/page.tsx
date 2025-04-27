@@ -59,7 +59,7 @@ export default function SuccessStory({ params }: { params: { id: string } }) {
                                     {storyData.name}
                                 </h3>
                                 <h3 className="text-2xl font-bold sm:text-xl xl:text-3xl/none text-pink">
-                                    Batch {storyData.batch}
+                                    Batch {storyData.batch} - {storyData.university}
                                 </h3>
                                 <p className="max-w-[800px] text-lg sm:text-lg xl:text-xl/none md:leading-relaxed xl:leading-relaxed text-black">
                                     {storyData.story}

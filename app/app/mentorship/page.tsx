@@ -76,7 +76,7 @@ export default function PartnershipMentorshipPage() {
            
             <div className="flex space-x-4">
                 {selectedMentor.instagram && (
-                  <a href={`mailto:${selectedMentor.instagram}`} target="_blank" rel="noopener noreferrer" aria-label={`${selectedMentor.name}'s Email`} className={iconColor}>
+                  <a href={selectedMentor.instagram} target="_blank" rel="noopener noreferrer" aria-label={`${selectedMentor.name}'s Email`} className={iconColor}>
                     <FaInstagram size={iconSize} className=''/>
                   </a>
                 )}

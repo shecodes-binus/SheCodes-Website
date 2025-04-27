@@ -1,3 +1,9 @@
 {
-  "/app/my-dashboard/page": "app/app/my-dashboard/page.js"
+  "/app/alumni/page": "app/app/alumni/page.js",
+  "/app/dashboard/page": "app/app/dashboard/page.js",
+  "/app/mentorship/page": "app/app/mentorship/page.js",
+  "/app/page": "app/app/page.js",
+  "/app/success-story-alumni/[id]/page": "app/app/success-story-alumni/[id]/page.js",
+  "/app/events/page": "app/app/events/page.js",
+  "/app/blog/page": "app/app/blog/page.js"
 }

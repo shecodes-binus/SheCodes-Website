@@ -8,4 +8,5 @@ export interface Alumni {
     instagram: string;
     linkedin: string;
     phone: string;
+    university: string;
   }

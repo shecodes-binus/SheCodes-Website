@@ -117,7 +117,7 @@ export function SuccessStoriesCarousel({
                               </div>
                               <div className="text-white">
                                 <h3 className="text-xl font-semibold mb-1">{alumni.name}</h3>
-                                <p className="text-sm opacity-80">Batch {alumni.batch}</p>
+                                <p className="text-sm opacity-80">Batch {alumni.batch} - {alumni.university}</p>
                                 {isSelected && alumni.story && (
                                   <p className="text-sm opacity-90 mt-3 line-clamp-3">
                                     {alumni.story}
