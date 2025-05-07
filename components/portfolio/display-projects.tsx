@@ -19,8 +19,8 @@ interface DisplayProjectsProps {
 // Updated ProjectCard
 const ProjectCard: React.FC<{ project: PortfolioProject; onEditClick: (project: PortfolioProject) => void }> = ({ project, onEditClick }) => {
   return (
-    <Card className="bg-[#DCEFFF] border-none rounded-2xl shadow-sm overflow-hidden h-full flex flex-col group"> {/* Added group for hover effect */}
-      <CardContent className="p-5 flex flex-col flex-grow relative"> {/* Added relative */}
+    <div className="border-none px-0 pb-0 overflow-hidden h-full flex flex-col group"> {/* Added group for hover effect */}
+      <div className="flex flex-col flex-grow relative"> {/* Added relative */}
         {/* Edit button - appears on hover */}
         <Button
             onClick={() => onEditClick(project)}
@@ -33,7 +33,7 @@ const ProjectCard: React.FC<{ project: PortfolioProject; onEditClick: (project: 
         </Button>
 
         {/* Image Area */}
-        <div className="relative aspect-[4/3] w-full bg-white/50 rounded-xl mb-4 overflow-hidden">
+        <div className="bg-[#DCEFFF] relative aspect-[4/3] w-full bg-white/50 rounded-xl mb-4 overflow-hidden">
            <Image
              src={project.imageUrl || "/projects/proj-default.png"}
              alt={project.name}
@@ -54,8 +54,8 @@ const ProjectCard: React.FC<{ project: PortfolioProject; onEditClick: (project: 
                 </Link>
             </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
@@ -65,13 +65,13 @@ export const DisplayProjects: React.FC<DisplayProjectsProps> = ({ projects, onPu
     <div className='h-full flex flex-col p-10 rounded-xl shadow-md bg-white'>
        <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800">Your Projects</h1>
-            <Button onClick={onPublishClick} className="bg-pink text-white hover:bg-pink/90 rounded-lg font-medium">
-                <PlusCircle className="mr-2 h-4 w-4" /> Publish New Project
-            </Button>
+            <button onClick={onPublishClick} className=" bg-blueSky text-white hover:bg-blueSky/90 text-md px-8 py-4 rounded-xl flex items-center gap-2">
+              <PlusCircle className="mr-2 h-4 w-4" /> Add Portfolio
+            </button>
        </div>
 
       {projects.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 flex-grow">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-12 flex-grow">
           {projects.map((project) => (
              // Pass onEditClick down to each card
             <ProjectCard key={project.id} project={project} onEditClick={onEditClick} />

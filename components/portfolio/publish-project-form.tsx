@@ -25,7 +25,7 @@ export const PublishProjectForm: React.FC<PublishProjectFormProps> = ({ onCancel
   }
 
   return (
-    <div className='h-full flex flex-col  p-10 rounded-xl shadow-md bg-white'>
+    <div className='flex flex-col p-10 rounded-xl shadow-md bg-white'>
         <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800">Publish Your Project</h1>
             <Button onClick={onCancel} variant="ghost" size="icon" className="text-gray-500 hover:text-gray-800">
@@ -34,17 +34,15 @@ export const PublishProjectForm: React.FC<PublishProjectFormProps> = ({ onCancel
             </Button>
         </div>
 
-        <div className='flex gap-5 flex-grow overflow-hidden'> {/* flex-grow + overflow needed */}
-            {/* Upload Area */}
-            <div className='flex-1 bg-[#7AADEB]/50 rounded-3xl flex items-center justify-center p-6'>
-                <div className='bg-white/60 border border-dashed border-blue-400 rounded-3xl w-full h-full flex flex-col items-center justify-center text-center space-y-4 p-4'>
-                {/* Replace button with actual file input logic later */}
-                <label className="w-1/2 h-1/2 relative max-w-[150px] max-h-[150px] hover:opacity-80 transition-opacity">
+        <div className='flex mb-8 gap-16'>
+            <div className='flex min-w-[350px] items-top justify-start max-h-[400px] border-[1.5px] border-blueSky rounded-2xl p-10'>
+                <div className='bg-blueSky/25 rounded-2xl  w-full h-full  flex flex-col items-center justify-center text-center space-y-4 p-6'>
+                    <label className="relative w-[100px] h-[100px] hover:opacity-80 transition-opacity cursor-pointer">
                     <Image
-                    src="/uploadimage.svg" // Make sure this exists in /public
-                    alt="Upload project image placeholder"
-                    fill
-                    className="object-contain"
+                        src="/uploadimage.svg"
+                        alt="Upload project image placeholder"
+                        fill
+                        className="object-contain"
                     />
                     <input
                         type="file"
@@ -55,38 +53,34 @@ export const PublishProjectForm: React.FC<PublishProjectFormProps> = ({ onCancel
                         const file = e.target.files?.[0];
                         if (file) {
                             console.log("Selected file:", file);
-                            // You can preview or upload the file here
                         }
                         }}
                     />
-                </label>
-                <h3 className="text-xl font-semibold text-gray-700">Upload Image</h3>
-                 <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
-                 {/* Hidden file input to be triggered */}
-                 {/* <input type="file" id="projectImage" className="hidden" /> */}
+                    </label>
+                    <h3 className="text-base font-semibold text-gray-800">Upload Image</h3>
                 </div>
             </div>
+            {/* </div> */}
 
             {/* Form Fields */}
-            <div className="flex-1 bg-[#FFD4E3] rounded-3xl flex items-center justify-center p-6 md:p-10">
-                {/* Add onSubmit to form */}
-                <form onSubmit={handleSubmit} className="w-full max-w-md h-full flex flex-col space-y-4 md:space-y-6">
+            <div className="flex-1 rounded-3xl flex items-start justify-center">
+                <form onSubmit={handleSubmit} className="w-full flex flex-col space-y-4 md:space-y-6">
                     <div>
-                        <label htmlFor="projectName" className="block text-base font-semibold text-[#4A0D32] mb-1.5">
+                        <label htmlFor="projectName" className="block text-base font-semibold text-black mb-2">
                         Project Name
                         </label>
                         <input
-                        type="text"
-                        id="projectName"
-                        placeholder="Enter the name of your project"
-                        required
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-1 focus:ring-pink placeholder-gray-400 bg-white"
+                            type="text"
+                            id="projectName"
+                            placeholder="Enter the name of your project"
+                            required
+                            className="w-full px-4 py-2.5 rounded-xl border border-[#BFBFBF] focus:outline-none focus:ring-1 focus:ring-pink placeholder-grey-2 bg-white"
                         />
                     </div>
                     
                     {/* Project name */}
                     <div>
-                        <label htmlFor="projectName" className="block text-base font-semibold text-[#4A0D32] mb-1.5">
+                        <label htmlFor="projectName" className="block text-base font-semibold text-black mb-2">
                         Project URL
                         </label>
                         <input
@@ -94,39 +88,32 @@ export const PublishProjectForm: React.FC<PublishProjectFormProps> = ({ onCancel
                         id="projectName"
                         placeholder="Enter the url of your project"
                         // required
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-1 focus:ring-pink placeholder-gray-400 bg-white"
+                        className="w-full px-4 py-2.5 rounded-xl border border-[#BFBFBF] focus:outline-none focus:ring-1 focus:ring-pink placeholder-grey-2 bg-white"
                         />
                     </div>
 
                     {/* Make textarea expand */}
                     <div className="flex flex-col flex-grow">
-                        <label htmlFor="projectDescription" className="block text-base font-semibold text-[#4A0D32] mb-1.5">
+                        <label htmlFor="projectDescription" className="block text-base font-semibold text-black mb-2">
                         Project Description
                         </label>
                         <textarea
                         id="projectDescription"
                         placeholder="Enter your project description"
                         required
-                        className="flex-grow w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-1 focus:ring-pink placeholder-gray-400 resize-none bg-white"
-                        ></textarea>
-                    </div>
-                     {/* Publish button moved inside form */}
-                     <div className="pt-2">
-                        <Button type="submit" className="w-full bg-pink text-white px-8 py-3 rounded-lg hover:bg-pink/80 font-bold text-base">
-                            Publish Project
-                        </Button>
+                        className="w-full px-4 py-2.5 rounded-xl border border-[#BFBFBF] focus:outline-none focus:ring-1 focus:ring-pink placeholder-grey-2 bg-white"
+                        rows={10}
+                        />
                     </div>
                 </form>
             </div>
         </div>
 
-        {/* Publish button outside the flex container, but inside the main flex-col */}
-        {/* Moved inside form */}
-        {/* <div>
-            <Button className="mt-6 bg-pink text-white px-16 py-6 rounded-lg hover:bg-pink/80 font-bold">
+        <div className="flex justify-center">
+            <Button type="submit" className="bg-blueSky text-white px-12 py-6 rounded-xl hover:bg-blueSky/80  text-base">
                 Publish
             </Button>
-        </div> */}
+        </div>
     </div>
   );
 };

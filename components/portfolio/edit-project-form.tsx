@@ -52,7 +52,7 @@ export const EditProjectForm: React.FC<EditProjectFormProps> = ({ project, onCan
   };
 
   return (
-    <div className='h-full flex flex-col  p-10 rounded-xl shadow-md bg-white'>
+    <div className='flex flex-col  p-10 rounded-xl shadow-md bg-white'>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Edit Your Project</h1>
         <Button onClick={onCancel} variant="ghost" size="icon" className="text-gray-500 hover:text-gray-800" disabled={isSaving}>
@@ -62,11 +62,9 @@ export const EditProjectForm: React.FC<EditProjectFormProps> = ({ project, onCan
       </div>
 
       {/* Use grid for layout matching the image */}
-      <form onSubmit={handleSave} className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-
-        {/* Left: Image Upload Area */}
-        <div className='bg-[#7AADEB]/50 rounded-3xl flex flex-col items-center justify-center p-6 space-y-4'>
-           <div className='bg-white/60 border border-dashed border-blue-300 rounded-2xl w-full h-full flex flex-col items-center justify-center text-center space-y-4 p-4 min-h-[250px]'>
+      <form onSubmit={handleSave} className="flex mb-8 gap-16">
+        <div className='flex min-w-[350px] items-top justify-start max-h-[400px] border-[1.5px] border-blueSky rounded-2xl p-10'>
+          <div className='bg-blueSky/25 rounded-2xl  w-full h-full  flex flex-col items-center justify-center text-center space-y-4 p-6'>
              {/* Display current image or placeholder */}
              <div className="relative aspect-[4/3] w-4/5 bg-white/50 rounded-xl mb-4 overflow-hidden">
                 <Image
@@ -100,61 +98,65 @@ export const EditProjectForm: React.FC<EditProjectFormProps> = ({ project, onCan
         </div>
 
         {/* Right: Form Fields */}
-        <div className="bg-[#FFD4E3] rounded-3xl p-6 md:p-8 flex flex-col space-y-4">
-          <div>
-            <label htmlFor="editProjectName" className="block text-base font-semibold text-pink-800 mb-1.5">
-              Project Name
-            </label>
-            <input
-              type="text"
-              id="editProjectName"
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              placeholder="Project name"
-              required
-              className="w-full px-4 py-2.5 rounded-xl border border-pink-200 focus:outline-none focus:ring-1 focus:ring-pink placeholder-gray-400 bg-white"
-            />
-          </div>
+        <div className="flex-1 rounded-3xl flex items-start justify-center">
+          <div className='w-full flex flex-col space-y-4 md:space-y-6'>
+            <div>
+              <label htmlFor="projectName" className="block text-base font-semibold text-black mb-2">
+                Project Name
+              </label>
+              <input
+                type="text"
+                id="editProjectName"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                placeholder="Project name"
+                required
+                className="w-full px-4 py-2.5 rounded-xl border border-[#BFBFBF] focus:outline-none focus:ring-1 focus:ring-pink placeholder-grey-2 bg-white"
+              />
+            </div>
 
-          <div>
-            <label htmlFor="editProjectURL" className="block text-base font-semibold text-pink-800 mb-1.5">
-              Project URL
-            </label>
-            <input
-              type="text"
-              id="editProjectURL"
-              value={projectUrl}
-              onChange={(e) => setProjectUrl(e.target.value)}
-              placeholder="Project Url"
-              required
-              className="w-full px-4 py-2.5 rounded-xl border border-pink-200 focus:outline-none focus:ring-1 focus:ring-pink placeholder-gray-400 bg-white"
-            />
-          </div>
-          
+            <div>
+              <label htmlFor="editProjectURL" className="block text-base font-semibold text-black mb-2">
+                Project URL
+              </label>
+              <input
+                type="text"
+                id="editProjectURL"
+                value={projectUrl}
+                onChange={(e) => setProjectUrl(e.target.value)}
+                placeholder="Project Url"
+                required
+                className="w-full px-4 py-2.5 rounded-xl border border-[#BFBFBF] focus:outline-none focus:ring-1 focus:ring-pink placeholder-grey-2 bg-white"
+              />
+            </div>
+            
 
-          {/* Make textarea expand */}
-          <div className="flex flex-col flex-grow">
-            <label htmlFor="editProjectDescription" className="block text-base font-semibold text-pink-800 mb-1.5">
-              Project Description
-            </label>
-            <textarea
-              id="editProjectDescription"
-              value={projectDescription}
-              onChange={(e) => setProjectDescription(e.target.value)}
-              placeholder="Project description"
-              required
-              className="flex-grow w-full px-4 py-3 rounded-xl border border-pink-200 focus:outline-none focus:ring-1 focus:ring-pink placeholder-gray-400 resize-none bg-white min-h-[150px]" // Ensure min height
-            ></textarea>
+            {/* Make textarea expand */}
+            <div className="flex flex-col flex-grow">
+              <label htmlFor="editProjectDescription" className="block text-base font-semibold text-black mb-2">
+                Project Description
+              </label>
+              <textarea
+                id="editProjectDescription"
+                value={projectDescription}
+                onChange={(e) => setProjectDescription(e.target.value)}
+                placeholder="Project description"
+                required
+                rows={10}
+                className="w-full px-4 py-2.5 rounded-xl border border-[#BFBFBF] focus:outline-none focus:ring-1 focus:ring-pink placeholder-grey-2 bg-white"
+              ></textarea>
+            </div>
           </div>
 
           {/* Save Button moved here */}
-           <div className="pt-2">
-                <Button type="submit" disabled={isSaving} className="w-full bg-pink text-white px-8 py-3 rounded-lg hover:bg-pink/80 font-bold text-base">
-                    {isSaving ? 'Saving...' : 'Save'}
-                </Button>
-            </div>
+           
         </div>
       </form>
+      <div className="flex justify-center pt-2">
+          <Button type="submit" disabled={isSaving} className="bg-blueSky text-white px-12 py-6 rounded-xl hover:bg-blueSky/80  text-base">
+              {isSaving ? 'Saving...' : 'Save'}
+          </Button>
+      </div>
     </div>
   );
 };
