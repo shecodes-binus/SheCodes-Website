@@ -58,7 +58,17 @@ export const allEventsData: CombinedEventData[] = [
     registerLink: "/register/event-1",
     tools: [ { name: "Visual Studio Code", logoSrc: "/tools/vsc.png" }, { name: "Browser DevTools", logoSrc: "/tools/python.png" /* Example */ } ],
     keyPoints: [ "Understand HTML document structure.", "Apply CSS for styling and layout.", "Basic JavaScript for interactivity.", "Using browser developer tools." ],
-    mentors: [ { id: 1, name: "Alice Developer", occupation: "Frontend Engineer", description: "Passionate about teaching web fundamentals.", imageSrc: "/avatars/mentor1.jpg" } ],
+    mentors: [ {
+      id: 1,
+      name: "Dewanti Subijantoro",
+      occupation: "Corporate Representative - Rumah Atsiri Indonesia",
+      description: "Passionate about building scalable web applications and mentoring aspiring developers.", // Shorter bio
+      imageSrc: "/mentors/mentor1.jpeg",
+      story: "Corporate Holding Representative and General Manager at Rumah Atsiri Indonesia with a vision to prioritize economic inclusion and Indonesian Soft Power promotion by way of aromatic wellness and regenerative tourism. With a solid foundation in strategic partnerships, business development, and international relations, she spearheads corporate branding and commercial expansion. Collaborative, results-oriented, and backed by networking, negotiating, and project management skills, she delivers effective operations and impactful partnerships. Dewanti is also devoted to technical training and capacity building, enhancing Indonesia’s international presence and promoting sustainable business and community development.",
+      instagram: "https://www.instagram.com/styllagram/",
+      linkedin: "https://www.linkedin.com/in/dewanti-subijantoro-49732923/",
+      status: 'active',
+    } ],
     skillsNeeded: [ { id: 1, title: "Problem Solving", description: "Debugging simple code issues." }, { id: 2, title: "Attention to Detail", description: "Writing syntactically correct code." } ],
     benefits: [
       { id: 1, title: "Build Your First Website", text: "Gain practical experience by creating a static website from scratch during the workshop." },
@@ -109,7 +119,17 @@ export const allEventsData: CombinedEventData[] = [
     registerLink: "/register/event-2",
     tools: [ { name: "Zoom", logoSrc: "/tools/zoom.png" } ],
     keyPoints: [ "Current state of AI.", "Ethical implications.", "Career paths in AI." ],
-    mentors: [ { id: 2, name: "Bob AI Expert", occupation: "AI Researcher", description: "Discussing cutting-edge AI.", imageSrc: "/avatars/mentor2.jpg" } ],
+    mentors: [ {
+      id: 2,
+      name: "Ananta Besty",
+      occupation: "Customer Success Account Manager - Microsoft Indonesia",
+      description: "Bridging the gap between user needs and technical solutions.",
+      imageSrc: "/mentors/mentor2.jpeg",
+      story: "Ananta Besty is a Customer Success Account Manager with a focus on driving digital transformation, cloud adoption, and generative AI deployment in enterprise, public sector, and education clients. With over six years of tenure at Microsoft, she has technical expertise in areas such as customer success, service delivery, and technical account management. With excellent communication, negotiation, and strategic planning abilities, she fosters long-term relationships and spearheads high-impacting projects aligned with organizational objectives. Her customer focus and deep client understanding empower organizations to succeed in the digital age.",
+      instagram: "https://www.instagram.com/anantabesty/",
+      linkedin: "https://www.linkedin.com/in/ananta-besty-906b46104/",
+      status: 'active',
+    } ],
     skillsNeeded: [ { id: 3, title: "Critical Thinking", description: "Analyzing AI trends." }, { id: 4, title: "Curiosity", description: "Exploring new technologies." } ],
     benefits: [
       { id: 1, title: "Build Your First Website", text: "Gain practical experience by creating a static website from scratch during the workshop." },

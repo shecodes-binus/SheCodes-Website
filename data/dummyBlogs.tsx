@@ -1,29 +1,39 @@
 // src/data/dummyBlogData.ts
+// Ensure your type definitions in '@/types/blog' match this structure,
+// particularly BlogArticle now having a 'sections' array of strings.
 import type { BlogArticle, ArticleCategory } from '@/types/blog'; // Adjust path if needed
 
 export const dummyArticles: BlogArticle[] = [
   {
-    id: 1, // Changed from string to number
+    id: 1,
     title: "The Rise of AI in Healthcare: Opportunities for Women in Tech",
-    slug: "ai-in-healthcare", // Using original ID as slug
-    excerpt: "How artificial intelligence is transforming healthcare and creating new career paths for women in technology.", // Changed from description
-    content: "Full article content detailing how artificial intelligence is transforming healthcare and creating new career paths for women in technology. Discusses ethical considerations, required skills, and future trends.", // Added placeholder content
-    featuredImageUrl: "/documentation/documentation1.JPG", // Changed from imageSrc
+    slug: "ai-in-healthcare",
+    excerpt: "How artificial intelligence is transforming healthcare and creating new career paths for women in technology.",
+    sections: [
+      "Artificial intelligence is no longer a futuristic concept but a present-day reality reshaping various industries, with healthcare at the forefront. This section explores AI's multifaceted applications, from advanced diagnostic tools and robotic surgery to personalized medicine and drug discovery. We examine how AI algorithms are improving patient outcomes and operational efficiencies in hospitals and clinics.",
+      "The surge in AI adoption in healthcare opens up a plethora of exciting opportunities for skilled professionals. For women in tech, this presents a unique chance to contribute to life-changing innovations. We delve into specific roles like AI ethics officers, data scientists specializing in health informatics, and AI product managers, discussing the necessary skills and how women can leverage their expertise in this burgeoning field.",
+      "With great power comes great responsibility. The integration of AI in healthcare also brings forth critical ethical considerations, such as data privacy, algorithmic bias, patient consent, and the 'black box' nature of some AI decisions. We will discuss these challenges and look towards future trends, including explainable AI (XAI) and collaborative human-AI healthcare models."
+    ],
+    featuredImageUrl: "/documentation/documentation1.JPG",
     category: "Tech & Innovation",
     authorName: "Jane Doe",
-    authorAvatarUrl: "/logonotext.svg", // Added field with specific value
-    publishedAt: "2025-04-10T10:00:00Z", // Changed from datetime
-    viewCount: 258, // Added dummy data
-    likeCount: 45, // Added dummy data
-    createdAt: "2025-04-10T09:55:00Z", // Added dummy data (slightly before publish)
-    updatedAt: "2025-04-10T10:00:00Z", // Added dummy data (same as publish)
+    authorAvatarUrl: "/logonotext.svg",
+    publishedAt: "2025-04-10T10:00:00Z",
+    viewCount: 258,
+    likeCount: 45,
+    createdAt: "2025-04-10T09:55:00Z",
+    updatedAt: "2025-04-10T10:00:00Z",
   },
   {
     id: 2,
     title: "Navigating Tech Interviews: A Guide for Women",
     slug: "tech-interviews-guide",
     excerpt: "Practical tips and strategies for women to confidently tackle technical interviews and showcase their skills.",
-    content: "Comprehensive guide covering resume building, common technical questions, behavioral interviews, negotiation strategies, and resources specifically for women navigating the tech interview process.",
+    sections: [
+      "Technical interviews can be daunting, but thorough preparation is key. This section covers essential preparation steps, including resume building tailored for tech roles, creating a portfolio of projects, and researching target companies and their tech stacks. We also discuss common pitfalls to avoid.",
+      "A deep dive into the types of questions you can expect. For technical rounds, we cover data structures, algorithms, system design, and live coding exercises. For behavioral interviews, we focus on the STAR method for structuring answers and how to effectively communicate your problem-solving skills, teamwork abilities, and cultural fit.",
+      "Securing an offer is just one part of the journey. This part of our guide provides insights into salary negotiation strategies, understanding equity, and evaluating benefits packages. We also list valuable resources, mentorship programs, and communities specifically for women in tech to help you not just land a job, but thrive in your career."
+    ],
     featuredImageUrl: "/documentation/documentation3.JPG",
     category: "Career Growth",
     authorName: "Maria Patel",
@@ -39,8 +49,12 @@ export const dummyArticles: BlogArticle[] = [
     title: "Building a Supportive Tech Community: Lessons from SheCodes",
     slug: "building-tech-community",
     excerpt: "How SheCodes has created a thriving community for women in tech and the impact it's making.",
-    content: "An exploration of the strategies used by SheCodes to foster an inclusive and supportive environment. Includes member testimonials, discussion of online and offline events, and the role of mentorship within the community.",
-    featuredImageUrl: "/documentation/documentation5.JPeG", // Corrected extension typo if needed
+    sections: [
+      "A strong community provides support, learning opportunities, and a sense of belonging. This section explores the core principles SheCodes employed to build its inclusive and supportive environment from the ground up, focusing on shared values and clear communication channels.",
+      "We detail the strategies used by SheCodes to foster active participation and continuous growth. This includes a mix of online forums, offline meetups, collaborative projects, and peer-to-peer learning sessions. Member testimonials highlight the positive impact of these initiatives.",
+      "Mentorship is a cornerstone of the SheCodes community. This part discusses how structured and informal mentorship programs have empowered members. We also look at the future vision for the community, including plans for expansion and new programs to further support women in their tech careers."
+    ],
+    featuredImageUrl: "/documentation/documentation5.JPeG",
     category: "Community",
     authorName: "Aisha Lee",
     authorAvatarUrl: "/logonotext.svg",
@@ -53,9 +67,13 @@ export const dummyArticles: BlogArticle[] = [
   {
     id: 4,
     title: "Recap: SheCodes Annual Tech Conference 2025",
-    slug: "recap-annual-conference", // Using original ID as slug
+    slug: "recap-annual-conference",
     excerpt: "Highlights from our biggest event of the year, featuring keynote speakers, workshops, and networking.",
-    content: "Detailed summary of the SheCodes Annual Tech Conference 2025. Includes summaries of keynotes, descriptions of popular workshops, photos from the event, and feedback from attendees.",
+    sections: [
+      "A summary of the powerful keynotes delivered by industry leaders. We share the main takeaways on topics ranging from future tech trends to leadership and innovation, along with memorable quotes and audience reactions.",
+      "An overview of the most popular workshops conducted during the conference. From hands-on coding sessions in emerging technologies to soft skill development for tech professionals, discover what attendees learned and created.",
+      "The conference was more than just talks and workshops; it was a vibrant hub for networking. We recount the connections made, the collaborative spirit, and include photos from the event. Plus, a sneak peek at what to expect for next year's conference!"
+    ],
     featuredImageUrl: "/documentation/documentation2.JPG",
     category: "Event",
     authorName: "Chloe Kim",
@@ -71,7 +89,11 @@ export const dummyArticles: BlogArticle[] = [
     title: "From Code to Product: Sarah's Journey to Product Management",
     slug: "sarah-journey-to-pm",
     excerpt: "Read about how Sarah leveraged her SheCodes experience to transition into a Product Manager role.",
-    content: "An inspiring success story detailing Sarah's background, her experience learning with SheCodes, the challenges she faced, and the steps she took to successfully transition into product management in the tech industry.",
+    sections: [
+      "An inspiring look at Sarah's background before SheCodes, what drew her to technology, and her initial experiences learning to code. This section highlights the motivations and early challenges faced on her journey.",
+      "Details on how Sarah utilized the resources and community at SheCodes. We explore the specific courses she took, projects she built, and how the supportive environment helped her overcome obstacles and gain the confidence to pursue a career change.",
+      "The practical steps Sarah took to transition from a coding-focused path to a Product Manager role. This includes networking, tailoring her resume, interview preparation specific to PM roles, and her first experiences in her new position. Her story serves as a roadmap for others considering a similar shift."
+    ],
     featuredImageUrl: "/photo1.png",
     category: "Success Stories",
     authorName: "Priya Sharma",
@@ -87,7 +109,11 @@ export const dummyArticles: BlogArticle[] = [
     title: "Overcoming Imposter Syndrome in the Tech Industry",
     slug: "imposter-syndrome-tech",
     excerpt: "Common feelings and practical strategies to build confidence and recognize your achievements in tech.",
-    content: "A look into the phenomenon of imposter syndrome, particularly prevalent in tech. Discusses its causes, symptoms, and provides actionable advice and techniques for building self-confidence.",
+    sections: [
+      "A look into the phenomenon of imposter syndrome, which is particularly prevalent in the fast-paced and ever-evolving tech industry. We discuss its common causes, how it manifests, and why it disproportionately affects underrepresented groups.",
+      "This section provides practical, actionable advice and techniques for combating imposter syndrome. Strategies include tracking achievements, seeking mentorship, practicing self-compassion, and reframing negative thoughts.",
+      "Beyond individual strategies, we explore how companies and communities like SheCodes can foster environments that help mitigate imposter syndrome. This includes promoting inclusive cultures, recognizing diverse contributions, and normalizing discussions around these challenges."
+    ],
     featuredImageUrl: "/documentation/documentation3.JPG",
     category: "Others",
     authorName: "Fatima Ahmed",
@@ -103,12 +129,16 @@ export const dummyArticles: BlogArticle[] = [
     title: "The Power of Mentorship in Tech Careers",
     slug: "mentorship-impact",
     excerpt: "Real stories highlighting how mentorship programs have accelerated careers for women at SheCodes.",
-    content: "Explores the benefits of mentorship through personal anecdotes from SheCodes members (mentor and mentee perspectives). Discusses how to find a mentor and make the most of the relationship.",
+    sections: [
+      "This section explores the profound benefits of mentorship through personal anecdotes from SheCodes members, showcasing both mentor and mentee perspectives. We highlight how guidance, support, and shared experiences can accelerate learning and career progression.",
+      "Practical advice on how to find a suitable mentor, what qualities to look for, and how to approach potential mentors. We also discuss strategies for mentees to make the most of the relationship, including setting clear goals and being proactive.",
+      "An overview of SheCodes' formal and informal mentorship programs. We explain how these programs are structured, the support provided, and success stories that have emerged, underscoring our commitment to fostering growth through connection."
+    ],
     featuredImageUrl: "/photo1.png",
-    category: "Others", // Kept as Others based on original
-    authorName: "Fatima Ahmed", // Same author as previous, kept for consistency
+    category: "Others",
+    authorName: "Fatima Ahmed",
     authorAvatarUrl: "/logonotext.svg",
-    publishedAt: "2025-03-10T16:00:00Z", // Slightly later than previous 'Others' post
+    publishedAt: "2025-03-10T16:00:00Z",
     viewCount: 290,
     likeCount: 58,
     createdAt: "2025-03-10T15:55:00Z",
@@ -119,7 +149,11 @@ export const dummyArticles: BlogArticle[] = [
     title: "Announcing: SheCodes 'Innovate for Good' Hackathon!",
     slug: "upcoming-hackathon-may",
     excerpt: "Join us this May for a weekend of coding, collaboration, and creating solutions for social impact. Open to all levels!",
-    content: "Official announcement for the 'Innovate for Good' Hackathon. Includes details on the theme, schedule, judges, prizes, registration link, and eligibility criteria. Encourages participation from all skill levels.",
+    sections: [
+      "Official announcement for the 'Innovate for Good' Hackathon. This section details the event's mission, the social impact theme, and what participants can expect over the hackathon weekend. We emphasize the collaborative and learning-focused environment.",
+      "A breakdown of the hackathon schedule, from opening ceremony to final presentations. We introduce our esteemed panel of judges from various tech companies and NGOs. Plus, a sneak peek at the exciting prizes and recognition for winning teams!",
+      "All the information you need to join: registration links, eligibility criteria (open to all skill levels!), team formation guidelines, and resources available to participants before and during the event. We encourage everyone passionate about tech and social good to apply."
+    ],
     featuredImageUrl: "/documentation/grandlaunchingphoto.JPG",
     category: "Event",
     authorName: "Event Team",
@@ -135,8 +169,12 @@ export const dummyArticles: BlogArticle[] = [
     title: "Webinar: Exploring Cloud Computing Careers for Women",
     slug: "webinar-cloud-careers",
     excerpt: "Learn about different roles in cloud computing and pathways to get started. Featuring industry experts.",
-    content: "Details about the upcoming webinar on cloud computing careers. Covers the topics, introduces the guest speakers (industry experts), provides date/time information, and includes the registration link.",
-    featuredImageUrl: "/documentation/documentation4.JPeG", // Corrected extension typo if needed
+    sections: [
+      "An introduction to the importance of cloud computing in today's tech landscape. This section covers the basics of cloud services (IaaS, PaaS, SaaS) and why it's a rapidly growing field with diverse career opportunities.",
+      "Meet our panel of industry experts who will be sharing their insights. We detail the key topics to be covered, including different roles in cloud (e.g., Cloud Architect, DevOps Engineer, Cloud Security Specialist), required skills, and certifications.",
+      "All the practical details for attending the webinar: date, time, platform, and a direct link for registration. We also explain how attendees can submit questions in advance and participate in the live Q&A session."
+    ],
+    featuredImageUrl: "/documentation/documentation4.JPeG",
     category: "Event",
     authorName: "SheCodes Academy",
     authorAvatarUrl: "/logonotext.svg",
