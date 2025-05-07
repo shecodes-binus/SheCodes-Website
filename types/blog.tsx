@@ -6,14 +6,14 @@ export interface BlogArticle {
   title: string;
   slug: string; // URL-friendly identifier
   excerpt: string; // Short summary
-  content: string; // The full article content (HTML or Markdown)
+  sections: string[];
   featuredImageUrl: string;
   category: ArticleCategory;
   authorName: string;
   authorAvatarUrl: string; 
-  publishedAt: string | Date; 
+  publishedAt: string; 
   viewCount: number;
   likeCount: number;
-  createdAt: string | Date; 
-  updatedAt: string | Date; 
+  createdAt: string; 
+  updatedAt: string; 
 }

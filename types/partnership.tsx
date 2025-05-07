@@ -7,6 +7,7 @@ export interface Mentor {
     story: string;
     instagram: string;
     linkedin: string;
+    status: 'active' | 'inactive';
   }
   
   export interface Partner {

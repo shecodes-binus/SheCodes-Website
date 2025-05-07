@@ -5,6 +5,10 @@ export interface Mentor {
     occupation: string;
     description: string;
     imageSrc: string;
+    story: string;
+    instagram: string;
+    linkedin: string;
+    status: 'active' | 'inactive'; 
   }
   
   export interface TimelineItem {
@@ -14,18 +18,30 @@ export interface Mentor {
     description: string;
   }
 
+  export interface Skill {
+    id: number;
+    title: string;
+    description: string;
+  }
+
+  export interface Benefit {
+    id: number;
+    title: string;
+    text: string;
+  }
+
   export interface Session {
     id: string; // Unique ID for the session
-    start: string;     // ISO 8601 string for session start
-    end: string;       // ISO 8601 string for session end
+    start: string | null;     // ISO 8601 string for session start
+    end: string | null;       // ISO 8601 string for session end
     topic?: string;     // Optional: Specific topic for this session
     description?: string; // Optional: Description of the session
     location?: string;  // Optional: Override main event location
   }
-  
+
   export interface CombinedEventData {
     id: number; // Unique ID for each event
-    status: 'upcoming' | 'past'; // Renamed from 'tab'
+    status: 'upcoming' | 'past' | 'ongoing'; // Renamed from 'tab'
     type: string; // Workshop, Seminar, Mentorship
     imageSrc: string; // Main image for the event (used in both list and detail)
     image_alt: string;
@@ -42,9 +58,9 @@ export interface Mentor {
     registerLink: string; // Link for registration or detail page
     tools: { name: string; logoSrc: string }[];
     keyPoints: string[];
-    mentors: { id: number; name: string; occupation: string; description: string; imageSrc: string }[];
-    skillsNeeded: { id: number; title: string; description: string }[];
-    benefits: { id: number; title: string; text: string }[];
+    mentors: Mentor[];
+    skillsNeeded: Skill[];
+    benefits: Benefit[];
     // timeline: { id: number; date: string; topic: string; description: string }[];
     groupLink: string;
   }
