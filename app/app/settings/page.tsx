@@ -179,7 +179,7 @@ export default function SettingsPage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Enter your full name here"
-                  className="text-black border-[#bfbfbf] rounded-lg placeholder:text-[#bfbfbf] py-5 px-3"
+                  className="text-black border-[#bfbfbf] rounded-lg placeholder:text-[#bfbfbf] py-5 px-3 focus:ring-1 focus:ring-blueSky focus:ring-offset-1"
                   required
                 />
               </div>
@@ -197,7 +197,7 @@ export default function SettingsPage() {
                   value={aboutMe}
                   onChange={(e) => setAboutMe(e.target.value)}
                   placeholder="Tell us about yourself here"
-                  className="text-black border-[#bfbfbf] rounded-lg placeholder:text-[#bfbfbf] py-3 px-3 min-h-[120px]"
+                  className="text-black border-[#bfbfbf] rounded-lg placeholder:text-[#bfbfbf] py-3 px-3 min-h-[120px] focus:ring-1 focus:ring-blueSky focus:ring-offset-1"
                   rows={4}
                 />
               </div>

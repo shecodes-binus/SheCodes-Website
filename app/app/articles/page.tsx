@@ -122,7 +122,7 @@ export default function BlogPage() {
                         {article.title}
                         </CardTitle>
                         <CardDescription className="text-black/95 text-sm/[21px] line-clamp-3">
-                        {article.content}
+                        {article.excerpt}
                         </CardDescription>
                     </CardContent>
                     <CardFooter className="flex justify-between items-center ">

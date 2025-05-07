@@ -123,7 +123,7 @@ export default function BlogPage() {
                             {event.title} 
                         </h4>
                         <p className="text-black md:text-base line-clamp-3">
-                            {event.content}
+                            {event.excerpt}
                         </p>
                         <div className="flex">
                           <p className="text-sm text-grey-3 flex-1">
@@ -183,7 +183,7 @@ export default function BlogPage() {
                         {article.title}
                         </CardTitle>
                         <CardDescription className="text-black/95 text-sm/[21px] line-clamp-3">
-                        {article.content}
+                        {article.excerpt}
                         </CardDescription>
                     </CardContent>
                     <CardFooter className="flex justify-between items-center ">

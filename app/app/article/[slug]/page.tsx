@@ -177,36 +177,16 @@ export default function SingleBlogPage({ params }: { params: { slug: string } })
                     </div>
 
                     {/* Article Body Content */}
-                    {/* Use Tailwind Prose for nice default styling if content is HTML/Markdown */}
-                    <div className="prose prose-lg max-w-none text-gray-700 mt-6">
-                        {/*
-                           IMPORTANT: If article.content is HTML from a trusted source (like a CMS),
-                           you can use dangerouslySetInnerHTML. Be very careful with this!
-                           If it's Markdown, use a library like 'react-markdown'.
-                           If it's plain text, just render it directly.
-                        */}
-
-                        {/* Example for plain text or simple HTML: */}
-                        <p>
-                            {article.content.split('\n').map((paragraph, index) => (
-                                <span key={index}>
+                    <div className="prose prose-lg max-w-none text-gray-700 mt-10 space-y-4">
+                        {article.sections.map((paragraph: string, pIndex: number) => (
+                            paragraph.trim() !== '' && ( 
+                                <p key={pIndex} className="!mb-4">
                                     {paragraph}
-                                    <br /> {/* Render line breaks if content has them */}
-                                </span>
-                             ))}
-                             {/* Placeholder for more complex content */}
-                             <br/>
-                             <h3 className='font-semibold'>The standard Lorem Ipsum passage, used since the 1500s</h3>
-                             <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-                             <br/>
-                             <h3 className='font-semibold'>1914 translation by H. Rackham</h3>
-                             <p>But I must explain to you how all this mistaken idea of denouncing pleasure and praising pain was born and I will give you a complete account of the system, and expound the actual teachings of the great explorer of the truth, the master-builder of human happiness. No one rejects, dislikes, or avoids pleasure itself, because it is pleasure, but because those who do not know how to pursue pleasure rationally encounter consequences that are extremely painful.</p>
-                        </p>
-
-                        {/* If using dangerouslySetInnerHTML (use with caution!): */}
-                        {/* <div dangerouslySetInnerHTML={{ __html: article.content }} /> */}
+                                </p>
+                            )
+                        ))}
                     </div>
-                </div> {/* End Main Content Column */}
+                </div> {/* End Main Article Column */}
 
 
                 {/* --- Column 3: Sidebar --- */}
