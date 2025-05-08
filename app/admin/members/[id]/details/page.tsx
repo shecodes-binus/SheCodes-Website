@@ -57,7 +57,7 @@ const ViewMemberPage: React.FC = () => {
     const labelStyles = "block text-md font-semibold text-black mb-1.5"; // Adjusted for image style
     
     // Value display style to mimic input fields but read-only
-    const valueDisplayStyles = "px-3 py-2 text-black border border-[#bfbfbf] rounded-lg shadow-sm min-h-[40px] flex items-center";
+    const valueDisplayStyles = "px-3 py-2.5 text-grey-3 bg-grey-2/30 rounded-lg shadow-sm min-h-[40px] flex items-center";
     const textAreaValueDisplayStyles = `${valueDisplayStyles} min-h-[100px] whitespace-pre-wrap break-words items-start`; // For multi-line text
     const imageContainerStyles = "w-32 h-32 rounded-full overflow-hidden bg-gray-200 mb-2 flex items-center justify-center";
 
@@ -72,7 +72,7 @@ const ViewMemberPage: React.FC = () => {
     }
 
     return (
-        <main className="flex-1 p-6 lg:p-10">
+        <main className="flex-1 px-10 py-6">
             <div className='bg-white rounded-xl shadow-md space-y-6 p-6 md:p-8'>
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-2xl font-semibold text-gray-800">Member Profile</h1>

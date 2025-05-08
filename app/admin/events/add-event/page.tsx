@@ -159,7 +159,7 @@ const EventFormPage: React.FC = () => {
     const removeButtonStyles = "bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-2 rounded-md text-xs inline-flex items-center gap-1";
 
     return (
-        <main className="flex-1 p-6 lg:p-10"> {/* Added background color */}
+        <main className="flex-1 px-10 py-6"> {/* Added background color */}
             <div className='bg-white rounded-xl shadow-md space-y-6 p-6 md:p-8'> {/* Adjusted padding and rounded */}
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-2xl font-semibold text-gray-800">Add a New Event</h1>

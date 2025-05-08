@@ -255,7 +255,7 @@ const EditEventPage: React.FC = () => {
     }
 
     return (
-        <main className="flex-1 p-6 lg:p-10">
+        <main className="flex-1 px-10 py-6">
             <div className='bg-white rounded-xl shadow-md space-y-6 p-6 md:p-8'>
                 {/* Changed Title */}
                 <div className="flex justify-between items-center mb-6">

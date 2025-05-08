@@ -153,7 +153,7 @@ const EventParticipantPage: React.FC = () => {
     };
 
     return (
-        <div className="p-10">
+        <div className="px-10 py-6">
             {/* Top Header Section */}
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-black">Event Participants <span className='text-grey-3'>({totalItems})</span></h1>

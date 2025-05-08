@@ -130,7 +130,7 @@ const EditMentorPage: React.FC = () => {
     }
 
     return (
-        <main className="flex-1 p-6 lg:p-10">
+        <main className="flex-1 px-10 py-6">
             <div className='bg-white rounded-xl shadow-md space-y-6 p-6 md:p-8'>
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-2xl font-semibold text-gray-800">Edit Mentor </h1>
