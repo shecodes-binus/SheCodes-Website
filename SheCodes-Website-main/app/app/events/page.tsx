@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -10,8 +11,23 @@ import { allEventsData } from '@/data/dummyEvent';
 import { getEventStatus, formatEventDateTime, formatStartDate } from '@/lib/eventUtils'; // Adjust path
 
 export default function EventsPage() {
-  const upcomingEvents = allEventsData.filter(event => event.status === "upcoming");
-  const pastEvents = allEventsData.filter(event => event.status === "past");
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [pastEvents, setPastEvents] = useState([]);
+
+  const now = new Date();
+  const status = new Date(event.date) > now ? "upcoming" : "past";
+  
+  useEffect(() => {
+    fetch("http://localhost:8000/events")
+      .then(res => res.json())
+      .then(data => {
+        const now = new Date();
+        const upcoming = data.filter((event: any) => new Date(event.date) > now);
+        const past = data.filter((event: any) => new Date(event.date) <= now);
+        setUpcomingEvents(upcoming);
+        setPastEvents(past);
+      });
+  }, []);
 
   return (
     <div className="container px-4 py-12 md:py-16">
