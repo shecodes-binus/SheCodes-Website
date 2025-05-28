@@ -9,6 +9,7 @@ class Event(Base):
     title = Column(String, nullable=False)
     description = Column(Text, nullable=False)
     event_type = Column(Enum("Workshop", "Seminar", "Webinar", name="event_type_enum"), nullable=False)
-    date = Column(DateTime, nullable=False)
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
     location = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
