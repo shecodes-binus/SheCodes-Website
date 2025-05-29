@@ -7,7 +7,16 @@ class BlogArticle(Base):
     id = Column(String, primary_key=True, index=True)
     title = Column(String, nullable=False)
     description = Column(String, nullable=False)
-    category = Column(Enum('Tech Trends', 'Career Growth', 'Community', name="blog_category"), nullable=False)
+    category = Column(Enum(
+    'Tech Trends',
+    'Career Growth',
+    'Community',
+    'Event',
+    'Others',
+    'Tech & Innovation',
+    'Success Stories',
+    name="blog_category"
+    ), nullable=False)
     date = Column(String, nullable=False)
     authorName = Column(String, nullable=False)
     authorInitials = Column(String, nullable=False)

@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -68,15 +70,26 @@ export default function BlogPage() {
         };
     }
   };
-
+  
+  const [articles, setArticles] = useState<BlogArticle[]>([]);
   const initialArticleCount = 6;
-  const articlesToShow = dummyArticles.slice(0, initialArticleCount);
+  const articlesToShow = articles.slice(0, initialArticleCount);
 
-  const eventArticles = dummyArticles.filter(article => article.category === "Event");
+  const eventArticles = articles.filter(article => article.category === "Event");
   eventArticles.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
   const recentEvents = eventArticles.slice(0, 3);
 
   const documentation = dummyDocumentation;
+
+  useEffect(() => {
+    axios.get("http://localhost:8000/blogs")  // Update with your actual backend URL
+      .then((res) => {
+        setArticles(res.data);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch blog articles", error);
+      });
+  }, []);
 
   return (
     <div className="mx-auto space-y-16 mb-20 min-h-screen">
