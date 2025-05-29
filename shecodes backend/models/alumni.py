@@ -9,3 +9,9 @@ class Alumni(Base):
     batch = Column(Integer, nullable=False)
     imageSrc = Column(String, nullable=False)
     story = Column(Text, nullable=False)
+
+    email = Column(String, nullable=True)
+    instagram = Column(String, nullable=True)
+    linkedin = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    university = Column(String, nullable=True)

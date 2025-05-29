@@ -4,9 +4,9 @@ export interface Alumni {
     batch: number;
     imageSrc: string;
     story: string;
-    email: string;
-    instagram: string;
-    linkedin: string;
-    phone: string;
-    university: string;
+    email?: string;
+    instagram?: string;
+    linkedin?: string;
+    phone?: string;
+    university?: string;
   }

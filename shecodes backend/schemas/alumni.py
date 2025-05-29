@@ -5,6 +5,11 @@ class AlumniBase(BaseModel):
     batch: int
     imageSrc: str
     story: str
+    email: str | None = None
+    instagram: str | None = None
+    linkedin: str | None = None
+    phone: str | None = None
+    university: str | None = None
 
 class AlumniCreate(AlumniBase):
     pass
