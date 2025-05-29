@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -6,8 +7,55 @@ import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Calendar, Clock, Download, Award, CheckCircle } from "lucide-react"
 import Image from "next/image"
+import jwt_decode from "jwt-decode"
+
+type User = {
+  id: string
+  name: string
+  role: string
+  email: string
+  profile_picture?: string
+  is_verified: boolean
+  created_at: string
+}
 
 export default function DashboardPage() {
+  const token = localStorage.getItem("access_token")
+  if (token) {
+    const decoded: any = jwt_decode(token)
+    const userId = decoded.sub
+  }
+  
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const userId = "REPLACE-WITH-REAL-USER-ID"
+
+    fetch(`http://localhost:8000/users/${userId}`)
+      .then(async (res) => {
+        if (!res.ok) {
+          const err = await res.json()
+          throw new Error(err.detail || "Failed to fetch user")
+        }
+        return res.json()
+      })
+      .then((data) => {
+        setUser(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error(err)
+        setError(err.message)
+        setLoading(false)
+      })
+  }, [])
+
+  if (loading) return <div>Loading...</div>
+  if (error) return <div>Error: {error}</div>
+  if (!user) return <div>No user data found</div>
+
   return (
     <div className="container px-4 py-12 md:px-6 md:py-24">
       <div className="space-y-12">
