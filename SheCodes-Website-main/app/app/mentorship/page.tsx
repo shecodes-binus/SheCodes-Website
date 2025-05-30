@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { HiChevronLeft } from "react-icons/hi";
@@ -14,10 +14,21 @@ import { SuccessStoriesCarousel } from '@/components/success-story-carousel';
 export default function PartnershipMentorshipPage() {
   const [selectedMentorIndex, setSelectedMentorIndex] = useState<number>(0);
 
-  const mentors = dummyMentors;
-  const partners = dummyPartners;
-
+  const [mentors, setMentors] = useState<Mentor[]>([]);
+  const [partners, setPartners] = useState<Partner[]>([]);
   const selectedMentor = mentors[selectedMentorIndex];
+
+  useEffect(() => {
+    fetch("http://localhost:8000/mentors")
+      .then(res => res.json())
+      .then(setMentors)
+      .catch((err) => console.error("error fetching mentors:", err));
+
+    fetch("http://localhost:8000/partners")
+      .then(res => res.json())
+      .then(setPartners)
+      .catch((err) => console.error("error fetching partners:", err));
+  }, []);
 
   const handleSelectMentor = (index: number) => {
     setSelectedMentorIndex(index);
@@ -37,6 +48,10 @@ export default function PartnershipMentorshipPage() {
 
   const iconSize = 20; 
   const iconColor = "border rounded-full cursor-pointer text-black hover:text-pink p-1"; 
+
+  if (!mentors.length || !partners.length) {
+    return <p className="text-center py-12">Loading...</p>;
+  }
 
   return (
     <div className="mx-auto py-12 md:py-16 space-y-12 md:space-y-12">
