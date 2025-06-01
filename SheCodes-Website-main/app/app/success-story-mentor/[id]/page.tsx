@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -17,11 +18,47 @@ function getStoryDataById(id: string): Mentor | undefined {
 
 
 export default function SuccessStory({ params }: { params: { id: string } }) {
-    const storyData = getStoryDataById(params.id);
-    const mentors = dummyMentors;
+    const [storyData, setStoryData] = useState<Mentor | null>(null);
+    const [mentors, setMentors] = useState<Mentor[]>([]);
+    const [error, setError] = useState(false);
 
     const iconSize = 20; 
-    const iconColor = "border rounded-full cursor-pointer text-black hover:text-pink p-1"; 
+    const iconColor = "border rounded-full cursor-pointer text-black hover:text-pink p-1";
+    
+    useEffect(() => {
+        const fetchMentor = async () => {
+        try {
+            const res = await fetch(`http://localhost:8000/mentors/${params.id}`);
+            if (!res.ok) throw new Error("Not found");
+            const data = await res.json();
+            setStoryData(data);
+        } catch {
+            setError(true);
+        }
+        };
+
+        const fetchAllMentors = async () => {
+        const res = await fetch("http://localhost:8000/mentors");
+        const data = await res.json();
+        setMentors(data);
+        };
+
+        fetchMentor();
+        fetchAllMentors();
+    }, [params.id]);
+
+    if (error) {
+        return (
+        <div className="flex flex-col min-h-screen items-center justify-center space-y-4">
+            <h1 className="text-2xl font-bold text-red-600">Success Story Not Found</h1>
+            <p className="text-gray-600">Sorry, we couldn't find the story you were looking for.</p>
+            <Link href="/partnership-mentorship">
+            <Button variant="outline">Back to Mentorship</Button>
+            </Link>
+        </div>
+        );
+    }
+
 
     if (!storyData) {
         return (
