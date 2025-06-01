@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .routers import documentation, user, event, mentor, partner, alumni, faq, contact, blog
+from .routers import documentation, user, event, mentor, partner, alumni, faq, contact, blog, comment
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -21,5 +21,6 @@ app.include_router(alumni.router)
 app.include_router(faq.router)
 app.include_router(contact.router)
 app.include_router(blog.router)
+app.include_router(comment.router)
 
 # uhh might add on to this later
