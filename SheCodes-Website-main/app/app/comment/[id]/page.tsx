@@ -72,12 +72,6 @@ const getAllComments = () => ({
     }
 });
 
-const getCommentData = (id: string): CommentData | null => {
-    const allData = getAllComments();
-    const commentIdStr = id as keyof typeof allData;
-    return allData[commentIdStr] || null;
-};
-
 // --- Page Component ---
 export default function CommentDetailPage({ params }: { params: { id: string } }) {
     const { id } = params;
@@ -93,68 +87,93 @@ export default function CommentDetailPage({ params }: { params: { id: string } }
 
     // --- Fetch data and set initial state ---
     useEffect(() => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const fetchedData = getCommentData(id);
-            if (fetchedData) {
-                setCommentState(fetchedData);
-                // TODO: In a real app, you might fetch the user's liked status
-                // for this comment/replies and initialize likedItemIds here.
-            } else {
+        const fetchComments = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+            const res = await fetch(`http://localhost:8000/comments/${id}`);
+            const raw = await res.json();
+
+            const main = raw.find((c: any) => c.parent_id === null);
+            const replies = raw.filter((c: any) => c.parent_id === main?.id);
+
+            if (!main) {
                 setError("Comment not found.");
+                return;
             }
-        } catch (err) {
-            console.error("Error fetching comment data:", err);
-            setError("Failed to load comment data.");
-        } finally {
-            setIsLoading(false);
-        }
-    }, [id]); // Re-run effect if the comment ID changes
 
-    // --- Like/Unlike Toggle Handler ---
-    const handleLikeToggle = (itemId: number | string, type: 'main' | 'reply') => {
-        const isCurrentlyLiked = likedItemIds.has(itemId);
-
-        // Update the comment state (main or reply likes)
-        setCommentState(prevState => {
-            if (!prevState) return null; // Should not happen if called correctly, but type safety
-
-            // Create a deep enough copy to modify likes safely
-            const newState = {
-                ...prevState,
-                // Important: Create new mainComment object if modifying it
-                mainComment: { ...prevState.mainComment },
-                // Important: Create new replies array if modifying any reply
-                replies: prevState.replies.map(r => ({ ...r }))
+            const commentData: CommentData = {
+                mainComment: {
+                id: main.id,
+                author: main.author,
+                date: new Date(main.date).toLocaleDateString(),
+                text: main.text,
+                avatar: main.avatar,
+                likes: main.likes,
+                replyCount: replies.length
+                },
+                replies: replies.map((r: any) => ({
+                id: r.id,
+                author: r.author,
+                date: new Date(r.date).toLocaleDateString(),
+                text: r.text,
+                avatar: r.avatar,
+                likes: r.likes,
+                commentCount: 0
+                }))
             };
 
-            if (type === 'main') {
-                const currentLikes = newState.mainComment.likes;
-                newState.mainComment.likes = Math.max(0, isCurrentlyLiked ? currentLikes - 1 : currentLikes + 1);
-            } else { // type === 'reply'
-                const replyIndex = newState.replies.findIndex(r => r.id === itemId);
-                if (replyIndex > -1) {
-                    const currentLikes = newState.replies[replyIndex].likes;
-                    newState.replies[replyIndex].likes = Math.max(0, isCurrentlyLiked ? currentLikes - 1 : currentLikes + 1);
-                }
+            setCommentState(commentData);
+            } catch (err) {
+            console.error("Error fetching comments:", err);
+            setError("Failed to load comment data.");
+            } finally {
+            setIsLoading(false);
             }
+        };
+
+        fetchComments();
+    }, [id]);
+
+
+    // --- Like/Unlike Toggle Handler ---
+    const handleLikeToggle = async (itemId: number | string, type: 'main' | 'reply') => {
+        const res = await fetch(`http://localhost:8000/comments/${itemId}/like`, {
+            method: "PUT"
+        });
+
+        if (!res.ok) {
+            console.error("Failed to like comment");
+            return;
+        }
+
+        const updated = await res.json();
+
+        setCommentState(prev => {
+            if (!prev) return null;
+
+            const newState = {
+            ...prev,
+            mainComment: { ...prev.mainComment },
+            replies: prev.replies.map(r => ({ ...r }))
+            };
+
+            if (type === "main" && itemId === newState.mainComment.id) {
+            newState.mainComment.likes = updated.likes;
+            } else {
+            const index = newState.replies.findIndex(r => r.id === itemId);
+            if (index > -1) newState.replies[index].likes = updated.likes;
+            }
+
             return newState;
         });
 
-        // Update the set of liked IDs
-        setLikedItemIds(prevSet => {
-            const newSet = new Set(prevSet);
-            if (isCurrentlyLiked) {
-                newSet.delete(itemId);
-            } else {
-                newSet.add(itemId);
-            }
+        setLikedItemIds(prev => {
+            const newSet = new Set(prev);
+            newSet.has(itemId) ? newSet.delete(itemId) : newSet.add(itemId);
             return newSet;
         });
-
-         console.log(isCurrentlyLiked ? `Unliked ${type} ID: ${itemId}` : `Liked ${type} ID: ${itemId}`);
-    };
+        };
 
     // --- Reply Handlers (Keep as is) ---
     const handleStartReply = (itemId: number | string) => {
@@ -163,29 +182,51 @@ export default function CommentDetailPage({ params }: { params: { id: string } }
     const handleCancelReply = () => {
         setReplyingToId(null);
     };
-    const handleReplySubmit = (text: string) => {
+    const handleReplySubmit = async (text: string) => {
         if (!replyingToId || !commentState) return;
-        const newReply: Reply = {
-            id: `reply-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-            author: "CurrentUser", // TODO: Replace
-            date: new Date().toLocaleDateString('en-CA'),
-            text: text,
-            avatar: "/alumnis/default-avatar.png", // TODO: Replace
-            likes: 0,
-            commentCount: 0,
+
+        const newReply = {
+            discussion_id: id,
+            parent_id: replyingToId,
+            author: "CurrentUser", // Replace with logged-in user later
+            text,
+            avatar: "/alumnis/default-avatar.png"
         };
-        setCommentState(prevState => {
-            if (!prevState) return null;
-            const newState = {
-                ...prevState,
-                mainComment: { ...prevState.mainComment },
-                replies: [...prevState.replies, newReply]
-            };
-            return newState;
+
+        const res = await fetch("http://localhost:8000/comments/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newReply)
         });
+
+        if (!res.ok) {
+            console.error("Failed to submit reply");
+            return;
+        }
+
+        const saved = await res.json();
+        const formattedReply: Reply = {
+            id: saved.id,
+            author: saved.author,
+            date: new Date(saved.date).toLocaleDateString(),
+            text: saved.text,
+            avatar: saved.avatar,
+            likes: saved.likes,
+            commentCount: 0
+        };
+
+        setCommentState(prev => prev && ({
+            ...prev,
+            replies: [...prev.replies, formattedReply],
+            mainComment: {
+            ...prev.mainComment,
+            replyCount: prev.mainComment.replyCount + 1
+            }
+        }));
+
         setReplyingToId(null);
-        console.log(`Submitted reply to ${replyingToId}:`, text);
-    };
+        };
+
 
 
 
