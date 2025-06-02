@@ -1,4 +1,5 @@
-from sqlalchemy import Column, String, Enum
+from sqlalchemy import Column, String, Enum, Integer, DateTime, Text
+from datetime import datetime
 from ..database import Base
 
 class BlogArticle(Base):
@@ -22,3 +23,9 @@ class BlogArticle(Base):
     authorInitials = Column(String, nullable=False)
     imageSrc = Column(String, nullable=False)
     link = Column(String, nullable=False)
+
+    sections = Column(Text, nullable=True)  # Store JSON string or delimited string
+    viewCount = Column(Integer, default=0)
+    likeCount = Column(Integer, default=0)
+    createdAt = Column(DateTime, default=datetime.utcnow)
+    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

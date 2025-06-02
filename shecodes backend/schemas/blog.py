@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from typing import Literal
+from typing import Literal, Optional, List
+from datetime import datetime
 
 class BlogArticleBase(BaseModel):
     title: str
@@ -18,6 +19,10 @@ class BlogArticleBase(BaseModel):
     authorInitials: str
     imageSrc: str
     link: str
+    sections: Optional[List[str]] = []
+    viewCount: int = 0
+    likeCount: int = 0
+
 
 class BlogArticleCreate(BlogArticleBase):
     id: str
@@ -27,6 +32,9 @@ class BlogArticleUpdate(BlogArticleBase):
 
 class BlogArticleResponse(BlogArticleBase):
     id: str
+    reatedAt: datetime
+    updatedAt: datetime
+
 
     class Config:
         orm_mode = True
