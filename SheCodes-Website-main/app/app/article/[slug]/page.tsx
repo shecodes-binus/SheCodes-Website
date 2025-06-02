@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link'; // Although not explicitly used for navigation in this example, good practice
 import { Badge } from '@/components/ui/badge'; // Assuming you have a Badge component (shadcn/ui or similar)
@@ -81,21 +82,48 @@ const RecommendationCard = ({ article }: { article: BlogArticle }) => {
 // --- Main Page Component ---
 // Assuming you get the 'slug' from the URL params in Next.js App Router
 export default function SingleBlogPage({ params }: { params: { slug: string } }) {
+    const [article, setArticle] = useState<BlogArticle | null>(null);
+    const [recommendations, setRecommendations] = useState<BlogArticle[]>([]);
+    const [updates, setUpdates] = useState<BlogArticle[]>([]);
+    const [error, setError] = useState<string | null>(null);
 
-    const article = dummyArticles.find(a => a.slug === params.slug);
+    useEffect(() => {
+        const fetchArticle = async () => {
+        try {
+            const res = await fetch(`http://localhost:8000/articles/${params.slug}`);
+            if (!res.ok) throw new Error('Article not found');
+            const data: BlogArticle = await res.json();
+            setArticle(data);
+
+            // Fetch recommendations and updates
+            fetch(`http://localhost:8000/articles?category=${data.category}&exclude=${data.id}&limit=3`)
+            .then(res => res.json())
+            .then(setRecommendations);
+
+            fetch(`http://localhost:8000/articles?exclude=${data.id}&limit=3`)
+            .then(res => res.json())
+            .then(setUpdates);
+        } catch (err) {
+            setError('Article not found');
+            console.error(err);
+        }
+        };
+
+        fetchArticle();
+    }, [params.slug]);
 
     // Handle case where article is not found
-    if (!article) {
-        notFound(); // Or return a custom "Not Found" component
+    if (error || !article) {
+        notFound(); // or render a fallback message
     }
 
     // Filter recommendations (e.g., same category, excluding current article)
-    const recommendations = dummyArticles.filter(
-        a => a.category === article.category && a.id !== article.id
-    ).slice(0, 3); // Limit to 3 recommendations
+    // const recommendations = dummyArticles.filter(
+    //     a => a.category === article.category && a.id !== article.id
+    // ).slice(0, 3); // Limit to 3 recommendations
 
     // Filter "updates" (could be latest articles, excluding current one)
-    const updates = dummyArticles.filter(a => a.id !== article.id).slice(0, 3); // Simple example: latest 3 other articles
+    // const updates = dummyArticles.filter(a => a.id !== article.id).slice(0, 3); // Simple example: latest 3 other articles
 
     const categoryBadgeColor = getCategoryBadgeColor(article.category);
 
