@@ -32,7 +32,7 @@ class BlogArticleUpdate(BlogArticleBase):
 
 class BlogArticleResponse(BlogArticleBase):
     id: str
-    reatedAt: datetime
+    createdAt: datetime
     updatedAt: datetime
 
 
