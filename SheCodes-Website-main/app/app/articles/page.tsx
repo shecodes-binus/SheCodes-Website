@@ -1,5 +1,5 @@
 "use client"
-
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
@@ -62,9 +62,28 @@ export default function BlogPage() {
     }
   };
 
+  const [articles, setArticles] = useState<BlogArticle[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchArticles = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`http://localhost:8000/articles`);
+        const data = await res.json();
+        setArticles(data);
+      } catch (err) {
+        console.error("Failed to load articles:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchArticles();
+  }, []);
+
   const filteredArticles = selectedCategory === "All"
-    ? dummyArticles
-    : dummyArticles.filter(article => article.category === selectedCategory);
+  ? articles
+  : articles.filter(article => article.category === selectedCategory);
 
   return (
     <div className="mx-auto space-y-16 mb-20 min-h-screen">
@@ -96,8 +115,11 @@ export default function BlogPage() {
           ))}
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredArticles.map((article: BlogArticle) => {
+        {loading ? (
+            <p className="text-center text-gray-500">Loading articles...</p>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredArticles.map((article: BlogArticle) => {
                 const styles = getCategoryStyles(article.category);
                 const date = new Date(article.publishedAt).toLocaleDateString();
                 const time = new Date(article.publishedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -143,8 +165,9 @@ export default function BlogPage() {
                     </CardFooter>
                     </Card>
                 );
-             })}
-          </div>
+              })}
+            </div>
+        )}
       </section>
     </div>
   )
