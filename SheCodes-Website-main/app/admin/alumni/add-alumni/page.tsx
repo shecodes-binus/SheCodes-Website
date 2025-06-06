@@ -2,249 +2,181 @@
 "use client";
 
 import * as React from 'react';
-import { useState, useEffect, useRef } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import Image from 'next/image';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import type { Alumni } from '@/types/alumnis'; // Adjust path to your Alumni type
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const AddAlumniPage: React.FC = () => {
-    const router = useRouter();
+  const router = useRouter();
 
-    // --- Form State ---
-    const [alumniPhoto, setAlumniPhoto] = useState<File | null>(null);
-    const [alumniPhotoPreview, setAlumniPhotoPreview] = useState<string | null>(null);
-    const [existingImageSrc, setExistingImageSrc] = useState<string | null>(null);
-    const [alumniName, setAlumniName] = useState('');
-    const [alumniUniversity, setAlumniUniversity] = useState('');
-    const [alumniStory, setAlumniStory] = useState('');
-    const [instagramLink, setInstagramLink] = useState('');
-    const [linkedinLink, setLinkedinLink] = useState('');
-    const [alumniBatch, setAlumniBatch] = useState<1 | 2>(1); // Default to batch 1
+  const [imageSrc, setImageSrc] = useState('');
+  const [name, setName] = useState('');
+  const [university, setUniversity] = useState('');
+  const [story, setStory] = useState('');
+  const [instagram, setInstagram] = useState('');
+  const [linkedin, setLinkedin] = useState('');
+  const [batch, setBatch] = useState<1 | 2>(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const fileInputRef = useRef<HTMLInputElement>(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
-    // --- Handlers ---
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            setAlumniPhoto(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setAlumniPhotoPreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-            setExistingImageSrc(null); // Clear existing image if new one is chosen
-        } else if (existingImageSrc) { // Revert to existing if selection is cancelled
-            setAlumniPhoto(null);
-            setAlumniPhotoPreview(existingImageSrc);
-        } else {
-            setAlumniPhoto(null);
-            setAlumniPhotoPreview(null);
-        }
+    const payload = {
+      name,
+      university,
+      batch,
+      story,
+      instagram,
+      linkedin,
+      imageSrc, // <— direct URL string
     };
 
-    // Trigger hidden file input click when the "Choose file" button is clicked
-    const handleChooseFileClick = () => {
-        fileInputRef.current?.click();
-    };
+    try {
+      const res = await fetch("http://localhost:8000/alumni", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-    const handleUpdateAlumni = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        console.log("Adding Alumni Data (ID: ", {            
-            alumniPhoto,
-            existingImageSrc,
-            alumniName,
-            alumniUniversity,
-            instagramLink,
-            linkedinLink,
-            alumniBatch,
-            alumniStory,
-        });
-        alert("Alumni Updated (Placeholder - Check Console)");
-        // router.push('/admin/mentors'); // Optionally navigate back
-    };
+      if (!res.ok) throw new Error("Failed to add alumni");
 
-    // --- Styles ---
-    const inputStyles = "text-black border-[#bfbfbf] rounded-lg placeholder:text-[#bfbfbf] py-5 px-3 focus:ring-2 focus:ring-blueSky focus:ring-offset-1";
-    const labelStyles = "block text-md font-semibold text-black mb-2";
-    const helperTextStyles = "mt-1 text-xs text-gray-500";
-    const selectTriggerStyles = `${inputStyles} text-left`;
+      alert("Alumni added successfully!");
+      router.push("/admin/mentors");
+    } catch (err) {
+      console.error(err);
+      alert("Error adding alumni.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-    return (
-        <main className="flex-1 px-10 py-6">
-            <div className='bg-white rounded-xl shadow-md space-y-6 p-6 md:p-8'>
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-semibold text-gray-800">Add Alumni </h1>
-                    <Button variant="outline" onClick={() => router.back()} className="text-sm">
-                        Back
-                    </Button>
-                </div>
+  const labelClass = "block text-md font-semibold text-black mb-2";
+  const inputClass = "text-black border-[#bfbfbf] rounded-lg placeholder:text-[#bfbfbf] py-5 px-3 focus:ring-2 focus:ring-blueSky";
 
-                <form onSubmit={handleUpdateAlumni} className="space-y-6">
-                    {/* Photo Upload Section */}
-                    <div>
-                        <label className={`${labelStyles}`}>
-                            Photo<span className="text-red-500">*</span>
-                        </label>
-                        <div className="mt-1 flex flex-col items-start">
-                            <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 mb-3 flex items-center justify-center">
-                                {alumniPhotoPreview ? (
-                                    <Image src={alumniPhotoPreview} alt="Alumni Preview" width={128} height={128} className="object-cover w-full h-full" />
-                                ) : (
-                                    <span className="text-gray-400 text-sm">Preview</span>
-                                )}
-                            </div>
-                            <div className="flex items-center space-x-3">
-                                <Button
-                                    type="button"
-                                    onClick={handleChooseFileClick}
-                                    variant="outline"
-                                    className="px-4 py-2 text-sm border-gray-300 text-gray-700 hover:bg-gray-50"
-                                >
-                                    Choose file
-                                </Button>
-                                <span className="text-sm text-gray-600">
-                                    {alumniPhoto ? alumniPhoto.name : (existingImageSrc ? "Current image" : "No file chosen")}
-                                </span>
-                            </div>
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                id="alumniPhotoInput"
-                                name="alumniPhotoInput"
-                                accept="image/jpeg, image/png, image/jpg"
-                                onChange={handleFileChange}
-                                className="hidden"
-                            />
-                            <p className={helperTextStyles}>Format file jpg, jpeg, png</p>
-                        </div>
-                    </div>
+  return (
+    <main className="flex-1 px-10 py-6">
+      <div className="bg-white rounded-xl shadow-md p-6 md:p-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-semibold text-gray-800">Add Alumni</h1>
+          <Button variant="outline" onClick={() => router.back()}>
+            Back
+          </Button>
+        </div>
 
-                    {/* Name */}
-                    <div>
-                        <label htmlFor="alumniName" className={`${labelStyles}`}>
-                            Name<span className="text-red-500">*</span>
-                        </label>
-                        <Input
-                            type="text"
-                            id="alumniName"
-                            name="alumniName"
-                            value={alumniName}
-                            onChange={(e) => setAlumniName(e.target.value)}
-                            placeholder="Enter name here"
-                            className={inputStyles}
-                            required
-                        />
-                    </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Image URL */}
+          <div>
+            <label className={labelClass}>Image URL<span className="text-red-500">*</span></label>
+            <Input
+              type="url"
+              placeholder="https://example.com/image.jpg"
+              value={imageSrc}
+              onChange={(e) => setImageSrc(e.target.value)}
+              required
+              className={inputClass}
+            />
+          </div>
 
-                    {/* University */}
-                    <div>
-                        <label htmlFor="alumniUniversity" className={`${labelStyles}`}>
-                            University<span className="text-red-500">*</span>
-                        </label>
-                        <Input
-                            type="text"
-                            id="alumniUniversity"
-                            name="alumniUniversity"
-                            value={alumniUniversity}
-                            onChange={(e) => setAlumniUniversity(e.target.value)}
-                            placeholder="Enter university here"
-                            className={inputStyles}
-                            required
-                        />
-                    </div>
+          {/* Name */}
+          <div>
+            <label className={labelClass}>Name<span className="text-red-500">*</span></label>
+            <Input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter name here"
+              className={inputClass}
+              required
+            />
+          </div>
 
-                    {/* Status */}
-                    <div>
-                        <label htmlFor="alumniBatch" className={`${labelStyles}`}>
-                            Batch<span className="text-red-500">*</span>
-                        </label>
-                        <Select
-                            value={alumniBatch.toString()}
-                            onValueChange={(value) => setAlumniBatch(parseInt(value, 10) as 1 | 2)}
-                            name="alumniBatch"
-                            required
-                        >
-                            <SelectTrigger className={selectTriggerStyles}>
-                                <SelectValue placeholder="Select batch" />
-                            </SelectTrigger>
-                            <SelectContent className='bg-white border-gray-300 rounded-md shadow-lg'>
-                                <SelectItem value="1">1</SelectItem>
-                                <SelectItem value="2">2</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+          {/* University */}
+          <div>
+            <label className={labelClass}>University<span className="text-red-500">*</span></label>
+            <Input
+              type="text"
+              value={university}
+              onChange={(e) => setUniversity(e.target.value)}
+              placeholder="Enter university name"
+              className={inputClass}
+              required
+            />
+          </div>
 
-                    {/* Story */}
-                    <div>
-                        <label htmlFor="alumniStory" className={`${labelStyles}`}>
-                            Story<span className="text-red-500">*</span>
-                        </label>
-                        <Textarea
-                            id="alumniStory"
-                            name="alumniStory"
-                            value={alumniStory}
-                            onChange={(e) => setAlumniStory(e.target.value)}
-                            placeholder="Enter story here"
-                            className={`${inputStyles} min-h-[200px]`}
-                            rows={4}
-                            required
-                        />
-                        {/* <p className={helperTextStyles}></p> */}
-                    </div>
+          {/* Batch */}
+          <div>
+            <label className={labelClass}>Batch<span className="text-red-500">*</span></label>
+            <Select
+              value={batch.toString()}
+              onValueChange={(value) => setBatch(parseInt(value) as 1 | 2)}
+            >
+              <SelectTrigger className={inputClass}>
+                <SelectValue placeholder="Select batch" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1</SelectItem>
+                <SelectItem value="2">2</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-                    {/* Instagram Link */}
-                    <div>
-                        <label htmlFor="instagramLink" className={`${labelStyles}`}>
-                            Instagram Link<span className="text-red-500">*</span>
-                        </label>
-                        <Input
-                            type="url"
-                            id="instagramLink"
-                            name="instagramLink"
-                            value={instagramLink}
-                            onChange={(e) => setInstagramLink(e.target.value)}
-                            placeholder="Enter Instagram link here"
-                            className={inputStyles}
-                            required
-                        />
-                    </div>
+          {/* Story */}
+          <div>
+            <label className={labelClass}>Story<span className="text-red-500">*</span></label>
+            <Textarea
+              value={story}
+              onChange={(e) => setStory(e.target.value)}
+              placeholder="Share the alumni’s success story..."
+              rows={5}
+              className={`${inputClass} min-h-[150px]`}
+              required
+            />
+          </div>
 
-                    {/* LinkedIn Link */}
-                    <div>
-                        <label htmlFor="linkedinLink" className={`${labelStyles}`}>
-                            LinkedIn Link<span className="text-red-500">*</span>
-                        </label>
-                        <Input
-                            type="url"
-                            id="linkedinLink"
-                            name="linkedinLink"
-                            value={linkedinLink}
-                            onChange={(e) => setLinkedinLink(e.target.value)}
-                            placeholder="Enter LinkedIn link here"
-                            className={inputStyles}
-                            required
-                        />
-                    </div>
+          {/* Instagram */}
+          <div>
+            <label className={labelClass}>Instagram Link</label>
+            <Input
+              type="url"
+              value={instagram}
+              onChange={(e) => setInstagram(e.target.value)}
+              placeholder="https://instagram.com/..."
+              className={inputClass}
+            />
+          </div>
 
-                    {/* Save Button */}
-                    <div className="pt-4 flex"> {/* Removed justify-start to let button take natural width or be styled further */}
-                        <Button
-                            type="submit"
-                            // Style to match the light gray button in the image
-                            className="bg-blueSky hover:bg-blueSky/90 text-white font-semibold py-2.5 px-8 rounded-md cursor-pointer transition-colors"
-                        >
-                            Save
-                        </Button>
-                    </div>
-                </form>
-            </div>
-        </main>
-    );
+          {/* LinkedIn */}
+          <div>
+            <label className={labelClass}>LinkedIn Link</label>
+            <Input
+              type="url"
+              value={linkedin}
+              onChange={(e) => setLinkedin(e.target.value)}
+              placeholder="https://linkedin.com/..."
+              className={inputClass}
+            />
+          </div>
+
+          {/* Submit */}
+          <div>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-blueSky hover:bg-blueSky/90 text-white font-semibold py-2.5 px-8 rounded-md"
+            >
+              {isSubmitting ? "Saving..." : "Save"}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </main>
+  );
 };
 
 export default AddAlumniPage;
