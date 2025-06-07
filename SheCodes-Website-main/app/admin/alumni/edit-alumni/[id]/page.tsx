@@ -22,8 +22,6 @@ const EditAlumniPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
 
     // --- Form State ---
-    const [alumniPhoto, setAlumniPhoto] = useState<File | null>(null);
-    const [alumniPhotoPreview, setAlumniPhotoPreview] = useState<string | null>(null);
     const [existingImageSrc, setExistingImageSrc] = useState<string | null>(null);
     const [alumniName, setAlumniName] = useState('');
     const [alumniUniversity, setAlumniUniversity] = useState('');
@@ -31,37 +29,25 @@ const EditAlumniPage: React.FC = () => {
     const [instagramLink, setInstagramLink] = useState('');
     const [linkedinLink, setLinkedinLink] = useState('');
     const [alumniBatch, setAlumniBatch] = useState<1 | 2>(1); // Default to batch 1
-
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [imageSrc, setImageSrc] = useState('');
 
     // --- Fetch and Pre-fill Data ---
     useEffect(() => {
-        if (alumniId === null) {
-            setError("Invalid Alumni ID.");
-            setLoading(false);
-            return;
-        }
-
-        const foundAlumni = dummyAlumnis.find(alumni => alumni.id === alumniId);
-
-        if (foundAlumni) {
-            setAlumniData(foundAlumni);
-            setAlumniName(foundAlumni.name);
-            setAlumniUniversity(foundAlumni.university);
-            setAlumniStory(foundAlumni.story);
-            setInstagramLink(foundAlumni.instagram || '');
-            setLinkedinLink(foundAlumni.linkedin || '');
-            setAlumniBatch(foundAlumni.batch as 1 | 2);
-
-            if (foundAlumni.imageSrc) {
-                setExistingImageSrc(foundAlumni.imageSrc);
-                setAlumniPhotoPreview(foundAlumni.imageSrc);
-            }
-            setLoading(false);
-        } else {
-            setError(`Alumni with ID ${alumniId} not found.`);
-            setLoading(false);
-        }
+    if (!alumniId) return;
+        fetch(`http://localhost:8000/alumnis/${alumniId}`)
+            .then(res => res.json())
+            .then((data: Alumni) => {
+            setAlumniData(data);
+            setAlumniName(data.name);
+            setAlumniUniversity(data.university);
+            setAlumniStory(data.story);
+            setInstagramLink(data.instagram || '');
+            setLinkedinLink(data.linkedin || '');
+            setAlumniBatch(data.batch as 1 | 2);
+            setImageSrc(data.imageSrc || '');
+            })
+            .catch(() => setError("Failed to fetch alumni"))
+            .finally(() => setLoading(false));
     }, [alumniId]);
 
     // --- Handlers ---
@@ -84,27 +70,34 @@ const EditAlumniPage: React.FC = () => {
         }
     };
 
-    // Trigger hidden file input click when the "Choose file" button is clicked
-    const handleChooseFileClick = () => {
-        fileInputRef.current?.click();
-    };
+    const handleUpdateAlumni = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
 
-    const handleUpdateAlumni = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        console.log("Updating Alumni Data (ID:", alumniId, "):", {
-            id: alumniId,
-            alumniPhoto, // New File object or null
-            existingImageSrc, // Original image URL if photo not changed
-            alumniName,
-            alumniUniversity,
-            instagramLink,
-            linkedinLink,
-            // Preserve other fields not in the form from original mentorData
-            alumniBatch,
-            story: alumniData?.story,
-        });
-        alert("Alumni Updated (Placeholder - Check Console)");
-        // router.push('/admin/mentors'); // Optionally navigate back
+        const payload = {
+            name: alumniName,
+            university: alumniUniversity,
+            batch: alumniBatch,
+            story: alumniStory,
+            instagram: instagramLink,
+            linkedin: linkedinLink,
+            imageSrc: imageSrc,
+        };
+
+        try {
+            const res = await fetch(`http://localhost:8000/alumnis/${alumniId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) throw new Error("Failed to update alumni");
+
+            alert("Alumni updated successfully");
+            router.push('/admin/alumnis'); // Change to your admin list page
+        } catch (err) {
+            console.error(err);
+            alert("Error updating alumni");
+        }
     };
 
     // --- Styles ---
@@ -144,33 +137,36 @@ const EditAlumniPage: React.FC = () => {
                         </label>
                         <div className="mt-1 flex flex-col items-start">
                             <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 mb-3 flex items-center justify-center">
-                                {alumniPhotoPreview ? (
-                                    <Image src={alumniPhotoPreview} alt="Alumni Preview" width={128} height={128} className="object-cover w-full h-full" />
-                                ) : (
+                                {imageSrc ? (
+                                    <Image src={imageSrc} alt="Alumni Preview" width={128} height={128} className="object-cover w-full h-full" />
+                                    ) : (
                                     <span className="text-gray-400 text-sm">Preview</span>
                                 )}
                             </div>
-                            <div className="flex items-center space-x-3">
-                                <Button
-                                    type="button"
-                                    onClick={handleChooseFileClick}
-                                    variant="outline"
-                                    className="px-4 py-2 text-sm border-gray-300 text-gray-700 hover:bg-gray-50"
-                                >
-                                    Choose file
-                                </Button>
-                                <span className="text-sm text-gray-600">
-                                    {alumniPhoto ? alumniPhoto.name : (existingImageSrc ? "Current image" : "No file chosen")}
-                                </span>
-                            </div>
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                id="alumniPhotoInput"
-                                name="alumniPhotoInput"
-                                accept="image/jpeg, image/png, image/jpg"
-                                onChange={handleFileChange}
-                                className="hidden"
+                            {/* 
+                                <div className="flex items-center space-x-3">
+                                    <Button
+                                        type="button"
+                                        onClick={handleChooseFileClick}
+                                        variant="outline"
+                                        className="px-4 py-2 text-sm border-gray-300 text-gray-700 hover:bg-gray-50"
+                                    >
+                                        Choose file
+                                    </Button>
+                                    <span className="text-sm text-gray-600">
+                                        {alumniPhoto ? alumniPhoto.name : (existingImageSrc ? "Current image" : "No file chosen")}
+                                    </span>
+                                </div>
+                            */}
+                            <Input
+                                type="url"
+                                id="imageSrc"
+                                name="imageSrc"
+                                value={imageSrc}
+                                onChange={(e) => setImageSrc(e.target.value)}
+                                placeholder="Enter image URL here"
+                                className={inputStyles}
+                                required
                             />
                             <p className={helperTextStyles}>Format file jpg, jpeg, png</p>
                         </div>
