@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useState, useRef } from 'react'; 
+import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,7 @@ interface BlogArticleFormData {
     title: string;
     slug: string;
     category: ArticleCategory; 
-    excerpt: string; 
+    description: string; 
     authorName: string;
     sections: string[];
 }
@@ -73,21 +74,66 @@ const ArticleFormPage: React.FC = () => {
     };
     // --- End Sections Handlers ---
 
-    const handleSaveArticle = (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSaveArticle = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const formData: BlogArticleFormData = {
-            featuredImage: articlePhoto,
+
+        const id = uuidv4();
+        const date = new Date().toISOString();
+        const authorInitials = authorName
+            .split(" ")
+            .map((word) => word[0])
+            .join("")
+            .toUpperCase();
+
+        let imageSrc = '';
+        if (articlePhoto) {
+            const imageForm = new FormData();
+            imageForm.append("file", articlePhoto);
+
+            try {
+                const res = await fetch("http://localhost:8000/upload", {
+                    method: "POST",
+                    body: imageForm,
+                });
+                const data = await res.json();
+                imageSrc = data.url;
+            } catch (err) {
+                console.error("Image upload failed:", err);
+                alert("Failed to upload image");
+                return;
+            }
+        } else {
+            alert("Please upload a featured image");
+            return;
+        }
+
+        const payload = {
+            id,
             title: articleTitle,
-            category: category as ArticleCategory, // Ensure non-null before assignment
-            excerpt,
-            slug,
+            description: excerpt,
+            category,
+            date,
             authorName,
+            authorInitials,
+            imageSrc,
+            link: slug,
             sections,
         };
-        console.log("Saving Article Data:", formData);
-        alert("Article Saved (Placeholder - Check Console)");
-        // Here you would typically send `formData` to your backend
-        // For `featuredImage`, you'd usually upload it separately and send the URL.
+
+        try {
+            const res = await fetch("http://localhost:8000/blogs", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) throw new Error("Failed to create article");
+            alert("Article successfully created!");
+            router.push("/admin/articles");
+        } catch (err) {
+            console.error("Failed to create article:", err);
+            alert("Something went wrong while saving the article.");
+        }
     };
 
     // Basic Input styling matching the image (adjust border color, placeholder color, padding)

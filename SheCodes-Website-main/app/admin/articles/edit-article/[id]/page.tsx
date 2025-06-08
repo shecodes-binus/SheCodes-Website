@@ -17,7 +17,7 @@ interface BlogArticleFormData {
     title: string;
     slug: string;
     category: ArticleCategory; 
-    excerpt: string; 
+    description: string; 
     authorName: string;
     sections: string[];
 }
