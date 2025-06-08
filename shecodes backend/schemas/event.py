@@ -1,31 +1,8 @@
 from pydantic import BaseModel
+from typing import Optional, List
 from enum import Enum
 from datetime import datetime
-
-class EventTypeEnum(str, Enum):
-    Workshop = "Workshop"
-    Seminar = "Seminar"
-    Webinar = "Webinar"
-
-class EventBase(BaseModel):
-    title: str
-    description: str
-    event_type: EventTypeEnum
-    location: str
-    date: datetime
-
-class EventCreate(EventBase):
-    pass
-
-class EventUpdate(EventBase):
-    pass
-
-class EventResponse(EventBase):
-    id: int
-    created_at: datetime
-
-    class Config:
-        orm_mode = True
+from .mentor import MentorResponse
 
 class SkillBase(BaseModel):
     title: str
@@ -62,5 +39,48 @@ class SessionCreate(SessionBase):
 
 class SessionResponse(SessionBase):
     id: int
+    class Config:
+        orm_mode = True
+
+
+class EventTypeEnum(str, Enum):
+    Workshop = "Workshop"
+    Seminar = "Seminar"
+    Webinar = "Webinar"
+
+class EventBase(BaseModel):
+    title: str
+    description: str
+    event_type: EventTypeEnum
+    location: str
+    start_date: datetime
+    end_date: datetime
+    tools: str
+    key_points: str
+
+class EventCreate(EventBase):
+    mentors: List[int]
+    skills: List[SkillCreate]
+    benefits: List[BenefitCreate]
+    sessions: List[SessionCreate]
+
+class EventUpdate(EventBase):
+    title: Optional[str]
+    description: Optional[str]
+    event_type: Optional[EventTypeEnum]
+    location: Optional[str]
+    start_date: Optional[datetime]
+    end_date: Optional[datetime]
+    tools: Optional[str]
+    key_points: Optional[str]
+
+class EventResponse(EventBase):
+    id: int
+    created_at: datetime
+    mentors: List[MentorResponse]
+    skills: List[SkillResponse]
+    benefits: List[BenefitResponse]
+    sessions: List[SessionResponse]
+
     class Config:
         orm_mode = True
