@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { dummyMembers } from '@/data/dummyMembers';
 import { dummyEventParticipants } from '@/data/dummyParticipants';
 import { useParams } from 'next/navigation';
@@ -24,18 +24,13 @@ const EventParticipantPage: React.FC = () => {
     const router = useRouter();
     const params = useParams();
     const eventId = params.id ? parseInt(params.id as string, 10) : null;
-    const participantsForThisEvent = dummyEventParticipants.filter(p => p.eventId === eventId);
+    const [currentParticipants, setCurrentParticipants] = useState<MemberWithParticipationStatus[]>([]);
 
-    const participantDetails = participantsForThisEvent.map(participation => {
-        const memberInfo = dummyMembers.find(m => m.id === participation.memberId);
-        return {
-            ...memberInfo, 
-            registrationDate: participation.registrationDate,
-            participationStatus: participation.status,
-        };
-    }).filter((details): details is Required<typeof details> => details.id !== undefined);
-
-    const [currentParticipants, setCurrentParticipants] = useState(participantDetails);
+    type MemberWithParticipationStatus = Member & {
+        registrationDate: string;
+        participationStatus: 'registered' | 'cancelled' | 'attended';
+        id: number;
+    };
 
     const [itemsPerPage, setItemsPerPage] = React.useState(10);
     const [currentPage, setCurrentPage] = React.useState(1);
@@ -62,6 +57,36 @@ const EventParticipantPage: React.FC = () => {
     const paginatedParticipants = useMemo(() => { // Renamed variable for clarity
         return filteredParticipants.slice(startIndex, endIndex);
      }, [filteredParticipants, startIndex, endIndex]);
+
+    useEffect(() => {
+        if (!eventId) return;
+
+        const fetchParticipants = async () => {
+            try {
+                const res = await fetch(`/api/participants/event/${eventId}`);
+                const data = await res.json();
+
+                // Assuming each record has member inside or fetched separately:
+                const detailed = await Promise.all(data.map(async (p: any) => {
+                    const res = await fetch(`/api/members/${p.member_id}`);
+                    const member = await res.json();
+
+                    return {
+                        ...member,
+                        id: p.id, // participant record ID
+                        registrationDate: p.registration_date,
+                        participationStatus: p.status,
+                    };
+                }));
+
+                setCurrentParticipants(detailed);
+            } catch (err) {
+                console.error('Failed to fetch participants', err);
+            }
+    };
+
+        fetchParticipants();
+    }, [eventId]); 
 
     // Handlers
     const handlePageChange = useCallback((page: number) => {
@@ -100,27 +125,58 @@ const EventParticipantPage: React.FC = () => {
         }
     }, [paginatedParticipants]); // Depend on paginatedEvents
 
-    const handleDeleteConfirmed = () => {
+    const handleDeleteConfirmed = async () => {
         if (selectedParticipants.length === 0) return;
 
-        console.log("Deleting Events:", selectedParticipants);
+        try {
+            const res = await fetch(`/api/participants`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(selectedParticipants),
+            });
 
-        setSelectedParticipants([]);
-        setIsDeleteModalOpen(false); // Close the modal
-        console.log("Simulated Delete Complete. Selection cleared.");
+            if (!res.ok) throw new Error('Failed to delete participants');
+
+            setCurrentParticipants(prev => prev.filter(p => !selectedParticipants.includes(p.id)));
+            setSelectedParticipants([]);
+            setIsDeleteModalOpen(false);
+        } catch (err) {
+            console.error('Delete Error:', err);
+            alert('Failed to delete participants.');
+        }
+    };
+    
+    const handleChangeStatus = async (participantId: number, newStatus: 'registered' | 'attended' | 'cancelled') => {
+        try {
+            const res = await fetch(`/api/participants/${participantId}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus }),
+            });
+
+            if (!res.ok) throw new Error('Failed to update status');
+
+            // Update frontend state
+            setCurrentParticipants(prev =>
+                prev.map(p => p.id === participantId ? { ...p, participationStatus: newStatus } : p)
+            );
+        } catch (err) {
+            console.error('API Status Update Error:', err);
+            alert('Failed to update status.');
+        }
     };
 
-    const handleChangeStatus = (participantId: number, newStatus: 'registered' | 'attended' | 'cancelled') => {
-        console.log(`Changing status for participant ${participantId} to ${newStatus}`);
+    //const handleChangeStatus = (participantId: number, newStatus: 'registered' | 'attended' | 'cancelled') => {
+       // console.log(`Changing status for participant ${participantId} to ${newStatus}`);
     
         // --- Frontend State Update (Simulation) ---
-        setCurrentParticipants(prevParticipants =>
-            prevParticipants.map(p =>
-                p.id === participantId
-                    ? { ...p, participationStatus: newStatus }
-                    : p
-            )
-        );
+        //setCurrentParticipants(prevParticipants =>
+          //  prevParticipants.map(p =>
+           //     p.id === participantId
+           //         ? { ...p, participationStatus: newStatus }
+         //           : p
+       //     )
+       // );
 
         // --- API Call Placeholder (Real Application) ---
         // async function updateStatusAPI() {
@@ -150,7 +206,7 @@ const EventParticipantPage: React.FC = () => {
         //   }
         // }
         // updateStatusAPI();
-    };
+   // };
 
     return (
         <div className="px-10 py-6">
