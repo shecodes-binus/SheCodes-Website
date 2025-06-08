@@ -129,27 +129,63 @@ const EventFormPage: React.FC = () => {
     };
 
     // Save Event
-    const handleSaveEvent = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        console.log("Saving Event Data:", {
-            eventPhoto,
-            eventTitle,
-            category,
+    const handleSaveEvent = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        if (!startDate || !endDate || !startTime || !endTime) {
+            alert("Please select valid start/end date and time.");
+            return;
+        }
+
+        const combinedStart = new Date(startDate);
+        combinedStart.setHours(startTime.getHours(), startTime.getMinutes());
+
+        const combinedEnd = new Date(endDate);
+        combinedEnd.setHours(endTime.getHours(), endTime.getMinutes());
+
+        const payload = {
+            title: eventTitle,
             description,
-            startDate,
-            endDate,
-            startTime, 
-            endTime,  
+            event_type: category.charAt(0).toUpperCase() + category.slice(1), // match backend enum
             location,
-            whatsappLink,
+            start_date: combinedStart.toISOString(),
+            end_date: combinedEnd.toISOString(),
             tools,
-            keyPoints,
-            mentors: selectedMentors, 
-            skills: skills,           
-            benefits: benefits,       
-            sessions: sessions,      
-        });
-        alert("Event Saved (Placeholder - Check Console)");
+            key_points: keyPoints,
+            mentors: selectedMentors.map((m) => m.id),
+            skills: skills.map((s) => ({ title: s.title, description: s.description })),
+            benefits: benefits.map((b) => ({ title: b.title, text: b.text })),
+            sessions: sessions.map((s) => ({
+                topic: s.topic,
+                description: s.description,
+                start: s.start ? new Date(s.start).toISOString() : null,
+                end: s.end ? new Date(s.end).toISOString() : null
+            }))
+        };
+
+        try {
+            const res = await fetch("http://localhost:8000/events", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.detail || "Failed to create event");
+            }
+
+            const data = await res.json();
+            console.log("Event created successfully:", data);
+            alert("Event created successfully!");
+            router.push("/admin/events"); // Or wherever you'd like to redirect
+
+        } catch (error: any) {
+            console.error("Event creation failed:", error);
+            alert("Error: " + error.message);
+        }
     };
 
     // Basic Input styling matching the image (adjust border color, placeholder color, padding)
