@@ -28,7 +28,7 @@ const ArticleFormPage: React.FC = () => {
     const [articlePhotoPreview, setArticlePhotoPreview] = useState<string | null>(null);
     const [articleTitle, setArticleTitle] = useState('');
     const [category, setCategory] = useState<ArticleCategory>('Tech & Innovation'); // Default to a valid category
-    const [excerpt, setExcerpt] = useState('');
+     const [description, setDescription] = useState('');
     const [authorName, setAuthorName] = useState('');
     const [slug, setSlug] = useState('');
     const [sections, setSections] = useState<string[]>(['']); 
@@ -238,15 +238,15 @@ const ArticleFormPage: React.FC = () => {
 
                     {/* Excerpt */}
                     <div>
-                        <label htmlFor="excerpt" className={`${labelStyles}`}>
+                        <label htmlFor="description" className={`${labelStyles}`}>
                             Excerpt<span className="text-red-500">*</span>
                         </label>
                         <Textarea
-                            id="excerpt"
-                            name="excerpt"
+                            id="description"
+                            name="description"
                             value={excerpt}
-                            onChange={(e) => setExcerpt(e.target.value)}
-                            placeholder="Enter excerpt here"
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Enter description here"
                             className={`${inputStyles} min-h-[100px]`} // Adjusted styling
                             rows={4}
                             // Add maxLength or word count validation logic if needed

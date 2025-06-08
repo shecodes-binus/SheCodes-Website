@@ -24,7 +24,7 @@ interface BlogArticleFormData {
 
 const EditArticlePage: React.FC = () => {
     const params = useParams();
-    const articleId = params.id ? parseInt(params.id as string, 10) : null;
+    const articleId = params.id as string;
 
     const [articleData, setArticleData] = useState<BlogArticle | null>(null);
     const [loading, setLoading] = useState(true);
@@ -36,40 +36,48 @@ const EditArticlePage: React.FC = () => {
     const [existingImageSrc, setExistingImageSrc] = useState<string | null>(null);
     const [articleTitle, setArticleTitle] = useState('');
     const [category, setCategory] = useState<ArticleCategory>('Tech & Innovation'); // Default to a valid category
-    const [excerpt, setExcerpt] = useState('');
+    const [description, setDescription] = useState('');
     const [authorName, setAuthorName] = useState('');
     const [slug, setSlug] = useState('');
     const [sections, setSections] = useState<string[]>(['']); 
 
     // --- Fetch and Pre-fill Data ---
     useEffect(() => {
-        if (articleId === null) {
-            setError("Invalid Alumni ID.");
+    const fetchArticle = async () => {
+        if (!params.id) {
+            setError("Invalid article ID.");
             setLoading(false);
             return;
         }
 
-        const foundArticle = dummyArticles.find(article => article.id === articleId);
+        try {
+            const res = await fetch(`http://localhost:8000/articles/${params.id}`);
+            if (!res.ok) throw new Error("Failed to fetch article");
+            const data = await res.json();
 
-        if (foundArticle) {
-            setArticleData(foundArticle);
-            setArticleTitle(foundArticle.title);
-            setCategory(foundArticle.category);
-            setExcerpt(foundArticle.excerpt);
-            setAuthorName(foundArticle.authorName);
-            setSlug(foundArticle.slug);
-            setSections(foundArticle.sections);
+            setArticleData(data);
+            setArticleTitle(data.title);
+            setCategory(data.category);
+            setDescription(data.description);
+            setAuthorName(data.authorName);
+            setSlug(data.slug);
+            setSections(data.sections || []);
 
-            if (foundArticle.featuredImageUrl) {
-                setExistingImageSrc(foundArticle.featuredImageUrl);
-                setArticlePhotoPreview(foundArticle.featuredImageUrl);
+            if (data.featuredImageUrl) {
+                setExistingImageSrc(data.featuredImageUrl);
+                setArticlePhotoPreview(data.featuredImageUrl);
             }
-            setLoading(false);
-        } else {
-            setError(`Article with ID ${articleId} not found.`);
-            setLoading(false);
-        }
-    }, [articleId]);
+
+            } catch (err: any) {
+                console.error(err);
+                setError(err.message || "Unknown error");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchArticle();
+    }, [params.id]);
 
     // Ref for hidden file input
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -112,22 +120,31 @@ const EditArticlePage: React.FC = () => {
     };
     // --- End Sections Handlers ---
 
-    const handleSaveArticle = (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSaveArticle = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const formData: BlogArticleFormData = {
-            featuredImage: articlePhoto,
-            title: articleTitle,
-            category: category as ArticleCategory, // Ensure non-null before assignment
-            excerpt,
-            slug,
-            authorName,
-            sections,
-        };
-        console.log("Saving Article Data:", formData);
-        alert("Article Saved (Placeholder - Check Console)");
-        // Here you would typically send `formData` to your backend
-        // For `featuredImage`, you'd usually upload it separately and send the URL.
-    };
+        const formData = new FormData();
+        formData.append("title", articleTitle);
+        formData.append("slug", slug);
+        formData.append("category", category);
+        formData.append("description", description);
+        formData.append("authorName", authorName);
+        sections.forEach((s, i) => formData.append(`sections[${i}]`, s));
+        if (articlePhoto) formData.append("file", articlePhoto);
+
+        try {
+            const res = await fetch(`http://localhost:8000/articles/${params.id}`, {
+                method: "PUT",
+                body: formData,
+            });
+
+            if (!res.ok) throw new Error("Failed to update article");
+            alert("Article updated!");
+            router.push("/admin/articles");
+        } catch (err) {
+            console.error("Update failed", err);
+            alert("Failed to update article");
+        }
+};
 
     // Basic Input styling matching the image (adjust border color, placeholder color, padding)
     const inputStyles = "text-black border-[#bfbfbf] rounded-lg placeholder:text-[#bfbfbf] py-5 px-3 focus:ring-2 focus:ring-blueSky focus:ring-offset-1";
@@ -235,11 +252,11 @@ const EditArticlePage: React.FC = () => {
                             Excerpt<span className="text-red-500">*</span>
                         </label>
                         <Textarea
-                            id="excerpt"
-                            name="excerpt"
-                            value={excerpt}
-                            onChange={(e) => setExcerpt(e.target.value)}
-                            placeholder="Enter excerpt here"
+                            id="description"
+                            name="description"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Enter description here"
                             className={`${inputStyles} min-h-[100px]`} // Adjusted styling
                             rows={4}
                             // Add maxLength or word count validation logic if needed
