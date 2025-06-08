@@ -10,8 +10,30 @@ router = APIRouter(
 )
 
 @router.post("/", response_model=schemas.EventResponse)
-def create_event(event: schemas.EventCreate, db: Session = Depends(get_db)):
-    new_event = models.Event(**event.dict())
+def create_event(event_data: schemas.EventCreate, db: Session = Depends(get_db)):
+    new_event = models.Event(
+        title=event_data.title,
+        description=event_data.description,
+        event_type=event_data.event_type,
+        start_date=event_data.start_date,
+        end_date=event_data.end_date,
+        location=event_data.location,
+        tools=event_data.tools,
+        key_points=event_data.key_points
+    )
+
+    mentors = db.query(models.Mentor).filter(models.Mentor.id.in_(event_data.mentors)).all()
+    new_event.mentors = mentors
+
+    for skill in event_data.skills:
+        new_event.skills.append(models.Skill(**skill.dict()))
+
+    for benefit in event_data.benefits:
+        new_event.benefits.append(models.Benefit(**benefit.dict()))
+
+    for session in event_data.sessions:
+        new_event.sessions.append(models.Session(**session.dict()))
+
     db.add(new_event)
     db.commit()
     db.refresh(new_event)
