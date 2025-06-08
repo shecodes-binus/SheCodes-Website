@@ -187,51 +187,85 @@ const EditEventPage: React.FC = () => {
         setSessions(sessions.filter(s => s.id !== id));
     };
 
-    // --- Update Event ---
-    const handleUpdateEvent = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const uploadImageIfNeeded = async (): Promise<string | null> => {
+        if (!eventPhoto) return existingImageSrc;
 
-        // Combine date and time back if needed, or handle separately
-        // For simplicity, we'll just log the current state which includes separate date/time Date objects
-        // In a real save, you'd format these back to ISO or your required format.
+        const formData = new FormData();
+        formData.append("file", eventPhoto);
 
-        // Convert toolsInput and keyPointsInput back to arrays if needed
-         const toolsArray = toolsInput.split(',').map(t => ({ name: t.trim(), logoSrc: '' })).filter(t => t.name); // Basic split, empty logo
-         const keyPointsArray = keyPointsInput.split(',').map(p => p.trim()).filter(p => p);
-
-        console.log("Updating Event Data (ID:", eventId, "):", {
-            // Include id to identify which event is being updated
-            id: eventId,
-            // New photo file (if changed) or indicate existing image should be kept
-            eventPhoto: eventPhoto, // This is the File object if changed, null otherwise
-            existingImageSrc: existingImageSrc, // The original image URL if no new file uploaded
-            // Other form fields
-            eventTitle,
-            category, // This state holds the 'type' from dummy data
-            description,
-            startDate, // Date object
-            endDate, // Date object
-            startTime, // Date object (time part relevant)
-            endTime, // Date object (time part relevant)
-            location,
-            whatsappLink,
-            tools: toolsArray, // Processed array
-            keyPoints: keyPointsArray, // Processed array
-            mentors: selectedMentors,
-            skills: skills,
-            benefits: benefits,
-            sessions: sessions.map(s => ({ // Format session dates back to string potentially
-                ...s,
-                start: s.start?.toString(),
-                end: s.end?.toString(),
-            })),
-            // Add other fields as necessary based on CombinedEventData structure
-            status: eventData?.status || 'upcoming', // Keep original status or default
-            // ... potentially map category back to 'type' if needed
+        const res = await fetch("http://localhost:8000/upload", {
+            method: "POST",
+            body: formData
         });
-        alert("Event Updated (Placeholder - Check Console)");
-        // Optionally navigate back to the events list
-        // router.push('/admin/events');
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || "Image upload failed");
+        }
+
+        const data = await res.json();
+        return data.url; // e.g., /static/images/abc.jpg
+    };
+
+    // --- Update Event ---
+    const handleUpdateEvent = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        if (!eventId || !startDate || !endDate || !startTime || !endTime) {
+            alert("Missing required fields.");
+            return;
+        }
+        const combinedStart = new Date(startDate);
+        combinedStart.setHours(startTime.getHours(), startTime.getMinutes());
+        
+        const combinedEnd = new Date(endDate);
+        combinedEnd.setHours(endTime.getHours(), endTime.getMinutes());
+        
+        const imageSrc = await uploadImageIfNeeded();
+        const payload = {
+            title: eventTitle,
+            description,
+            event_type: category.charAt(0).toUpperCase() + category.slice(1),
+            location,
+            imageSrc,
+            start_date: combinedStart.toISOString(),
+            end_date: combinedEnd.toISOString(),
+            tools: toolsInput,
+            key_points: keyPointsInput,
+            mentors: selectedMentors.map(m => m.id),
+            skills: skills.map(s => ({ title: s.title, description: s.description })),
+            benefits: benefits.map(b => ({ title: b.title, text: b.text })),
+            sessions: sessions.map(s => ({
+                topic: s.topic,
+                description: s.description,
+                start: s.start ? new Date(s.start).toISOString() : null,
+                end: s.end ? new Date(s.end).toISOString() : null
+            }))
+        };
+
+        try {
+            const res = await fetch(`http://localhost:8000/events/${eventId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.detail || "Failed to update event.");
+            }
+
+            const data = await res.json();
+            console.log("Event updated successfully:", data);
+            alert("Event updated successfully.");
+            // router.push("/admin/events");
+
+        } catch (err: any) {
+            console.error("Error updating event:", err);
+            alert("Error: " + err.message);
+        }
     };
 
     // --- Styles (Identical to Add page) ---
