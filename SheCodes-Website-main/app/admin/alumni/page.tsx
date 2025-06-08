@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 // Import the new type and data
 import { Alumni } from '@/types/alumnis';
 import { dummyAlumnis } from '@/data/dummyAlumnis'; // Adjust path as needed
@@ -21,7 +21,8 @@ import { useRouter } from 'next/navigation';
 const AlumniPage: React.FC = () => {
     const router = useRouter();
     // Use the imported dummy data and the correct type
-    const [allAlumni] = useState<Alumni[]>(dummyAlumnis);
+    const [allAlumni, setAllAlumni] = useState<Alumni[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     // Filter status now aligns with the 'status' field in your data
     const [filterStatus, setFilterStatus] = useState<'All' | "1" | "2">('All');
@@ -30,6 +31,22 @@ const AlumniPage: React.FC = () => {
     // Selected events store numbers (IDs) now
     const [selectedAlumni, setSelectedAlumni] = useState<number[]>([]);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); 
+
+    useEffect(() => {
+        const fetchAlumni = async () => {
+            try {
+            const res = await fetch("http://localhost:8000/alumnis");
+            const data = await res.json();
+            setAllAlumni(data);
+            } catch (err) {
+            console.error("Failed to fetch alumni:", err);
+            } finally {
+            setLoading(false);
+            }
+        };
+
+        fetchAlumni();
+    }, []);
 
     // Filtering Logic
     const filteredAlumni = useMemo(() => {
@@ -107,15 +124,26 @@ const AlumniPage: React.FC = () => {
         router.push(`/admin/alumni/edit-alumni/${id}`); // Adjust the path as needed
     };
 
-    const handleDeleteConfirmed = () => {
-        if (selectedAlumni.length === 0) return;
-
-        console.log("Deleting Alumni:", selectedAlumni);
-
-        setSelectedAlumni([]);
-        setIsDeleteModalOpen(false); // Close the modal
-        console.log("Simulated Delete Complete. Selection cleared.");
+    const handleDeleteConfirmed = async () => {
+    if (selectedAlumni.length === 0) return;
+        try {
+            await Promise.all(
+            selectedAlumni.map(id =>
+                fetch(`http://localhost:8000/alumnis/${id}`, { method: "DELETE" })
+            )
+            );
+            setAllAlumni(prev => prev.filter(alumni => !selectedAlumni.includes(alumni.id)));
+            setSelectedAlumni([]);
+        } catch (err) {
+            console.error("Failed to delete alumni:", err);
+        } finally {
+            setIsDeleteModalOpen(false);
+        }
     };
+
+    if (loading) {
+        return <div className="p-10 text-center text-gray-500">Loading alumni...</div>;
+    }
 
     return (
         <div className="px-10 py-6">
