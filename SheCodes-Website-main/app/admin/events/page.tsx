@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 // Import the new type and data
 import { CombinedEventData } from '@/types/events';
 import { allEventsData } from '@/data/dummyEvent'; // Adjust path as needed
@@ -21,7 +21,7 @@ import {
 const EventPage: React.FC = () => {
     const router = useRouter();
     // Use the imported dummy data and the correct type
-    const [allEvents] = useState<CombinedEventData[]>(allEventsData);
+    const [allEvents, setAllEvents] = useState<CombinedEventData[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     // Filter status now aligns with the 'status' field in your data
     const [filterStatus, setFilterStatus] = useState<'All' | 'upcoming' | 'past'>('All');
@@ -31,23 +31,22 @@ const EventPage: React.FC = () => {
     const [selectedEvents, setSelectedEvents] = useState<number[]>([]);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); 
 
+    const now = new Date();
+    const computedEvents = useMemo(() =>
+        allEvents.map(event => ({
+            ...event,
+            status: new Date(event.end_date) < now ? 'past' : 'upcoming'
+        })), [allEvents]
+    );
+
     // Filtering Logic
     const filteredEvents = useMemo(() => {
-        return allEvents.filter(event => {
-            // Filter by status ('upcoming' or 'past')
+        return computedEvents.filter(event => {
             const statusMatch = filterStatus === 'All' || event.status === filterStatus;
-
-            // Filter by search term (checking the title)
-            const searchLower = searchTerm.toLowerCase();
-            const titleMatch = event.title.toLowerCase().includes(searchLower);
-            // You could also add description or tags to search:
-            // const descriptionMatch = event.description.toLowerCase().includes(searchLower);
-            // const tagMatch = event.tags.some(tag => tag.toLowerCase().includes(searchLower));
-            // return statusMatch && (titleMatch || descriptionMatch || tagMatch);
-
+            const titleMatch = event.title.toLowerCase().includes(searchTerm.toLowerCase());
             return statusMatch && titleMatch;
         });
-    }, [allEvents, searchTerm, filterStatus]);
+    }, [computedEvents, searchTerm, filterStatus]);
 
     // Pagination Logic (remains the same logic)
     const totalItems = filteredEvents.length;
@@ -58,6 +57,18 @@ const EventPage: React.FC = () => {
         return filteredEvents.slice(startIndex, endIndex);
     }, [filteredEvents, startIndex, endIndex]);
 
+    useEffect(() => {
+        const fetchEvents = async () => {
+            try {
+                const res = await fetch('/api/events');
+                const data = await res.json();
+                setAllEvents(data);
+            } catch (err) {
+                console.error('Failed to fetch events:', err);
+            }
+        };
+        fetchEvents();
+    }, []);
 
     // Handlers
     const handlePageChange = useCallback((page: number) => {
@@ -114,14 +125,20 @@ const EventPage: React.FC = () => {
         router.push(`/admin/events/participants/${id}`);
     };
 
-    const handleDeleteConfirmed = () => {
-        if (selectedEvents.length === 0) return;
-
-        console.log("Deleting Events:", selectedEvents);
-
-        setSelectedEvents([]);
-        setIsDeleteModalOpen(false); // Close the modal
-        console.log("Simulated Delete Complete. Selection cleared.");
+    const handleDeleteConfirmed = async () => {
+        try {
+            await Promise.all(
+                selectedEvents.map(id =>
+                    fetch(`/api/events/${id}`, { method: 'DELETE' })
+                )
+            );
+            setAllEvents(prev => prev.filter(e => !selectedEvents.includes(e.id)));
+            setSelectedEvents([]);
+            setIsDeleteModalOpen(false);
+        } catch (err) {
+            console.error('Failed to delete:', err);
+            alert('Error deleting events.');
+        }
     };
 
 
