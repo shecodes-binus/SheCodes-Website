@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Enum
-from ..database import Base
+from database import Base
 
 class FAQItem(Base):
     __tablename__ = "faq_items"

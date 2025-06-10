@@ -3,8 +3,9 @@ from uuid import uuid4
 from fastapi import APIRouter, HTTPException, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 from typing import List
-from .. import models, schemas
-from ..database import get_db
+from database import get_db
+import models
+from schemas.alumni import AlumniResponse, AlumniCreate, AlumniUpdate
 
 def save_file_somewhere(upload_file: UploadFile, upload_dir="static/uploads") -> str:
     os.makedirs(upload_dir, exist_ok=True)
@@ -23,26 +24,26 @@ router = APIRouter(
     tags=["Alumni"]
 )
 
-@router.post("/", response_model=schemas.AlumniResponse)
-def create_alumni(alumni: schemas.AlumniCreate, db: Session = Depends(get_db)):
+@router.post("/", response_model=AlumniResponse)
+def create_alumni(alumni: AlumniCreate, db: Session = Depends(get_db)):
     new_alumni = models.Alumni(**alumni.dict())
     db.add(new_alumni)
     db.commit()
     db.refresh(new_alumni)
     return new_alumni
 
-@router.get("/", response_model=List[schemas.AlumniResponse])
+@router.get("/", response_model=List[AlumniResponse])
 def get_alumni(db: Session = Depends(get_db)):
     return db.query(models.Alumni).all()
 
-@router.get("/{alumni_id}", response_model=schemas.AlumniResponse)
+@router.get("/{alumni_id}", response_model=AlumniResponse)
 def get_alumni(alumni_id: int, db: Session = Depends(get_db)):
     alumni = db.query(models.Alumni).filter(models.Alumni.id == alumni_id).first()
     if not alumni:
         raise HTTPException(status_code=404, detail="Alumni not found")
     return alumni
 
-@router.post("/upload", response_model=schemas.AlumniResponse)
+@router.post("/upload", response_model=AlumniResponse)
 async def create_alumni(
     name: str = Form(...),
     batch: int = Form(...),
@@ -69,8 +70,8 @@ async def create_alumni(
     db.refresh(new_alumni)
     return new_alumni
 
-@router.put("/{alumni_id}", response_model=schemas.AlumniResponse)
-def update_alumni(alumni_id: int, alumni: schemas.AlumniUpdate, db: Session = Depends(get_db)):
+@router.put("/{alumni_id}", response_model=AlumniResponse)
+def update_alumni(alumni_id: int, alumni: AlumniUpdate, db: Session = Depends(get_db)):
     db_alumni = db.query(models.Alumni).filter(models.Alumni.id == alumni_id).first()
     if not db_alumni:
         raise HTTPException(status_code=404, detail="Alumni not found")

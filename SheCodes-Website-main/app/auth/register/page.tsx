@@ -133,34 +133,6 @@ const SignupPage: React.FC = () => {
                 Log in
               </Link>
             </p>
-
-            {/* OR Separator */}
-            <div className="flex items-center justify-center pt-4">
-              <span className="h-px w-full bg-black/50"></span>
-              <span className="px-10 text-sm font-medium text-black/50 whitespace-nowrap">or Sign Up with</span>
-              <span className="h-px w-full bg-black/50"></span>
-            </div>
-
-            {/* Social Login Buttons */}
-            <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              {/* Google Button */}
-              <button
-                type="button"
-                className="flex items-center justify-center gap-3 rounded-lg bg-white px-4 py-3 text-sm font-medium text-pink shadow-sm hover:bg-pink/5 focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1"
-              >
-                <FcGoogle className="h-10 w-10" />
-                {/* <span>Sign up with Google</span>  */}
-              </button>
-
-              {/* GitHub Button */}
-              <button
-                type="button"
-                className="flex items-center justify-center gap-3 rounded-lg  bg-white px-4 py-3 text-sm font-medium text-pink shadow-sm hover:bg-pink/5 focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1"
-              >
-                <FaGithub className="h-10 w-10 text-gray-800" />
-                {/* <span>Sign up with GitHub</span>  */}
-              </button>
-            </div>
           </div>
           
         </div>

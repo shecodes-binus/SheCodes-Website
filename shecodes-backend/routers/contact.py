@@ -1,35 +1,36 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List
-from .. import models, schemas
-from ..database import get_db
+import models
+from database import get_db
+from schemas.contact import ContactCardInfoCreate, ContactCardInfoResponse, ContactCardInfoUpdate
 
 router = APIRouter(
     prefix="/contacts",
     tags=["Contact Cards"]
 )
 
-@router.post("/", response_model=schemas.ContactCardInfoResponse)
-def create_contact(contact: schemas.ContactCardInfoCreate, db: Session = Depends(get_db)):
+@router.post("/", response_model=ContactCardInfoResponse)
+def create_contact(contact: ContactCardInfoCreate, db: Session = Depends(get_db)):
     new_contact = models.ContactCardInfo(**contact.dict())
     db.add(new_contact)
     db.commit()
     db.refresh(new_contact)
     return new_contact
 
-@router.get("/", response_model=List[schemas.ContactCardInfoResponse])
+@router.get("/", response_model=List[ContactCardInfoResponse])
 def get_contacts(db: Session = Depends(get_db)):
     return db.query(models.ContactCardInfo).all()
 
-@router.get("/{contact_id}", response_model=schemas.ContactCardInfoResponse)
+@router.get("/{contact_id}", response_model=ContactCardInfoResponse)
 def get_contact(contact_id: int, db: Session = Depends(get_db)):
     contact = db.query(models.ContactCardInfo).filter(models.ContactCardInfo.id == contact_id).first()
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
     return contact
 
-@router.put("/{contact_id}", response_model=schemas.ContactCardInfoResponse)
-def update_contact(contact_id: int, contact: schemas.ContactCardInfoUpdate, db: Session = Depends(get_db)):
+@router.put("/{contact_id}", response_model=ContactCardInfoResponse)
+def update_contact(contact_id: int, contact: ContactCardInfoUpdate, db: Session = Depends(get_db)):
     db_contact = db.query(models.ContactCardInfo).filter(models.ContactCardInfo.id == contact_id).first()
     if not db_contact:
         raise HTTPException(status_code=404, detail="Contact not found")
