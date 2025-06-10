@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .routers import documentation, user, event, mentor, partner, alumni, faq, contact, blog, comment, participant
+from routers import documentation, user, event, mentor, partner, alumni, faq, contact, blog, comment, participant
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 

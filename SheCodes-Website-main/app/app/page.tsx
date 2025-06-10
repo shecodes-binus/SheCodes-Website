@@ -62,7 +62,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative w-full pt-20 px-16 bg-white">
         <div className=" px-4 md:px-6">
-          <div className="grid gap-5 lg:grid-cols-[1fr_600px] lg:gap-12 xl:grid-cols-[1fr_800px]">
+          <div className="grid gap-5 lg:grid-cols-[1fr_550px] lg:gap-16 xl:grid-cols-[1fr_750px]">
             <div className="flex flex-col justify-center space-y-4 leading-10">
               <div className="xl:space-y-8 lg:space-y-6 md:space-y-6">
                 <h3 className="text-xl font-bold sm:text-3xl xl:text-4xl/none text-pink">
@@ -79,7 +79,7 @@ export default function Home() {
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
                 <Link href="/auth/register">
-                  <Button className="w-2/5 bg-blueSky text-white rounded-3xl px-16 font-bold hover:bg-blueSky hover:shadow-lg transition-all duration-300">Join Us</Button>
+                  <Button className="w-2/5 bg-blueSky text-white rounded-lg px-16 font-bold hover:bg-blueSky/80 transition-all duration-300">Join Us</Button>
                 </Link>
               </div>
             </div>
