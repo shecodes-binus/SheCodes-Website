@@ -169,7 +169,7 @@ export function SuccessStoriesCarousel({
                       </CarouselItem>
                     );
                   })
-            })
+            }
             
           </CarouselContent>
 
