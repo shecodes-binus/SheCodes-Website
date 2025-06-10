@@ -1,11 +1,28 @@
 // src/app/signup/page.tsx (or your preferred route)
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { FcGoogle } from 'react-icons/fc'; // Google Icon
 import { FaGithub } from 'react-icons/fa'; // GitHub Icon
 
 const LoginPage: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const router = useRouter();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post('http://localhost:8000/auth/login', null, {
+        params: { email, password }
+      });
+      localStorage.setItem('token', response.data.access_token);
+      router.push('/dashboard'); // Redirect after login
+    } catch (error) {
+      alert("Login failed: " + (error as any).response?.data?.detail);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-stretch text-gray-800 bg-[#4A287F]">
       {/* Left Decorative Column */}
@@ -69,7 +86,7 @@ const LoginPage: React.FC = () => {
 
             {/* Email Input */}
             <div>
-              <label htmlFor="email" className="block text-md font-semibold text-pink mb-2">
+              <label htmlFor="email" className="block text-md font-semibold text-pink mb-2" onSubmit={handleLogin}>
                 Email
               </label>
               <input
@@ -77,6 +94,8 @@ const LoginPage: React.FC = () => {
                 name="email"
                 type="email"
                 autoComplete="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
                 required
                 className="block w-full appearance-none rounded-xl border border-[#bfbfbf] bg-white px-4 py-3 placeholder-[#bfbfbf] focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1"
                 placeholder="Enter your email here"
@@ -93,10 +112,13 @@ const LoginPage: React.FC = () => {
                 name="password"
                 type="password"
                 autoComplete="new-password"
+                value={password}
                 required
+                onChange={e => setPassword(e.target.value)}
                 className="block w-full appearance-none rounded-xl border border-[#bfbfbf] bg-white px-4 py-3 placeholder-[#bfbfbf] focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1"
                 placeholder="Enter your password here"
               />
+              <button type="submit">Log In</button>
             </div>
 
             <div className='text-right'>

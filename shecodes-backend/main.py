@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import documentation, user, event, mentor, partner, alumni, faq, contact, blog, comment, participant
+from routers import documentation, user, event, mentor, partner, alumni, faq, contact, blog, comment, participant, auth
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import models
@@ -40,6 +40,8 @@ app.include_router(faq.router)
 app.include_router(contact.router)
 app.include_router(blog.router)
 app.include_router(comment.router)
+app.include_router(auth.router)
+
 
 # uhh might add on to this later
 @app.get("/", tags=["Root"])
