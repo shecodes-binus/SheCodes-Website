@@ -11,7 +11,20 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "SheCodes Society Binus",
   description: "Empowering girls in tech to lead with innovation, inspiration, and impact",
-  generator: 'v0.dev'
+  generator: 'v0.dev',
+  icons: {
+    icon: '/logonotext.svg', 
+  },
+  openGraph: {
+    images: [
+      {
+        url: '/logonotext.svg',
+        width: 800,
+        height: 600,
+        alt: 'SheCodes Logo',
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
