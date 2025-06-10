@@ -2,12 +2,15 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import axios from 'axios';
+import { useRouter } from 'next/navigation';
 import { FcGoogle } from 'react-icons/fc'; // Google Icon
 import { FaGithub } from 'react-icons/fa'; // GitHub Icon
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -17,7 +20,7 @@ const LoginPage: React.FC = () => {
         params: { email, password }
       });
       localStorage.setItem('token', response.data.access_token);
-      router.push('/dashboard'); // Redirect after login
+      router.push('/dashboard');
     } catch (error) {
       alert("Login failed: " + (error as any).response?.data?.detail);
     }
