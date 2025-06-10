@@ -1,11 +1,40 @@
 // src/app/signup/page.tsx (or your preferred route)
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import axios from 'axios';
 import { FcGoogle } from 'react-icons/fc'; // Google Icon
 import { FaGithub } from 'react-icons/fa'; // GitHub Icon
 
 const SignupPage: React.FC = () => {
+  const [form, setForm] = useState({
+      name: '',
+      email: '',
+      password: '',
+      role: 'member',
+      profile_picture: null,
+  });
+
+  const router = useRouter();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      await axios.post('http://localhost:8000/users/', form);
+      router.push('/auth/login');
+    } catch (error) {
+      console.error(error);
+      alert("Signup failed: " + (error as any).response?.data?.detail || "Unknown error");
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-stretch text-gray-800 bg-[#4A287F]">
       {/* Left Decorative Column */}
@@ -65,7 +94,7 @@ const SignupPage: React.FC = () => {
           </div>
 
           {/* Signup Form */}
-          <form className="space-y-4" action="#" method="POST">
+          <form className="space-y-4" action="#" onSubmit={handleSubmit}>
             {/* Full Name Input */}
             <div>
               <label htmlFor="full-name" className="block text-md font-semibold text-pink mb-2">
@@ -75,6 +104,8 @@ const SignupPage: React.FC = () => {
                 id="full-name"
                 name="full-name"
                 type="text"
+                value={form.name}
+                onChange={handleChange}
                 autoComplete="name"
                 required
                 className="block w-full appearance-none rounded-xl border border-[#bfbfbf] bg-white px-4 py-3 placeholder-[#bfbfbf] focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1"
@@ -91,6 +122,8 @@ const SignupPage: React.FC = () => {
                 id="email"
                 name="email"
                 type="email"
+                value={form.email}
+                onChange={handleChange}
                 autoComplete="email"
                 required
                 className="block w-full appearance-none rounded-xl border border-[#bfbfbf] bg-white px-4 py-3  placeholder-[#bfbfbf] focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1"
@@ -107,12 +140,17 @@ const SignupPage: React.FC = () => {
                 id="password"
                 name="password"
                 type="password"
+                value={form.password}
+                onChange={handleChange}
                 autoComplete="new-password"
                 required
                 className="block w-full appearance-none rounded-xl border border-[#bfbfbf] bg-white px-4 py-3 placeholder-[#bfbfbf] focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1"
                 placeholder="Enter your password here"
               />
             </div>
+
+            {/* hidden default role (or make dropdown if needed) */}
+            <input type="hidden" name="role" value="member" />
 
             {/* Submit Button */}
             <div>
