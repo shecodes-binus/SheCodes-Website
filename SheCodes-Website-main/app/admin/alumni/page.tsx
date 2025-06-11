@@ -35,7 +35,7 @@ const AlumniPage: React.FC = () => {
     useEffect(() => {
         const fetchAlumni = async () => {
             try {
-            const res = await fetch("http://localhost:8000/alumnis");
+            const res = await fetch("api/alumni");
             const data = await res.json();
             setAllAlumni(data);
             } catch (err) {
@@ -129,7 +129,7 @@ const AlumniPage: React.FC = () => {
         try {
             await Promise.all(
             selectedAlumni.map(id =>
-                fetch(`http://localhost:8000/alumnis/${id}`, { method: "DELETE" })
+                fetch(`api/alumni/${id}`, { method: "DELETE" })
             )
             );
             setAllAlumni(prev => prev.filter(alumni => !selectedAlumni.includes(alumni.id)));

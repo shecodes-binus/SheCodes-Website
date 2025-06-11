@@ -91,7 +91,7 @@ const ArticleFormPage: React.FC = () => {
             imageForm.append("file", articlePhoto);
 
             try {
-                const res = await fetch("http://localhost:8000/upload", {
+                const res = await fetch("api/upload", {
                     method: "POST",
                     body: imageForm,
                 });
@@ -121,7 +121,7 @@ const ArticleFormPage: React.FC = () => {
         };
 
         try {
-            const res = await fetch("http://localhost:8000/blogs", {
+            const res = await fetch("api/blogs", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),

@@ -34,7 +34,7 @@ const EditAlumniPage: React.FC = () => {
     // --- Fetch and Pre-fill Data ---
     useEffect(() => {
     if (!alumniId) return;
-        fetch(`http://localhost:8000/alumnis/${alumniId}`)
+        fetch(`api/alumni/${alumniId}`)
             .then(res => res.json())
             .then((data: Alumni) => {
             setAlumniData(data);
@@ -84,7 +84,7 @@ const EditAlumniPage: React.FC = () => {
         };
 
         try {
-            const res = await fetch(`http://localhost:8000/alumnis/${alumniId}`, {
+            const res = await fetch(`api/alumni/${alumniId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),

@@ -51,7 +51,7 @@ const EditArticlePage: React.FC = () => {
         }
 
         try {
-            const res = await fetch(`http://localhost:8000/articles/${params.id}`);
+            const res = await fetch(`api/blogs/${params.id}`);
             if (!res.ok) throw new Error("Failed to fetch article");
             const data = await res.json();
 

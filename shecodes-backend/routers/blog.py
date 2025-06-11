@@ -22,32 +22,32 @@ def create_blog(blog: BlogArticleCreate, db: Session = Depends(get_db)):
 def get_blogs(db: Session = Depends(get_db)):
     return db.query(models.BlogArticle).all()
 
-@router.get("/{blog_id}", response_model=BlogArticleResponse)
-def get_blog(blog_id: str, db: Session = Depends(get_db)):
-    blog = db.query(models.BlogArticle).filter(models.BlogArticle.id == blog_id).first()
+@router.get("/{slug}", response_model=BlogArticleResponse)
+def get_blog(slug: str, db: Session = Depends(get_db)):
+    blog = db.query(models.BlogArticle).filter(models.BlogArticle.slug == slug).first()
     if not blog:
-        raise HTTPException(status_code=404, detail="Blog not found")
+        raise HTTPException(status_code=404, detail="Article not found")
     return blog
 
-@router.put("/{blog_id}", response_model=BlogArticleResponse)
-def update_blog(blog_id: str, blog: BlogArticleUpdate, db: Session = Depends(get_db)):
-    db_blog = db.query(models.BlogArticle).filter(models.BlogArticle.id == blog_id).first()
+@router.put("/{slug}", response_model=BlogArticleResponse)
+def update_blog(slug: str, blog: BlogArticleUpdate, db: Session = Depends(get_db)):
+    db_blog = db.query(models.BlogArticle).filter(models.BlogArticle.slug == slug).first()
     if not db_blog:
-        raise HTTPException(status_code=404, detail="Blog not found")
-    
+        raise HTTPException(status_code=404, detail="Article not found")
+
     for key, value in blog.dict(exclude_unset=True).items():
         setattr(db_blog, key, value)
-    
+
     db.commit()
     db.refresh(db_blog)
     return db_blog
 
-@router.delete("/{blog_id}", response_model=dict)
-def delete_blog(blog_id: str, db: Session = Depends(get_db)):
-    db_blog = db.query(models.BlogArticle).filter(models.BlogArticle.id == blog_id).first()
+@router.delete("/{slug}", response_model=dict)
+def delete_blog(slug: str, db: Session = Depends(get_db)):
+    db_blog = db.query(models.BlogArticle).filter(models.BlogArticle.slug == slug).first()
     if not db_blog:
-        raise HTTPException(status_code=404, detail="Blog not found")
-    
+        raise HTTPException(status_code=404, detail="Article not found")
+
     db.delete(db_blog)
     db.commit()
-    return {"message": "Blog deleted successfully"}
+    return {"message": "Article deleted successfully"}

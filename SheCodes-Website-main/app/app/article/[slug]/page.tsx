@@ -90,17 +90,17 @@ export default function SingleBlogPage({ params }: { params: { slug: string } })
     useEffect(() => {
         const fetchArticle = async () => {
         try {
-            const res = await fetch(`http://localhost:8000/articles/${params.slug}`);
+            const res = await fetch(`api/blogs/${params.slug}`);
             if (!res.ok) throw new Error('Article not found');
             const data: BlogArticle = await res.json();
             setArticle(data);
 
             // Fetch recommendations and updates
-            fetch(`http://localhost:8000/articles?category=${data.category}&exclude=${data.id}&limit=3`)
+            fetch(`api/blogs?category=${data.category}&exclude=${data.id}&limit=3`)
             .then(res => res.json())
             .then(setRecommendations);
 
-            fetch(`http://localhost:8000/articles?exclude=${data.id}&limit=3`)
+            fetch(`api/blogs?exclude=${data.id}&limit=3`)
             .then(res => res.json())
             .then(setUpdates);
         } catch (err) {

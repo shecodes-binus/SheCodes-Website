@@ -27,7 +27,7 @@ const SignupPage: React.FC = () => {
     e.preventDefault();
 
     try {
-      await axios.post('http://localhost:8000/users/', form);
+      await axios.post('api/users/', form);
       router.push('/auth/login');
     } catch (error) {
       console.error(error);

@@ -23,7 +23,7 @@ export default function AlumniHubPage() {
   const [alumnis, setAlumnis] = useState<Alumni[]>([]);
 
   useEffect(() => {
-  axios.get("http://localhost:8000/alumni")
+  axios.get("api/alumni")
     .then((res) => {
       const cleanedAlumnis = res.data.map((item: any) => ({
         ...item,
