@@ -4,12 +4,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 import Link from "next/link"
-import { useState } from 'react';
 
 // Import data and types
 import type { BlogArticle, ArticleCategory } from "@/types/blog"; // Adjust path if needed
 import { dummyArticles } from "@/data/dummyBlogs"; // Adjust path if needed
 import { dummyDocumentation } from '@/data/dummyDocumentation'; 
+import apiService from '@/lib/apiService';
 
 const categories: (ArticleCategory | "All")[] = ["All", "Event", "Success Stories", "Tech & Innovation", "Career Growth", "Community", "Others"];
 
@@ -66,19 +66,21 @@ export default function BlogPage() {
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    const fetchArticles = async () => {
-      setLoading(true);
+    const fetchData = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/blogs`);
-        const data = await res.json();
-        setArticles(data);
-      } catch (err) {
-        console.error("Failed to load articles:", err);
+        const [articleResponse] = await Promise.all([
+          apiService.get('/blogs'),      
+        ]);
+        
+        setArticles(articleResponse.data);
+      } catch (error) {
+        console.error("Failed to fetch page data:", error);
       } finally {
-        setLoading(false);
+        setLoading(false); // <-- Stop loading in finally block
       }
     };
-    fetchArticles();
+
+    fetchData();
   }, []);
 
   const filteredArticles = selectedCategory === "All"
@@ -121,15 +123,15 @@ export default function BlogPage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filteredArticles.map((article: BlogArticle) => {
                 const styles = getCategoryStyles(article.category);
-                const date = new Date(article.publishedAt).toLocaleDateString();
-                const time = new Date(article.publishedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const date = new Date(article.published_at).toLocaleDateString();
+                const time = new Date(article.published_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
                 return (
                     <Card key={article.id} className="bg-white shadow flex flex-col"> 
                     <CardHeader className="p-0">
                         <div className="relative h-64 w-full">
                         <Image
-                            src={article.featuredImageUrl || "/placeholder.svg?text=Image"} 
+                            src={article.featured_image_url || "/placeholder.svg?text=Image"} 
                             alt={article.title}
                             fill
                             sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"

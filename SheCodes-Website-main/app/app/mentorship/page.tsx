@@ -10,6 +10,7 @@ import { FaEnvelope, FaInstagram, FaLinkedin } from 'react-icons/fa';
 import type { Mentor, Partner } from '@/types/partnership'; 
 import { dummyMentors, dummyPartners } from '@/data/dummyPartnershipData'; 
 import { SuccessStoriesCarousel } from '@/components/success-story-carousel';
+import apiService from '@/lib/apiService';
 
 export default function PartnershipMentorshipPage() {
   const [selectedMentorIndex, setSelectedMentorIndex] = useState<number>(0);
@@ -19,15 +20,22 @@ export default function PartnershipMentorshipPage() {
   const selectedMentor = mentors[selectedMentorIndex];
 
   useEffect(() => {
-    fetch("http://localhost:8000/mentors")
-      .then(res => res.json())
-      .then(setMentors)
-      .catch((err) => console.error("error fetching mentors:", err));
+    const fetchData = async () => {
+      try {
+        const [mentorsResponse, partnersResponse] = await Promise.all([
+          apiService.get('/mentors'),      // Corresponds to @router.get("/") in alumni router
+          apiService.get('/partners')  // Corresponds to @router.get("/") in champions router
+        ]);
+        
+        setMentors(mentorsResponse.data);
+        setPartners(partnersResponse.data);
 
-    fetch("http://localhost:8000/partners")
-      .then(res => res.json())
-      .then(setPartners)
-      .catch((err) => console.error("error fetching partners:", err));
+      } catch (error) {
+        console.error("Failed to fetch page data:", error);
+      }
+    };
+
+    fetchData();
   }, []);
 
   const handleSelectMentor = (index: number) => {
@@ -107,7 +115,7 @@ export default function PartnershipMentorshipPage() {
           <div className="relative flex-1 aspect-[11/12] w-full max-w-md mx-auto lg:w-1/4 lg:max-w-none order-1 lg:order-2">
             <Image
               key={selectedMentor.id}
-              src={selectedMentor.imageSrc} 
+              src={selectedMentor.image_src} 
               alt={selectedMentor.name}
               fill
               sizes="(max-width: 768px) 80vw, (max-width: 1200px) 50vw, 400px"
@@ -131,7 +139,7 @@ export default function PartnershipMentorshipPage() {
               onKeyPress={(e) => e.key === 'Enter' && handleSelectMentor(index)}
             >
               <Avatar className={`h-16 w-16 md:h-20 md:w-20 transition-transform duration-200 group-hover:scale-105 ${selectedMentorIndex === index ? 'ring-2 ring-pink ring-offset-2' : ''}`}>
-                <AvatarImage src={mentor.imageSrc} alt={mentor.name} className='object-cover' />
+                <AvatarImage src={mentor.image_src} alt={mentor.name} className='object-cover' />
                 <AvatarFallback>{mentor.name.substring(0, 1)}</AvatarFallback>
               </Avatar>
               <p className="text-sm font-medium text-gray-800">{mentor.name}</p>
@@ -162,7 +170,7 @@ export default function PartnershipMentorshipPage() {
             {partners.map((partner: Partner) => (
               <div key={partner.id} className='relative w-48 h-48'> 
                 <Image
-                  src={partner.logoSrc}
+                  src={partner.logo_src}
                   alt={partner.name}
                   fill 
                   sizes="96px"

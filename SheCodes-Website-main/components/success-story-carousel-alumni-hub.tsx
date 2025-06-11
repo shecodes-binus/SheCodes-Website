@@ -108,7 +108,7 @@ export function SuccessStoriesCarousel({
                             >
                               <div className="w-full mb-4 aspect-square overflow-hidden rounded-lg">
                                 <Image
-                                  src={alumni.imageSrc}
+                                  src={alumni.image_src}
                                   alt={`Success story from ${alumni.name}`}
                                   width={300}
                                   height={300}
@@ -147,7 +147,7 @@ export function SuccessStoriesCarousel({
                             >
                               <div className="w-full mb-4 aspect-square overflow-hidden rounded-lg">
                                 <Image
-                                  src={mentor.imageSrc}
+                                  src={mentor.image_src}
                                   alt={`Success story from ${mentor.name}`}
                                   width={300}
                                   height={300}

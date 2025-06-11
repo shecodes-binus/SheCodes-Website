@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 class PartnerBase(BaseModel):
     name: str
-    logoSrc: str
+    logo_src: str
 
 class PartnerCreate(PartnerBase):
     pass

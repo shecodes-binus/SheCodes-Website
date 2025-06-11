@@ -3,7 +3,7 @@ export interface Mentor {
     name: string;
     occupation: string;
     description: string;
-    imageSrc: string;
+    image_src: string;
     story: string;
     instagram: string;
     linkedin: string;
@@ -13,5 +13,5 @@ export interface Mentor {
   export interface Partner {
     id: number;
     name: string;
-    logoSrc: string;
+    logo_src: string;
   }

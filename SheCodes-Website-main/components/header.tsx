@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/navigation-menu"
 import { cn } from "@/lib/utils"
 import { Menu } from "lucide-react"
+import AuthButton from "./auth-button";
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
@@ -69,9 +70,7 @@ export default function Header() {
           </NavigationMenu>
           
           <div className="flex items-center"> 
-             <Link href="/auth/login">
-               <Button className="bg-transparent hover:bg-purple-2 rounded-3xl px-8 text-blueSky border-blueSky border-2 hover:bg-blueSky hover:text-white">Login</Button>
-             </Link>
+             <AuthButton />
            </div>
         </div>
 
@@ -121,9 +120,7 @@ export default function Header() {
                       Member Dashboard
                     </Button>
                   </Link> */}
-                  <Link href="/app/contact" onClick={() => setIsOpen(false)}>
-                    <Button className="w-2/5 bg-blueSky text-white hover:bg-blue">Join Us</Button>
-                  </Link>
+                   <AuthButton />
                 </div>
               </div>
             </SheetContent>

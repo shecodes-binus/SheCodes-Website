@@ -126,8 +126,39 @@ def delete_alumni(db: Session, alumni_id: int) -> Optional[alumni_model.Alumni]:
 def get_blog(db: Session, blog_id: str) -> Optional[blog_model.BlogArticle]:
     return db.query(blog_model.BlogArticle).filter(blog_model.BlogArticle.id == blog_id).first()
 
-def get_all_blogs(db: Session, skip: int = 0, limit: int = 100) -> List[blog_model.BlogArticle]:
-    return db.query(blog_model.BlogArticle).offset(skip).limit(limit).all()
+def get_all_blogs(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    category: Optional[blog_schema.ArticleCategoryEnum] = None, # Optional category filter
+    exclude_id: Optional[int] = None # Optional ID to exclude
+) -> List[blog_model.BlogArticle]:
+    """
+    Retrieves all blog articles with optional filtering by category
+    and an option to exclude a specific article by its ID.
+    Articles are sorted by published date in descending order.
+    """
+    # Start with a base query
+    query = db.query(blog_model.BlogArticle)
+
+    # Apply category filter if provided
+    if category:
+        query = query.filter(blog_model.BlogArticle.category == category)
+
+    # Apply exclusion filter if provided
+    if exclude_id is not None:
+        query = query.filter(blog_model.BlogArticle.id != exclude_id)
+    
+    # Order by most recent first, then apply limit and skip for pagination
+    blogs = query.order_by(blog_model.BlogArticle.published_at.desc()).offset(skip).limit(limit).all()
+    
+    return blogs
+
+def get_blog_by_id(db: Session, blog_id: int):
+    return db.query(blog_model.BlogArticle).filter(blog_model.BlogArticle.id == blog_id).first()
+
+def get_blog_by_slug(db: Session, slug: str):
+    return db.query(blog_model.BlogArticle).filter(blog_model.BlogArticle.slug == slug).first()
 
 def create_blog(db: Session, blog: blog_schema.BlogArticleCreate) -> blog_model.BlogArticle:
     db_blog = blog_model.BlogArticle(**blog.model_dump())

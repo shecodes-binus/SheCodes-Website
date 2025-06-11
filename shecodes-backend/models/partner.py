@@ -6,4 +6,4 @@ class Partner(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
-    logoSrc = Column(String, nullable=False)
+    logo_src = Column(String, nullable=False)

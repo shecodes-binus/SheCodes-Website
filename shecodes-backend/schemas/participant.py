@@ -6,6 +6,9 @@ class ParticipantBase(BaseModel):
     event_id: int
     member_id: str # Should be string to match User.id
     status: Optional[str] = "registered"
+    
+    certificate_url: Optional[str]
+    feedback: Optional[str]
 
 class ParticipantCreate(ParticipantBase):
     # Add a default factory for the registration date

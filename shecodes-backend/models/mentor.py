@@ -9,7 +9,7 @@ class Mentor(Base):
     name = Column(String, nullable=False)
     occupation = Column(String, nullable=False)
     description = Column(Text, nullable=False)
-    imageSrc = Column(String, nullable=False)
+    image_src = Column(String, nullable=False)
     story = Column(Text, nullable=False)
 
     instagram = Column(String, nullable=True)

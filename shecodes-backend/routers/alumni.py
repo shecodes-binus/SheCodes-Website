@@ -44,7 +44,7 @@ def create_alumni_with_upload(
         linkedin=linkedin,
         email=email,
         phone=phone,
-        imageSrc=image_url # Use the public URL from Supabase
+        image_src=image_url # Use the public URL from Supabase
     )
     
     return crud.create_alumni(db=db, alumni=alumni_data)
@@ -91,7 +91,7 @@ def update_alumni(
 
     alumni_update_data = alumni_schema.AlumniUpdate(
         name=name, batch=batch, story=story, university=university, instagram=instagram,
-        linkedin=linkedin, email=email, phone=phone, imageSrc=new_image_url
+        linkedin=linkedin, email=email, phone=phone, image_src=new_image_url
     )
     return crud.update_alumni(db=db, db_alumni=db_alumni, alumni_in=alumni_update_data)
 

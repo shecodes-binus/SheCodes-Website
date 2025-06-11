@@ -14,7 +14,7 @@ const AlumniCard: React.FC<AlumniCardProps> = ({ alumni }) => {
     <div className="flex flex-col items-center text-center pb-16">
       <div className="relative w-64 h-64 md:w-80 md:h-80 mb-4 rounded-full overflow-hidden shadow-md">
         <Image
-          src={alumni.imageSrc}
+          src={alumni.image_src}
           alt={alumni.name}
           fill
           className="object-cover"

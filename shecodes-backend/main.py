@@ -12,8 +12,6 @@ from routers import (
     auth, user, documentation, event, mentor, 
     partner, alumni, faq, contact, blog, comment, participant,
     upload as upload_router,
-    # New Routers
-    admin as admin_router,
     champion as champion_router,
     portfolio as portfolio_router
 )
@@ -45,7 +43,6 @@ app.add_middleware(
 # Include all routers
 app.include_router(auth.router)
 app.include_router(user.router)
-app.include_router(admin_router.router)
 app.include_router(champion_router.router)
 app.include_router(portfolio_router.router)
 app.include_router(documentation.router)

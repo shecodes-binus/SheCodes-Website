@@ -11,45 +11,62 @@ import {
   Briefcase,
   Settings,
   ArrowRight, // Icon for continue button
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { allEventsData } from '@/data/dummyEvent'; // Adjust path
 import type { CombinedEventData } from '@/types/events'; // Adjust path
 import { getEventStatus, formatEventDateTime } from '@/lib/eventUtils'; // Adjust path
+import { useAuth } from '@/contexts/AuthContext';
 
-// --- Sidebar Component (Same as Dashboard) ---
+// --- Sidebar Component (Reuse or adapt) ---
 const SidebarNav = () => {
-    // In a real app, determine active path from router/usePathname
-    const activePath = '/app/my-activity'; // Example for this page
+    const activePath = '/app/settings'; // Set active path for this page
+    const { logout } = useAuth();
 
     const navItems = [
         { href: '/app/dashboard', label: 'Dashboard', icon: LayoutGrid },
         { href: '/app/my-activity', label: 'My Activities', icon: ListChecks },
         { href: '/app/portfolio', label: 'Portfolio', icon: Briefcase },
-        { href: '/app/settings', label: 'Settings', icon: Settings },
+        { href: '/app/settings', label: 'Settings', icon: Settings }, // Use aliased icon
     ];
 
+    const handleLogout = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        logout(); // Call the logout function from context
+    };
+
     return (
-      <nav className="flex flex-col space-y-1"> {/* Reduced space */}
-          {navItems.map((item) => {
-              const isActive = item.href === activePath;
-              const Icon = item.icon;
-              return (
-                  <Link
-                      key={item.label}
-                      href={item.href}
-                      // Use light blue bg for active, gray text otherwise
-                      className={cn(
-                          "flex items-center gap-4 rounded-lg text-gray-500 transition-colors hover:bg-blue-100/50 hover:text-gray-900 px-6 py-3", // Adjusted padding/rounding
-                          isActive && "bg-blue-200/60 text-gray-900 font-semibold hover:bg-blue-200/60 hover:text-gray-900"
-                      )}
-                  >
-                      <Icon className="h-5 w-5" />
-                      <span className='font-semibold text-lg'>{item.label}</span> {/* Adjusted size/weight */}
-                  </Link>
-              );
-          })}
-      </nav>
+        <nav className="flex flex-col space-y-1"> {/* Reduced space */}
+            {navItems.map((item) => {
+                const isActive = item.href === activePath;
+                const Icon = item.icon;
+                return (
+                    <Link
+                        key={item.label}
+                        href={item.href}
+                         // Use light blue bg for active, gray text otherwise
+                        className={cn(
+                            "flex items-center gap-4 rounded-lg text-gray-500 transition-colors hover:bg-blue-100/50 hover:text-gray-900 px-6 py-3", // Adjusted padding/rounding
+                            isActive && "bg-blue-200/60 text-gray-900 font-semibold hover:bg-blue-200/60 hover:text-gray-900"
+                        )}
+                    >
+                        <Icon className="h-5 w-5" />
+                        <span className='font-semibold text-lg'>{item.label}</span> {/* Adjusted size/weight */}
+                    </Link>
+                );
+            })}
+            {/* Logout Button */}
+            <button
+                onClick={handleLogout}
+                className={cn(
+                    "flex items-center gap-4 rounded-lg text-red-500 transition-colors hover:bg-red-100/50 hover:text-red-700 px-6 py-3 w-full text-left"
+                )}
+            >
+                <LogOut className="h-5 w-5" />
+                <span className='font-semibold text-lg'>Log Out</span>
+            </button>
+        </nav>
     );
 };
 

@@ -5,7 +5,7 @@ class MentorBase(BaseModel):
     name: str
     occupation: str
     description: str
-    imageSrc: str
+    image_src: str
     story: str
     instagram: Optional[str] = None
     linkedin: Optional[str] = None

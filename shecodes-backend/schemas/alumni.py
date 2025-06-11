@@ -3,7 +3,7 @@ from pydantic import BaseModel
 class AlumniBase(BaseModel):
     name: str
     batch: int
-    imageSrc: str
+    image_src: str
     story: str
     email: str | None = None
     instagram: str | None = None

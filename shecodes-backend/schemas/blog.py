@@ -1,6 +1,6 @@
 from enum import Enum
 from pydantic import BaseModel, ConfigDict
-from typing import Literal, Optional, List
+from typing import Optional, List
 from datetime import datetime
 
 class ArticleCategoryEnum(str, Enum):
@@ -17,11 +17,11 @@ class BlogArticleBase(BaseModel):
     title: str
     excerpt: Optional[str] = None
     sections: Optional[List[str]] = None
-    featuredImageUrl: str
+    featured_image_url: str
     category: ArticleCategoryEnum
-    authorName: str
-    authorAvatarUrl: Optional[str] = None
-    publishedAt: datetime
+    author_name: str
+    author_avatar_url: Optional[str] = None
+    published_at: datetime
 
 class BlogArticleCreate(BlogArticleBase):
     pass
@@ -31,8 +31,9 @@ class BlogArticleUpdate(BlogArticleBase):
 
 class BlogArticleResponse(BlogArticleBase):
     id: int
-    viewCount: int
-    likeCount: int
-    createdAt: datetime
-    updatedAt: datetime
+    view_count: int
+    like_count: int
+    created_at: datetime
+    updated_at: datetime
+
     model_config = ConfigDict(from_attributes=True)

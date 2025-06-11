@@ -4,7 +4,7 @@ from typing import Optional
 class ChampionBase(BaseModel):
     name: str
     position: str
-    imageSrc: str
+    image_src: str
     description: Optional[str] = None
 
 class ChampionCreate(ChampionBase):

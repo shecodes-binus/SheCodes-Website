@@ -22,15 +22,18 @@ import {
   Briefcase,
   Settings as SettingsIcon, // Alias Settings icon
   UploadCloud, // Icon for upload area
-  User, // Fallback icon
+  User, // Fallback icon,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FaCalendar } from 'react-icons/fa';
 import DatePicker from 'react-datepicker';
+import { useAuth } from '@/contexts/AuthContext';
 
 // --- Sidebar Component (Reuse or adapt) ---
 const SidebarNav = () => {
     const activePath = '/app/settings'; // Set active path for this page
+    const { logout } = useAuth();
 
     const navItems = [
         { href: '/app/dashboard', label: 'Dashboard', icon: LayoutGrid },
@@ -38,6 +41,11 @@ const SidebarNav = () => {
         { href: '/app/portfolio', label: 'Portfolio', icon: Briefcase },
         { href: '/app/settings', label: 'Settings', icon: SettingsIcon }, // Use aliased icon
     ];
+
+    const handleLogout = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        logout(); // Call the logout function from context
+    };
 
     return (
         <nav className="flex flex-col space-y-1"> {/* Reduced space */}
@@ -59,6 +67,16 @@ const SidebarNav = () => {
                     </Link>
                 );
             })}
+            {/* Logout Button */}
+            <button
+                onClick={handleLogout}
+                className={cn(
+                    "flex items-center gap-4 rounded-lg text-red-500 transition-colors hover:bg-red-100/50 hover:text-red-700 px-6 py-3 w-full text-left"
+                )}
+            >
+                <LogOut className="h-5 w-5" />
+                <span className='font-semibold text-lg'>Log Out</span>
+            </button>
         </nav>
     );
 };

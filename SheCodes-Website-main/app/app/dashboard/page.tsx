@@ -20,12 +20,14 @@ import {
   NotebookText, // Assuming this or similar icon for default
   Presentation, // Example for Seminar
   Users, // Example for Mentorship
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { allEventsData } from '@/data/dummyEvent'; 
 import type { CombinedEventData, Session } from '@/types/events';
 import { normalizeDate, formatEventGroupDate, calculateDuration, formatEventDateTime } from '@/lib/eventUtils';
 import { format, parseISO, isSameDay, isAfter, isBefore, isEqual, min, max, differenceInMilliseconds } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
 
 // --- Interfaces ( Reuse or define if needed ) ---
 interface CourseProgress {
@@ -84,16 +86,22 @@ const eventTypeStyles: { [key: string]: { icon: React.ElementType; bg: string; c
   Default: { icon: NotebookText, bg: 'bg-gray-100', color: 'text-gray-600' }, // Fallback
 };
 
-// --- Sidebar Component (Adapted from previous code) ---
+// --- Sidebar Component (Reuse or adapt) ---
 const SidebarNav = () => {
-    const activePath = '/app/dashboard'; // Set active path for this page
+    const activePath = '/app/settings'; // Set active path for this page
+    const { logout } = useAuth();
 
     const navItems = [
         { href: '/app/dashboard', label: 'Dashboard', icon: LayoutGrid },
         { href: '/app/my-activity', label: 'My Activities', icon: ListChecks },
         { href: '/app/portfolio', label: 'Portfolio', icon: Briefcase },
-        { href: '/app/settings', label: 'Settings', icon: Settings },
+        { href: '/app/settings', label: 'Settings', icon: Settings }, // Use aliased icon
     ];
+
+    const handleLogout = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        logout(); // Call the logout function from context
+    };
 
     return (
         <nav className="flex flex-col space-y-1"> {/* Reduced space */}
@@ -115,6 +123,16 @@ const SidebarNav = () => {
                     </Link>
                 );
             })}
+            {/* Logout Button */}
+            <button
+                onClick={handleLogout}
+                className={cn(
+                    "flex items-center gap-4 rounded-lg text-red-500 transition-colors hover:bg-red-100/50 hover:text-red-700 px-6 py-3 w-full text-left"
+                )}
+            >
+                <LogOut className="h-5 w-5" />
+                <span className='font-semibold text-lg'>Log Out</span>
+            </button>
         </nav>
     );
 };

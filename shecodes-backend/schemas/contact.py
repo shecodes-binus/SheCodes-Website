@@ -2,11 +2,11 @@ from pydantic import BaseModel
 from typing import Literal
 
 class ContactCardInfoBase(BaseModel):
-    platformName: str
-    logoSrc: str
+    platform_name: str
+    logo_src: str
     description: str
-    linkUrl: str
-    colorVariant: Literal['pink', 'blue']
+    link_url: str
+    color_variant: Literal['pink', 'blue']
 
 class ContactCardInfoCreate(ContactCardInfoBase):
     pass

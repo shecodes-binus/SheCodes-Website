@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button"
@@ -22,6 +24,7 @@ import { dummyArticles } from "@/data/dummyBlogs"; // Adjust path if needed
 import type { Documentation} from '@/types/documentation'; 
 import { dummyDocumentation } from '@/data/dummyDocumentation'; 
 import { FaArrowAltCircleRight, FaArrowRight, FaLongArrowAltRight } from "react-icons/fa"
+import apiService from "@/lib/apiService";
 
 export default function BlogPage() {
   const getCategoryStyles = (category: ArticleCategory): { badge: string; button: string; title: string } => {
@@ -76,19 +79,28 @@ export default function BlogPage() {
   const articlesToShow = articles.slice(0, initialArticleCount);
 
   const eventArticles = articles.filter(article => article.category === "Event");
-  eventArticles.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  eventArticles.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
   const recentEvents = eventArticles.slice(0, 3);
 
-  const documentation = dummyDocumentation;
+  const [documentation, setDocumentation] = useState<Documentation[]>([]);
 
   useEffect(() => {
-    axios.get("http://localhost:8000/blogs")  // Update with your actual backend URL
-      .then((res) => {
-        setArticles(res.data);
-      })
-      .catch((error) => {
-        console.error("Failed to fetch blog articles", error);
-      });
+    const fetchData = async () => {
+      try {
+        const [articleResponse, documentationResponse] = await Promise.all([
+          apiService.get('/blogs'),      
+          apiService.get('/documentations'), 
+        ]);
+        
+        setArticles(articleResponse.data);
+        setDocumentation(documentationResponse.data)
+
+      } catch (error) {
+        console.error("Failed to fetch page data:", error);
+      } 
+    };
+
+    fetchData();
   }, []);
 
   return (
@@ -104,8 +116,8 @@ export default function BlogPage() {
         {recentEvents.map((event, index) => {
         const isImageLeft = index % 2 === 0;
         const styles = getCategoryStyles(event.category);
-        const date = new Date(event.publishedAt).toLocaleDateString();
-        const time = new Date(event.publishedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const date = new Date(event.published_at).toLocaleDateString();
+        const time = new Date(event.published_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         return (
           <div className="md:px-6" key={event.id}> 
@@ -116,7 +128,7 @@ export default function BlogPage() {
                 }`}
               >
                 <Image
-                  src={event.featuredImageUrl} 
+                  src={event.featured_image_url} 
                   alt={event.title}    
                   fill
                   sizes="(max-width: 768px) 90vw, (max-width: 1200px) 50vw, 600px"
@@ -173,15 +185,15 @@ export default function BlogPage() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {articlesToShow.map((article: BlogArticle) => {
                 const styles = getCategoryStyles(article.category);
-                const date = new Date(article.publishedAt).toLocaleDateString();
-                const time = new Date(article.publishedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const date = new Date(article.published_at).toLocaleDateString();
+                const time = new Date(article.published_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
                 return (
                     <Card key={article.id} className="bg-white shadow flex flex-col"> 
                     <CardHeader className="p-0">
                         <div className="relative h-64 w-full">
                         <Image
-                            src={article.featuredImageUrl || "/placeholder.svg?text=Image"} 
+                            src={article.featured_image_url || "/placeholder.svg?text=Image"} 
                             alt={article.title}
                             fill
                             sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
@@ -259,7 +271,7 @@ export default function BlogPage() {
                       <div className="p-1 cursor-pointer group">
                         <div className="flex flex-col overflow-hidden">
                           <Image
-                            src={photo.imageSrc} 
+                            src={photo.image_src} 
                             alt={`Documentation ${photo.id}`}
                             width={900}
                             height={700}

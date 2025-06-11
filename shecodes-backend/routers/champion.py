@@ -22,7 +22,7 @@ def create_champion(
 ):
     image_url = upload_file_to_supabase(image)
     champion_data = champion_schema.ChampionCreate(
-        name=name, position=position, description=description, imageSrc=image_url
+        name=name, position=position, description=description, image_src=image_url
     )
     return crud.create_generic_item(db, model=champion_model.Champion, schema=champion_data)
 
@@ -44,13 +44,13 @@ def update_champion(
     if not db_champion:
         raise HTTPException(status_code=404, detail="Champion not found")
 
-    new_image_url = db_champion.imageSrc
+    new_image_url = db_champion.image_src
     if image:
-        delete_file_from_supabase(db_champion.imageSrc)
+        delete_file_from_supabase(db_champion.image_src)
         new_image_url = upload_file_to_supabase(image)
 
     update_data = champion_schema.ChampionUpdate(
-        name=name, position=position, description=description, imageSrc=new_image_url
+        name=name, position=position, description=description, image_src=new_image_url
     )
     return crud.update_generic_item(db, db_item=db_champion, schema_in=update_data)
 
@@ -64,6 +64,6 @@ def delete_champion(
     if not db_champion:
         raise HTTPException(status_code=404, detail="Champion not found")
     
-    delete_file_from_supabase(db_champion.imageSrc)
+    delete_file_from_supabase(db_champion.image_src)
     crud.delete_generic_item(db, model=champion_model.Champion, item_id=champion_id)
     return {"message": "Champion deleted"}

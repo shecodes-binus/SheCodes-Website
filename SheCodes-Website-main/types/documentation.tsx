@@ -1,4 +1,4 @@
 export interface Documentation {
     id: number; 
-    imageSrc: string; 
+    image_src: string; 
 }

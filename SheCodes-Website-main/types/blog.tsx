@@ -1,5 +1,10 @@
-// src/types/blog.ts
-export type ArticleCategory = 'Tech & Innovation' | 'Career Growth' | 'Community' | 'Event' | 'Success Stories' | 'Others';
+export type ArticleCategory = 
+  'Tech & Innovation' | 
+  'Career Growth' | 
+  'Community' | 
+  'Event' | 
+  'Success Stories' | 
+  'Others';
 
 export interface BlogArticle {
   id: number;
@@ -7,13 +12,13 @@ export interface BlogArticle {
   slug: string; // URL-friendly identifier
   excerpt: string; // Short summary
   sections: string[];
-  featuredImageUrl: string;
+  featured_image_url: string;
   category: ArticleCategory;
-  authorName: string;
-  authorAvatarUrl: string; 
-  publishedAt: string; 
-  viewCount: number;
-  likeCount: number;
-  createdAt: string; 
-  updatedAt: string; 
+  author_name: string;
+  author_avatar_url: string;
+  published_at: string;
+  view_count: number;
+  like_count: number;
+  created_at: string;
+  updated_at: string;
 }

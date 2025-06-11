@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Enum, DateTime, Text, Table, ForeignKey
+from sqlalchemy import Column, Integer, String, Enum, DateTime, Text, Table, ForeignKey, func
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
 from database import Base
@@ -11,6 +11,8 @@ event_mentor_association = Table(
     Column("mentor_id", Integer, ForeignKey("mentors.id"))
 )
 
+# /models/event.py
+
 class Event(Base):
     __tablename__ = "events"
 
@@ -21,20 +23,20 @@ class Event(Base):
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime, nullable=False)
     location = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=func.now(), nullable=False)
     
-    # New Fields from Frontend Type
+    # --- Updated Fields ---
     status = Column(Enum("upcoming", "past", "ongoing", name="event_status_enum"), nullable=False, default="upcoming")
-    imageSrc = Column(String, nullable=True)
+    image_src = Column(String, nullable=True) # Renamed from imageSrc
     image_alt = Column(String, nullable=True)
     tags = Column(JSONB, nullable=True)
-    longDescription = Column(Text, nullable=True)
-    registerLink = Column(String, nullable=True)
+    long_description = Column(Text, nullable=True) # Renamed from longDescription
+    register_link = Column(String, nullable=True) # Renamed from registerLink
     tools = Column(JSONB, nullable=True)
     key_points = Column(JSONB, nullable=True)
-    groupLink = Column(String, nullable=True)
+    group_link = Column(String, nullable=True) # Renamed from groupLink
     
-    # Relationships
+    # Relationships (no changes here)
     mentors = relationship("Mentor", secondary=event_mentor_association, back_populates="events")
     skills = relationship("Skill", cascade="all, delete-orphan", backref="event")
     benefits = relationship("Benefit", cascade="all, delete-orphan", backref="event")

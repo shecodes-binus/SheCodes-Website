@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState } from "react";
 import Image from "next/image"
 import Link from "next/link"
@@ -108,7 +110,7 @@ export default function SuccessStory({ params }: { params: { id: string } }) {
 
                 <div className="flex items-center justify-center">
                 <Image
-                    src={storyData.imageSrc}
+                    src={storyData.image_src}
                     alt={storyData.name}
                     width={550}
                     height={450}

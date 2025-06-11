@@ -131,13 +131,13 @@ const BlogTable: React.FC<BlogTableProps> = ({
                                 {blog.title}
                             </td>
                             <td className="px-4 py-3.5 whitespace-nowrap text-sm text-textMuted">
-                                {formatDateString(blog.publishedAt)}
+                                {formatDateString(blog.published_at)}
                             </td>
                             <td className="px-4 py-3.5 whitespace-nowrap text-sm text-textMuted">
-                                {formatTimeString(blog.publishedAt)}
+                                {formatTimeString(blog.published_at)}
                             </td>
                             <td className="px-4 py-3.5 whitespace-nowrap text-sm text-textMuted">
-                                {blog.authorName}
+                                {blog.author_name}
                             </td>
                             <td className="px-4 py-3.5 whitespace-nowrap text-sm font-medium">
                                 <div className="flex space-x-3">

@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -19,8 +21,13 @@ import { dummyAlumnis } from '@/data/dummyAlumnis';
 import type { TeamMember } from '@/types/teams';
 import { dummyTeam } from '@/data/dummyTeam'; 
 import { SuccessStoriesCarousel } from "@/components/success-story-carousel"
+import { useEffect, useState } from "react"
+import apiService from "@/lib/apiService";
 
 export default function Home() {
+  const [alumnis, setAlumnis] = useState<Alumni[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+
   const missionData = [
     {
       iconSrc: "/icons/advocate.svg",
@@ -54,8 +61,24 @@ export default function Home() {
     },
   ];
 
-  const alumnis = dummyAlumnis;
-  const teamMembers: TeamMember[] = dummyTeam;
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [alumniResponse, teamResponse] = await Promise.all([
+          apiService.get('/alumni'),      // Corresponds to @router.get("/") in alumni router
+          apiService.get('/champions')  // Corresponds to @router.get("/") in champions router
+        ]);
+        
+        setAlumnis(alumniResponse.data);
+        setTeamMembers(teamResponse.data);
+
+      } catch (error) {
+        console.error("Failed to fetch page data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen space-y-28">
@@ -63,15 +86,15 @@ export default function Home() {
       <section className="relative w-full pt-20 px-16 bg-white">
         <div className=" px-4 md:px-6">
           <div className="grid gap-5 lg:grid-cols-[1fr_550px] lg:gap-16 xl:grid-cols-[1fr_750px]">
-            <div className="flex flex-col justify-center space-y-4 leading-10">
-              <div className="xl:space-y-8 lg:space-y-6 md:space-y-6">
-                <h3 className="text-xl font-bold sm:text-3xl xl:text-4xl/none text-pink">
+            <div className="flex flex-col justify-center space-y-6 leading-10">
+              <div className="space-y-4 lg:space-y-6 md:space-y-4">
+                <h3 className="text-2xl font-bold sm:text-3xl xl:text-4xl/none text-pink">
                   Welcome to Shecodes
                 </h3>
-                <h1 className="text-3xl font-bold sm:text-5xl xl:text-6xl text-black xl:leading-normal sm:leading-normal">
+                <h1 className="leading-normal text-3xl font-bold sm:text-5xl xl:text-6xl text-black xl:leading-tight sm:leading-normal">
                   Empowering Women in Tech
                 </h1>
-                <p className="max-w-[600px] text-gray-600 md:text-base md:leading-tight xl:leading-relaxed">
+                <p className="max-w-[600px] text-gray-600 text-base/8">
                   SheCodes Society Binus is an initiative that was set in 2020 with the exclusive purpose of narrowing the gender divide in tech by 
                   equipping women with the skills and confidence acquired through hands-on workshops, mentorship, and networking sessions. 
                   By uniting students, professionals, and industry leaders, we aim to elevate the presence of women in STEM.
@@ -79,7 +102,7 @@ export default function Home() {
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
                 <Link href="/auth/register">
-                  <Button className="w-2/5 bg-blueSky text-white rounded-lg px-16 font-bold hover:bg-blueSky/80 transition-all duration-300">Join Us</Button>
+                  <Button className="w-2/5 bg-blueSky text-white rounded-lg px-16 py-3 font-bold hover:bg-blueSky/80 transition-all duration-300">Join Us</Button>
                 </Link>
               </div>
             </div>
@@ -112,11 +135,11 @@ export default function Home() {
         <div className="md:px-6">
           <div className="grid gap-5 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_580px]">
             <div className="flex flex-col justify-center space-y-4 leading-10">
-                <div className="xl:space-y-8 lg:space-y-6 md:space-y-6">
+                <div className="space-y-4 xl:space-y-8 lg:space-y-6 md:space-y-6">
                   <h3 className="text-xl font-bold sm:text-3xl xl:text-4xl/none text-pink text-center">
                     Our Vision
                   </h3>
-                  <p className="max-w-[600px] text-gray-600 md:text-base md:leading-relaxed xl:leading-relaxed">
+                  <p className="max-w-[600px] text-gray-600 text-base/8">
                   To create a world where women have equitable opportunities and representation in STEM fields, fostering innovation and 
                   inclusive growth through diverse perspectives and talents by empowering them with cutting-edge skills and 
                   leadership capabilities.
@@ -194,7 +217,7 @@ export default function Home() {
               <Card className="h-full"> 
                 <CardContent className="py-6 px-6 flex flex-col items-center text-center space-y-6 h-full"> 
                   <Avatar className="h-40 w-40">
-                    <AvatarImage src={team.imageSrc} alt={`Team Member ${team.id}`} />
+                    <AvatarImage src={team.image_src} alt={`Team Member ${team.id}`} />
                     <AvatarFallback>SC</AvatarFallback>
                   </Avatar>
                   <div className="flex-grow space-y-3"> 

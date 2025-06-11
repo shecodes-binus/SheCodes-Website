@@ -1,4 +1,5 @@
 // src/app/faq-contact/page.tsx
+"use client"
 
 import Image from "next/image";
 import Link from "next/link";
@@ -13,15 +14,19 @@ import { Button } from "@/components/ui/button";
 
 // Import Data and Types
 import type { FAQItem, ContactCardInfo } from '@/types/faqContact'; // Adjust path
-import { faqData, contactCardData } from '@/data/dummyFAQContact'; // Adjust path
+// import { faqData, contactCardData } from '@/data/dummyFAQContact'; // Adjust path
+import { useEffect, useState } from "react";
+import apiService from "@/lib/apiService";
 
 export default function FAQContactPage() {
+  const [faqData, setFaqData] = useState<FAQItem[]>([]);
+  const [contactCardData, setContactCardData] = useState<ContactCardInfo[]>([]);
 
   // Array defining the repeating color sequence
-  const faqColorSequence: FAQItem['colorVariant'][] = ['pink', 'blue', 'purple'];
+  const faqColorSequence: FAQItem['color_variant'][] = ['pink', 'blue', 'purple'];
 
   // Helper to get conditional accordion styling (adjust colors as needed)
-  const getAccordionColors = (variant: FAQItem['colorVariant']) => {
+  const getAccordionColors = (variant: FAQItem['color_variant']) => {
     switch (variant) {
       case 'pink':
         return {
@@ -50,9 +55,28 @@ export default function FAQContactPage() {
     }
   };
 
-    const getButtonColor = (variant: ContactCardInfo['colorVariant']) => {
+    const getButtonColor = (variant: ContactCardInfo['color_variant']) => {
         return variant === 'pink' ? 'bg-pink hover:bg-pink/90' : 'bg-blueSky hover:bg-blueSky/90';
     }
+
+    useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [faqResponse, contactResponse] = await Promise.all([
+          apiService.get('/faqs'),      // Corresponds to @router.get("/") in alumni router
+          apiService.get('/contacts')  // Corresponds to @router.get("/") in champions router
+        ]);
+        
+        setFaqData(faqResponse.data);
+        setContactCardData(contactResponse.data);
+
+      } catch (error) {
+        console.error("Failed to fetch page data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -74,7 +98,7 @@ export default function FAQContactPage() {
                   const colors = getAccordionColors(currentVariant); // Get colors for the calculated variant
 
                   return (
-                    <AccordionItem key={item.id} value={item.id} className="border-none rounded-lg overflow-hidden shadow-lg">
+                    <AccordionItem key={item.id} value={String(item.id)} className="border-none rounded-lg overflow-hidden shadow-lg">
                       <AccordionTrigger className={`px-6 py-4 text-left font-semibold text-lg rounded-lg ${colors.triggerBg} ${colors.triggerText}`}>
                         {item.question}
                       </AccordionTrigger>
@@ -115,24 +139,24 @@ export default function FAQContactPage() {
                   <CardContent className="p-8 flex flex-col items-center text-center flex-grow space-y-5">
                     <div className="relative h-24 w-32 mb-4">
                         <Image
-                          src={card.logoSrc}
-                          alt={`${card.platformName} Logo`}
+                          src={card.logo_src}
+                          alt={`${card.platform_name} Logo`}
                           fill
                           className="object-contain"
                           sizes="128px"
                         />
                     </div>
-                    <h3 className={`text-2xl font-bold ${card.colorVariant === 'pink' ? 'text-pink' : 'text-purple-3'}`}>
-                      {card.platformName}
+                    <h3 className={`text-2xl font-bold ${card.color_variant === 'pink' ? 'text-pink' : 'text-purple-3'}`}>
+                      {card.platform_name}
                     </h3>
                     <p className="text-gray-600 text-sm flex-grow">{card.description}</p>
                     <a
-                        href={card.linkUrl}
+                        href={card.link_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block w-full mt-auto pt-4"
                     >
-                        <Button className={`w-full rounded-full px-8 py-3 text-lg font-semibold text-white ${getButtonColor(card.colorVariant)}`}>
+                        <Button className={`w-full rounded-full px-8 py-3 text-lg font-semibold text-white ${getButtonColor(card.color_variant)}`}>
                             Open
                         </Button>
                     </a>

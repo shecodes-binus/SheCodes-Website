@@ -4,16 +4,16 @@ from typing import Literal
 class FAQItemBase(BaseModel):
     question: str
     answer: str
-    colorVariant: Literal['pink', 'blue', 'purple']
+    color_variant: Literal['pink', 'blue', 'purple']
 
 class FAQItemCreate(FAQItemBase):
-    id: str
+    id: int
 
 class FAQItemUpdate(FAQItemBase):
     pass
 
 class FAQItemResponse(FAQItemBase):
-    id: str
+    id: int
 
     class Config:
         orm_mode = True

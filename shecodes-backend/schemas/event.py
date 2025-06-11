@@ -50,6 +50,8 @@ class EventStatusEnum(str, Enum):
     past = "past"
     ongoing = "ongoing"
 
+# /schemas/event.py
+
 class EventBase(BaseModel):
     title: str
     description: str
@@ -58,14 +60,17 @@ class EventBase(BaseModel):
     start_date: datetime
     end_date: datetime
     status: EventStatusEnum
-    imageSrc: Optional[str] = None
+    created_at: Optional[datetime]
+    
+    # --- Updated Fields ---
+    image_src: Optional[str] = None
     image_alt: Optional[str] = None
     tags: Optional[List[str]] = None
-    longDescription: Optional[str] = None
-    registerLink: Optional[str] = None
+    long_description: Optional[str] = None
+    register_link: Optional[str] = None
     tools: Optional[List[Any]] = None
     key_points: Optional[List[str]] = None
-    groupLink: Optional[str] = None
+    group_link: Optional[str] = None
 
 class EventCreate(EventBase):
     mentors: List[int] = []
@@ -73,8 +78,7 @@ class EventCreate(EventBase):
     benefits: List[BenefitCreate] = []
     sessions: List[SessionCreate] = []
 
-class EventUpdate(EventBase):
-    pass
+# No changes needed for EventUpdate as it inherits the corrected fields
 
 class EventResponse(EventBase):
     id: int
@@ -83,4 +87,8 @@ class EventResponse(EventBase):
     skills: List[SkillResponse] = []
     benefits: List[BenefitResponse] = []
     sessions: List[SessionResponse] = []
+    
     model_config = ConfigDict(from_attributes=True)
+
+class EventUpdate(EventBase):
+    pass

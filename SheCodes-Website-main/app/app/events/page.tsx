@@ -11,24 +11,36 @@ import Link from "next/link"
 import type { CombinedEventData } from '@/types/events'; 
 import { allEventsData } from '@/data/dummyEvent'; 
 import { getEventStatus, formatEventDateTime, formatStartDate } from '@/lib/eventUtils'; // Adjust path
+import apiService from "@/lib/apiService"
 
 export default function EventsPage() {
-  const [upcomingEvents, setUpcomingEvents] = useState([]);
-  const [pastEvents, setPastEvents] = useState([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<CombinedEventData[]>([]);
+  const [pastEvents, setPastEvents] = useState<CombinedEventData[]>([]);
 
-  const now = new Date();
-  const status = new Date(event.date) > now ? "upcoming" : "past";
-  
+  // const now = new Date();
+  // const status = new Date(event.date) > now ? "upcoming" : "past";
+
   useEffect(() => {
-    fetch("http://localhost:8000/events")
-      .then(res => res.json())
-      .then(data => {
+    const fetchData = async () => {
+      try {
+        const [eventResponse] = await Promise.all([
+          apiService.get('/events'),      
+        ]);
+        
         const now = new Date();
-        const upcoming = data.filter((event: any) => new Date(event.date) > now);
-        const past = data.filter((event: any) => new Date(event.date) <= now);
+        const upcoming = eventResponse.data.filter((event: any) => new Date(event.start_date) > now);
+        const past = eventResponse.data.filter((event: any) => new Date(event.start_date) <= now);
         setUpcomingEvents(upcoming);
         setPastEvents(past);
-      });
+
+      } catch (error) {
+        console.error("Failed to fetch page data:", error);
+      }
+    };
+
+    fetchData();
+
+    console.log(upcomingEvents);
   }, []);
 
   return (
@@ -52,12 +64,12 @@ export default function EventsPage() {
           {/* Upcoming Events */}
           <TabsContent value="upcoming" className="space-y-16">
             <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
-              {upcomingEvents.map((event, index) => (
-                <Card key={index}>
+              {upcomingEvents.map((event) => (
+                <Card key={event.id}>
                   <CardHeader className="p-0">
                     <div className="relative h-72 w-full">
                       <Image
-                        src={event.imageSrc}
+                        src={event.image_src}
                         alt={event.image_alt}
                         fill
                         className="object-cover rounded-xl shadow-lg"
@@ -75,11 +87,11 @@ export default function EventsPage() {
                     <div className="space-y-2 text-sm text-gray-600">
                       <div className="flex items-center">
                         <Calendar className="mr-2 shrink-0 h-4 w-4" />
-                        <span className="text-grey-3">{formatStartDate(event.startDate)}</span>
+                        <span className="text-grey-3">{formatStartDate(event.start_date)}</span>
                       </div>
                       <div className="flex items-center">
                         <Clock className="mr-2 shrink-0 h-4 w-4" />
-                        <span className="text-grey-3">{formatEventDateTime(event.startDate, event.endDate).timeRange}</span>
+                        <span className="text-grey-3">{formatEventDateTime(event.start_date, event.end_date).timeRange}</span>
                       </div>
                       <div className="flex items-center">
                         <MapPin className="mr-2 shrink-0 h-4 w-4" />
@@ -113,7 +125,7 @@ export default function EventsPage() {
                   <CardHeader className="p-0">
                     <div className="relative h-72 w-full">
                       <Image
-                        src={event.imageSrc}
+                        src={event.image_src}
                         alt={event.image_alt}
                         fill
                         className="object-cover rounded-xl"
@@ -131,11 +143,11 @@ export default function EventsPage() {
                     <div className="space-y-2 text-sm text-gray-600">
                       <div className="flex items-center">
                         <Calendar className="mr-2 shrink-0 h-4 w-4" />
-                        <span className="text-grey-3">{formatStartDate(event.startDate)}</span>
+                        <span className="text-grey-3">{formatStartDate(event.start_date)}</span>
                       </div>
                       <div className="flex items-center">
                         <Clock className="mr-2 shrink-0 h-4 w-4" />
-                        <span className="text-grey-3">{formatEventDateTime(event.startDate, event.endDate).timeRange}</span>
+                        <span className="text-grey-3">{formatEventDateTime(event.start_date, event.end_date).timeRange}</span>
                       </div>
                       <div className="flex items-center">
                         <MapPin className="mr-2 shrink-0 h-4 w-4" />

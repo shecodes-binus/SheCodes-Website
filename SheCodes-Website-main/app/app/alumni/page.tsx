@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState } from "react";
 import axios from "axios";
 import AlumniHeroSection from '@/components/alumni/alumni-hero-section'; // Adjust path
@@ -5,37 +7,27 @@ import AlumniShowcase from '@/components/alumni/alumni-showcase'; // Adjust path
 import DiscussionSection from '@/components/alumni/discussion-section'; // Adjust path
 import { SuccessStoriesCarousel } from '@/components/success-story-carousel';
 import { dummyAlumnis } from '@/data/dummyAlumnis'; // Adjust path
-
-type Alumni = {
-  id: number;
-  name: string;
-  batch: number;
-  imageSrc: string;
-  story: string;
-  email?: string;
-  instagram?: string;
-  linkedin?: string;
-  phone?: string;
-  university?: string;
-};
+import { Alumni } from "@/types/alumnis";
+import apiService from "@/lib/apiService";
 
 export default function AlumniHubPage() {
   const [alumnis, setAlumnis] = useState<Alumni[]>([]);
 
   useEffect(() => {
-  axios.get("api/alumni")
-    .then((res) => {
-      const cleanedAlumnis = res.data.map((item: any) => ({
-        ...item,
-        email: item.email || "",
-        instagram: item.instagram || "",
-        linkedin: item.linkedin || "",
-        phone: item.phone || "",
-        university: item.university || "",
-      }));
-      setAlumnis(cleanedAlumnis);
-    })
-    .catch((err) => console.error("Error fetching alumni:", err));
+    const fetchData = async () => {
+      try {
+        const [alumniResponse] = await Promise.all([
+          apiService.get('/alumni'),      // Corresponds to @router.get("/") in alumni router
+        ]);
+        
+        setAlumnis(alumniResponse.data);
+
+      } catch (error) {
+        console.error("Failed to fetch page data:", error);
+      }
+    };
+
+    fetchData();
   }, []);
   
   return (
