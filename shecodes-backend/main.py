@@ -1,23 +1,29 @@
+# /shecodes-backend/main.py
+
 from fastapi import FastAPI
-from routers import documentation, user, event, mentor, partner, alumni, faq, contact, blog, comment, participant, auth
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-import models
 from database import engine
+from models.user import Base
 from core.config import settings
 
-models.Base.metadata.create_all(bind=engine)
+from routers import (
+    auth, user, documentation, event, mentor, 
+    partner, alumni, faq, contact, blog, comment, participant
+)
+from routers import upload as upload_router 
 
-app = FastAPI()
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version=settings.PROJECT_VERSION,
+)
 
 origins = [
     "http://localhost",
     "http://localhost:3000", 
-    "http://localhost:8080", 
     "http://localhost:5173", 
-    "http://localhost:5174",
-    "http://0.0.0.0:5173",
-    "http://127.0.0.1:5173",
+    "https://your-frontend-domain.com",
 ]
 
 app.add_middleware(
@@ -28,10 +34,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# app.mount("/static", StaticFiles(directory="static"), name="static")
-app.include_router(participant.router)
-app.include_router(documentation.router)
+# Include all routers
+app.include_router(auth.router) 
 app.include_router(user.router)
+app.include_router(documentation.router)
 app.include_router(event.router)
 app.include_router(mentor.router)
 app.include_router(partner.router)
@@ -40,10 +46,10 @@ app.include_router(faq.router)
 app.include_router(contact.router)
 app.include_router(blog.router)
 app.include_router(comment.router)
-app.include_router(auth.router)
+app.include_router(participant.router)
+app.include_router(upload_router.router) 
 
-
-# uhh might add on to this later
 @app.get("/", tags=["Root"])
-async def root():
-    return {"message": f"Welcome to {settings.PROJECT_NAME} v{settings.PROJECT_VERSION}"}
+def read_root():
+    """A welcome endpoint for the API."""
+    return {"message": f"Welcome to {settings.PROJECT_NAME} API v{settings.PROJECT_VERSION}"}

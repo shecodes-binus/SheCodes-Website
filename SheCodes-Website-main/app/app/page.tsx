@@ -58,7 +58,7 @@ export default function Home() {
   const teamMembers: TeamMember[] = dummyTeam;
 
   return (
-    <div className="flex flex-col min-h-screen space-y-20">
+    <div className="flex flex-col min-h-screen space-y-28">
       {/* Hero Section */}
       <section className="relative w-full pt-20 px-16 bg-white">
         <div className=" px-4 md:px-6">

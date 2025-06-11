@@ -1,75 +1,59 @@
-from fastapi import APIRouter, HTTPException, Depends
+# /shecodes-backend/routers/event.py
+from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from typing import List
-import models
-from schemas.event import EventResponse, EventCreate, EventUpdate
+
+import crud
+from models import user as user_model
+from schemas import event as event_schema
 from database import get_db
+from core.security import get_current_user
 
 router = APIRouter(
     prefix="/events",
     tags=["Events"]
 )
 
-@router.post("/", response_model=EventResponse)
-def create_event(event_data: EventCreate, db: Session = Depends(get_db)):
-    new_event = models.Event(
-        title=event_data.title,
-        description=event_data.description,
-        event_type=event_data.event_type,
-        start_date=event_data.start_date,
-        end_date=event_data.end_date,
-        location=event_data.location,
-        tools=event_data.tools,
-        key_points=event_data.key_points
-    )
+@router.post("/", response_model=event_schema.EventResponse, status_code=status.HTTP_201_CREATED)
+def create_event(
+    event_data: event_schema.EventCreate, 
+    db: Session = Depends(get_db),
+    current_user: user_model.User = Depends(get_current_user) # Protected
+):
+    return crud.create_event(db=db, event_data=event_data)
 
-    mentors = db.query(models.Mentor).filter(models.Mentor.id.in_(event_data.mentors)).all()
-    new_event.mentors = mentors
+@router.get("/", response_model=List[event_schema.EventResponse])
+def get_all_events(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return crud.get_all_events(db, skip=skip, limit=limit)
 
-    for skill in event_data.skills:
-        new_event.skills.append(models.Skill(**skill.dict()))
-
-    for benefit in event_data.benefits:
-        new_event.benefits.append(models.Benefit(**benefit.dict()))
-
-    for session in event_data.sessions:
-        new_event.sessions.append(models.Session(**session.dict()))
-
-    db.add(new_event)
-    db.commit()
-    db.refresh(new_event)
-    return new_event
-
-@router.get("/", response_model=List[EventResponse])
-def get_events(db: Session = Depends(get_db)):
-    return db.query(models.Event).all()
-
-@router.get("/{event_id}", response_model=EventResponse)
-def get_event(event_id: int, db: Session = Depends(get_db)):
-    event = db.query(models.Event).filter(models.Event.id == event_id).first()
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
-    return event
-
-@router.put("/{event_id}", response_model=EventResponse)
-def update_event(event_id: int, event: EventUpdate, db: Session = Depends(get_db)):
-    db_event = db.query(models.Event).filter(models.Event.id == event_id).first()
+@router.get("/{event_id}", response_model=event_schema.EventResponse)
+def get_event_by_id(event_id: int, db: Session = Depends(get_db)):
+    db_event = crud.get_event(db, event_id=event_id)
     if not db_event:
-        raise HTTPException(status_code=404, detail="Event not found")
-    
-    for key, value in event.dict(exclude_unset=True).items():
-        setattr(db_event, key, value)
-    
-    db.commit()
-    db.refresh(db_event)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     return db_event
 
-@router.delete("/{event_id}", response_model=dict)
-def delete_event(event_id: int, db: Session = Depends(get_db)):
-    db_event = db.query(models.Event).filter(models.Event.id == event_id).first()
+@router.put("/{event_id}", response_model=event_schema.EventResponse)
+def update_event(
+    event_id: int, 
+    event_in: event_schema.EventUpdate, 
+    db: Session = Depends(get_db),
+    current_user: user_model.User = Depends(get_current_user) # Protected
+):
+    db_event = crud.get_event(db, event_id=event_id)
     if not db_event:
-        raise HTTPException(status_code=404, detail="Event not found")
-    
-    db.delete(db_event)
-    db.commit()
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    # Note: This simple update only changes top-level fields. Updating relationships
+    # like mentors, skills, etc., requires more complex logic in the CRUD function.
+    return crud.update_event(db=db, db_event=db_event, event_in=event_in)
+
+@router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_event(
+    event_id: int, 
+    db: Session = Depends(get_db),
+    current_user: user_model.User = Depends(get_current_user) # Protected
+):
+    deleted_event = crud.delete_event(db, event_id=event_id)
+    if not deleted_event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     return {"message": "Event deleted successfully"}

@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, ConfigDict
+from typing import Optional, Literal
 
 class MentorBase(BaseModel):
     name: str
@@ -7,6 +7,9 @@ class MentorBase(BaseModel):
     description: str
     imageSrc: str
     story: str
+    instagram: Optional[str] = None
+    linkedin: Optional[str] = None
+    status: Literal['active', 'inactive']
 
 class MentorCreate(MentorBase):
     pass
@@ -16,6 +19,4 @@ class MentorUpdate(MentorBase):
 
 class MentorResponse(MentorBase):
     id: int
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

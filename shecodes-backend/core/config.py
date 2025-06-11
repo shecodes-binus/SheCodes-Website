@@ -11,7 +11,7 @@ DB_NAME = os.environ.get('DB_NAME')
 DB_PORT= os.environ.get('DB_PORT')
 
 class Settings:
-    PROJECT_NAME: str = "SheCodes API"
+    PROJECT_NAME: str = "SheCodes Society"
     PROJECT_VERSION: str = "1.0.0"
     
     # App Mode
@@ -47,6 +47,9 @@ class Settings:
     
     EMAIL_VERIFICATION_SUBJECT: str = f"{PROJECT_NAME} - Verify Your Email"
     PASSWORD_RESET_SUBJECT: str = f"{PROJECT_NAME} - Password Reset Request"
+    
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL")
+    SUPABASE_SERVICE_KEY: str = os.getenv("SUPABASE_SERVICE_KEY")
 
 settings = Settings()
 

@@ -1,20 +1,21 @@
 from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 
 class ParticipantBase(BaseModel):
     event_id: int
-    member_id: int
-    registration_date: Optional[datetime] = None # type: ignore
+    member_id: str # Should be string to match User.id
     status: Optional[str] = "registered"
 
 class ParticipantCreate(ParticipantBase):
-    pass
+    # Add a default factory for the registration date
+    registration_date: datetime = Field(default_factory=datetime.utcnow)
 
 class ParticipantUpdate(BaseModel):
     status: str
 
 class ParticipantResponse(ParticipantBase):
     id: int
-    class Config:
-        orm_mode = True
+    registration_date: datetime
+    
+    model_config = ConfigDict(from_attributes=True)

@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Optional, List
+from pydantic import BaseModel, ConfigDict
+from typing import Optional, List, Any, Literal
 from enum import Enum
 from datetime import datetime
 from .mentor import MentorResponse
@@ -13,8 +13,7 @@ class SkillCreate(SkillBase):
 
 class SkillResponse(SkillBase):
     id: int
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class BenefitBase(BaseModel):
     title: str
@@ -25,8 +24,7 @@ class BenefitCreate(BenefitBase):
 
 class BenefitResponse(BenefitBase):
     id: int
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SessionBase(BaseModel):
     topic: str
@@ -39,14 +37,18 @@ class SessionCreate(SessionBase):
 
 class SessionResponse(SessionBase):
     id: int
-    class Config:
-        orm_mode = True
-
+    model_config = ConfigDict(from_attributes=True)
 
 class EventTypeEnum(str, Enum):
     Workshop = "Workshop"
     Seminar = "Seminar"
     Webinar = "Webinar"
+    Mentorship = "Mentorship"
+
+class EventStatusEnum(str, Enum):
+    upcoming = "upcoming"
+    past = "past"
+    ongoing = "ongoing"
 
 class EventBase(BaseModel):
     title: str
@@ -55,32 +57,30 @@ class EventBase(BaseModel):
     location: str
     start_date: datetime
     end_date: datetime
-    tools: str
-    key_points: str
+    status: EventStatusEnum
+    imageSrc: Optional[str] = None
+    image_alt: Optional[str] = None
+    tags: Optional[List[str]] = None
+    longDescription: Optional[str] = None
+    registerLink: Optional[str] = None
+    tools: Optional[List[Any]] = None
+    key_points: Optional[List[str]] = None
+    groupLink: Optional[str] = None
 
 class EventCreate(EventBase):
-    mentors: List[int]
-    skills: List[SkillCreate]
-    benefits: List[BenefitCreate]
-    sessions: List[SessionCreate]
+    mentors: List[int] = []
+    skills: List[SkillCreate] = []
+    benefits: List[BenefitCreate] = []
+    sessions: List[SessionCreate] = []
 
 class EventUpdate(EventBase):
-    title: Optional[str]
-    description: Optional[str]
-    event_type: Optional[EventTypeEnum]
-    location: Optional[str]
-    start_date: Optional[datetime]
-    end_date: Optional[datetime]
-    tools: Optional[str]
-    key_points: Optional[str]
+    pass
 
 class EventResponse(EventBase):
     id: int
     created_at: datetime
-    mentors: List[MentorResponse]
-    skills: List[SkillResponse]
-    benefits: List[BenefitResponse]
-    sessions: List[SessionResponse]
-
-    class Config:
-        orm_mode = True
+    mentors: List[MentorResponse] = []
+    skills: List[SkillResponse] = []
+    benefits: List[BenefitResponse] = []
+    sessions: List[SessionResponse] = []
+    model_config = ConfigDict(from_attributes=True)

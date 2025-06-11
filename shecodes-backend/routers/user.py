@@ -1,75 +1,96 @@
-from fastapi import APIRouter, HTTPException, Depends, Body
+# /shecodes-backend/routers/user.py
+
+from fastapi import APIRouter, HTTPException, Depends, status, File, UploadFile, Form
 from sqlalchemy.orm import Session
-from typing import List
-import models
+from typing import List, Optional
+
+import crud
+from models import user as user_model
+from schemas import user as user_schema
 from database import get_db
-from schemas.user import UserCreate, UserResponse, UserUpdate
-from utils.security import hash_password
-from datetime import datetime, timedelta
-import uuid
+from core.security import get_current_user
+from core.storage_service import upload_file_to_supabase, delete_file_from_supabase
 
 router = APIRouter(
     prefix="/users",
     tags=["Users"]
 )
 
-@router.post("/", response_model=UserResponse)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(models.User).filter(models.User.email == user.email).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="ENMail already registered")
-    
-    new_user_data = user.dict()
-    new_user_data['password'] = hash_password(new_user_data['password'])
-    new_user = models.User(**new_user_data) 
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
+@router.put("/me", response_model=user_schema.UserResponse)
+def update_my_profile(
+    name: str = Form(...),
+    # You might not want users to change their own role, so it's commented out
+    # role: RoleEnum = Form(...), 
+    picture: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+    current_user: user_model.User = Depends(get_current_user)
+):
+    """
+    Allows the currently logged-in user to update their name and profile picture.
+    """
+    new_picture_url = current_user.profile_picture
 
-@router.get("/", response_model=List[UserResponse])
-def get_users(db: Session = Depends(get_db)):
-    return db.query(models.User).all()
+    if picture:
+        if not picture.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="Uploaded file is not an image.")
+        # Delete the old picture if it exists
+        delete_file_from_supabase(current_user.profile_picture)
+        new_picture_url = upload_file_to_supabase(picture)
 
-@router.get("/{user_id}", response_model=UserResponse)
-def get_user(user_id: str, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+    user_update_data = user_schema.UserUpdate(
+        name=name,
+        profile_picture=new_picture_url
+    )
+    return crud.update_user(db=db, db_user=current_user, user_in=user_update_data)
 
-@router.put("/{user_id}", response_model=UserResponse)
-def update_user(user_id: str, user: UserUpdate, db: Session = Depends(get_db)):
-    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_user: user_model.User = Depends(get_current_user)
+):
+    """
+    Deletes a user. Should be restricted to admins or the user themselves.
+    """
+    # Authorization check: only an admin or the user themselves can delete the account.
+    if current_user.role != "admin" and current_user.id != user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this user")
+
+    db_user = crud.get_user(db, user_id=user_id)
     if not db_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    for key, value in user.dict(exclude_unset=True).items():
-        setattr(db_user, key, value)
-    
-    db.commit()
-    db.refresh(db_user)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        
+    delete_file_from_supabase(db_user.profile_picture)
+    crud.delete_user(db, user_id=user_id)
+    return {"message": "User and associated data deleted successfully"}
+
+
+
+@router.get("/me", response_model=user_schema.UserResponse)
+def read_current_user(current_user: user_model.User = Depends(get_current_user)):
+    return current_user
+
+# Note: The endpoint below is for demonstration. 
+# In a real app, you'd likely want to restrict this to admin users.
+@router.get("/", response_model=List[user_schema.UserResponse])
+def read_all_users(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    # current_user: user_model.User = Depends(get_current_user) # Uncomment to protect this endpoint
+):
+    """Retrieve all users. (Admin access recommended)."""
+    users = crud.get_all_users(db, skip=skip, limit=limit)
+    return users
+
+@router.get("/{user_id}", response_model=user_schema.UserResponse)
+def read_user_by_id(
+    user_id: str,
+    db: Session = Depends(get_db),
+    # current_user: user_model.User = Depends(get_current_user) # Uncomment to protect
+):
+    """Retrieve a specific user by their ID."""
+    db_user = crud.get_user(db, user_id=user_id)
+    if db_user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return db_user
-
-@router.delete("/{user_id}", response_model=dict)
-def delete_user(user_id: str, db: Session = Depends(get_db)):
-    db_user = db.query(models.User).filter(models.User.id == user_id).first()
-    if not db_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    db.delete(db_user)
-    db.commit()
-    return {"message": "user deleted successfully"}
-
-@router.post("/request-password-reset", response_model=dict)
-def request_password_reset(email: str = Body(...), db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    token = str(uuid.uuid4())
-    user.reset_token = token
-    user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
-    db.commit()
-
-    return {"message": "Password reset link sent to email"}
