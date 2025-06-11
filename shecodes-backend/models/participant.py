@@ -12,5 +12,5 @@ class Participant(Base):
     registration_date = Column(DateTime, default=datetime.utcnow)
     status = Column(Enum("registered", "attended", "cancelled", name="participant_status_enum"), default="registered")
 
-    event = relationship("Event", backref="participants")
-    member = relationship("User", backref="participations")
+    event = relationship("Event", back_populates="participants")
+    user = relationship("User", back_populates="participations")

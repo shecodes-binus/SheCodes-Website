@@ -1,5 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
+import { URL } from 'url';
 import { Inter } from "next/font/google"
 import "../globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -9,6 +10,7 @@ import Footer from "@/components/footer"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   title: "SheCodes Society Binus",
   description: "Empowering girls in tech to lead with innovation, inspiration, and impact",
     generator: 'v0.dev'

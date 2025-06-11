@@ -1,10 +1,12 @@
 'use client';
 
-import type React from "react"
+import React, { useEffect } from "react"
 // import type { Metadata } from "next"
 import { usePathname } from 'next/navigation';
 import { Inter } from "next/font/google"
 import "../globals.css"
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 import { ThemeProvider } from "@/components/theme-provider"
 import Sidebar from "@/components/admin/sidebar"
 import Header from "@/components/admin/header"
@@ -22,9 +24,28 @@ export default function AdminLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const { isAuthenticated, isAdmin, loading } = useAuth();
+  const router = useRouter();
   const pathname = usePathname(); // <-- Get the current pathname
 
   const showHeader = pathname !== '/admin/settings';
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push('/auth/login'); // Not logged in, redirect to login
+    } else if (!loading && !isAdmin) {
+      router.push('/app/dashboard'); // Logged in but NOT an admin, redirect to user dashboard
+    }
+  }, [isAuthenticated, isAdmin, loading, router]);
+
+  // Show a loading screen while auth state is being determined
+  if (loading || !isAdmin) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div>Loading and verifying access...</div>
+      </div>
+    );
+  }
 
   return (
     <html lang="en" suppressHydrationWarning>

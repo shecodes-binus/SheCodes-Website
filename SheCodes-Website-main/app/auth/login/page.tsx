@@ -1,28 +1,59 @@
 // src/app/signup/page.tsx (or your preferred route)
+"use client"
+
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import axios from 'axios';
-import { useRouter } from 'next/navigation';
-import { FcGoogle } from 'react-icons/fc'; // Google Icon
-import { FaGithub } from 'react-icons/fa'; // GitHub Icon
+import { useAuth } from '@/contexts/AuthContext';
+import toast from 'react-hot-toast';
+import apiService from '@/lib/apiService'; // Use the new apiService
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const { login } = useAuth(); 
   
-  const router = useRouter();
+  // const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+
+    // Validate inputs
+    if (!email || !password) {
+      toast.error('Please fill in all fields');
+      setLoading(false);
+      return;
+    }
+
+    // Use URLSearchParams for OAuth2PasswordRequestForm
+    const params = new URLSearchParams();
+    params.append('username', email);
+    params.append('password', password);
+
     try {
-      const response = await axios.post('http://localhost:8000/auth/login', null, {
-        params: { email, password }
+      const response = await apiService.post('/auth/token', params, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
-      localStorage.setItem('token', response.data.access_token);
-      router.push('/dashboard');
-    } catch (error) {
-      alert("Login failed: " + (error as any).response?.data?.detail);
+      
+      // Call the context login function, which handles storing the token
+      // and redirecting based on role.
+      login(response.data.access_token);
+      toast.success('Login successful!');
+    } catch (err: any) {
+      console.error('Login error:', err);
+      if (err.response?.status === 401) {
+        toast.error('Invalid email or password');
+      } else if (err.response?.status === 403) {
+        toast.error('Account not verified. Please check your email.');
+      } else {
+        toast.error(err.response?.data?.detail || "An unexpected error occurred.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -36,24 +67,24 @@ const LoginPage: React.FC = () => {
           <Image
             src="/blobs/blobs1.svg"
             alt="Abstract Shape"
-            layout="fill"
-            objectFit="contain"
+            fill
+            className='object-contain'
           />
         </div>
         <div className="absolute top-10 -right-20 w-[550px] h-[550px] transform z-10">
           <Image
             src="/blobs/blobs2.svg" 
             alt="Abstract Shape"
-            layout="fill"
-            objectFit="contain"
+            fill
+            className='object-contain'
           />
         </div>
         <div className="absolute top-20 -left-5 w-[600px] h-[600px] transform z-0">
           <Image
             src="/blobs/blobs3.svg" 
             alt="Abstract Shape"
-            layout="fill"
-            objectFit="contain"
+            fill
+            className='object-contain'
           />
         </div>
         {/* <div className="absolute w-80 h-80 bg-blueSky rounded-full -bottom-24 right-0 opacity-70 mix-blend-multiply filter blur-xl"></div>
@@ -68,7 +99,7 @@ const LoginPage: React.FC = () => {
                 alt="SheCodes Society Logo"
                 width={600} // Match container width
                 height={600} // Match container height
-                className="" // No absolute needed if centered in flex container
+                priority
             />
             </div>
         </div>
@@ -85,11 +116,11 @@ const LoginPage: React.FC = () => {
           </div>
 
           {/* Login Form */}
-          <form className="space-y-4" action="#" method="POST">
+          <form className="space-y-4" onSubmit={handleLogin}>
 
             {/* Email Input */}
             <div>
-              <label htmlFor="email" className="block text-md font-semibold text-pink mb-2" onSubmit={handleLogin}>
+              <label htmlFor="email" className="block text-md font-semibold text-pink mb-2">
                 Email
               </label>
               <input
@@ -99,29 +130,29 @@ const LoginPage: React.FC = () => {
                 autoComplete="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                required
                 className="block w-full appearance-none rounded-xl border border-[#bfbfbf] bg-white px-4 py-3 placeholder-[#bfbfbf] focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1"
                 placeholder="Enter your email here"
               />
             </div>
 
             {/* Password Input */}
-            <div>
+            <div className='relative'>
               <label htmlFor="password" className="block text-md font-semibold text-pink mb-2">
                 Password
               </label>
               <input
                 id="password"
                 name="password"
-                type="password"
-                autoComplete="new-password"
+                type={showPassword ? 'text' : 'password'} 
+                autoComplete="current-password"
                 value={password}
-                required
                 onChange={e => setPassword(e.target.value)}
                 className="block w-full appearance-none rounded-xl border border-[#bfbfbf] bg-white px-4 py-3 placeholder-[#bfbfbf] focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1"
                 placeholder="Enter your password here"
               />
-              <button type="submit">Log In</button>
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 top-7 flex items-center px-4 text-gray-600">
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
             </div>
 
             <div className='text-right'>
@@ -134,9 +165,10 @@ const LoginPage: React.FC = () => {
             <div>
               <button
                 type="submit"
-                className="mt-6 flex w-full justify-center rounded-xl bg-[#7E52C5] px-4 py-3 text-base font-semibold text-white shadow-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-2 transition-colors"
+                disabled={loading}
+                className="mt-6 flex w-full justify-center rounded-xl bg-[#7E52C5] px-4 py-3 text-base font-semibold text-white shadow-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Log In
+                {loading ? 'Logging in...' : 'Log In'}
               </button>
             </div>
           </form>

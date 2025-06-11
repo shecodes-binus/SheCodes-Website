@@ -1,55 +1,73 @@
-// src/app/signup/page.tsx (or your preferred route)
-import React, { useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { FcGoogle } from 'react-icons/fc'; // Google Icon
-import { FaGithub } from 'react-icons/fa'; // GitHub Icon
+"use client"
 
-const ResetPasswordPage: React.FC = () => {
+import React, { useState, Suspense } from 'react';
+import Image from 'next/image';
+import { useSearchParams, useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import apiService from '@/lib/apiService'; // Use the shared apiService
+import { FaEye, FaEyeSlash } from 'react-icons/fa'; 
+
+// The main component logic is extracted to be wrapped by Suspense
+const ResetPasswordComponent: React.FC = () => {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [message, setMessage] = useState('');
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage('');
+    setLoading(true);
 
     if (!token) {
-      setMessage("Invalid or missing token.");
+      toast.error("Invalid or missing reset link. Please request a new one.");
+      setLoading(false);
+      return;
+    }
+
+    if (newPassword.length < 9) {
+      toast.error("Password must be at least 9 characters long.");
+      setLoading(false);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setMessage("Passwords do not match.");
+      toast.error("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match.");
+      setLoading(false);
       return;
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/reset-password`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          token,
-          new_password: newPassword
-        }),
-      });
+      // Corresponds to the backend endpoint: POST /auth/password-reset/confirm
+      const body = {
+        token: token,
+        new_password: newPassword
+      };
+      
+      const response = await apiService.post('/auth/password-reset/confirm', body);
 
-      const data = await res.json();
-      if (res.ok) {
-        setIsSuccess(true);
-        setMessage("Password updated successfully!");
-      } else {
-        setMessage(data.detail || "Error resetting password.");
-      }
-    } catch (err) {
-      setMessage("Server error.");
+      toast.success(response.data.msg);
+      
+      // Redirect to login page after a short delay to let the user read the toast
+      setTimeout(() => {
+        router.push('/auth/login');
+      }, 2000);
+
+    } catch (err: any) {
+      // The backend returns specific errors for this endpoint (e.g., expired token)
+      toast.error(err.response?.data?.detail || "An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -57,46 +75,26 @@ const ResetPasswordPage: React.FC = () => {
     <div className="min-h-screen flex items-stretch text-gray-800 bg-[#4A287F]">
       {/* Left Decorative Column */}
       <div className="relative hidden lg:flex w-1/2 items-center justify-center bg-[#4A287F] text-white p-12 overflow-hidden">
-
         {/* Abstract Shapes */}
         <div className="absolute bottom-1 left-0 w-[550px] h-[550px] transform z-20">
-          <Image
-            src="/blobs/blobs1.svg"
-            alt="Abstract Shape"
-            layout="fill"
-            objectFit="contain"
-          />
+          <Image src="/blobs/blobs1.svg" alt="Abstract Shape" fill className="object-contain" />
         </div>
         <div className="absolute top-10 -right-20 w-[550px] h-[550px] transform z-10">
-          <Image
-            src="/blobs/blobs2.svg" 
-            alt="Abstract Shape"
-            layout="fill"
-            objectFit="contain"
-          />
+          <Image src="/blobs/blobs2.svg" alt="Abstract Shape" fill className="object-contain" />
         </div>
         <div className="absolute top-20 -left-5 w-[600px] h-[600px] transform z-0">
-          <Image
-            src="/blobs/blobs3.svg" 
-            alt="Abstract Shape"
-            layout="fill"
-            objectFit="contain"
-          />
+          <Image src="/blobs/blobs3.svg" alt="Abstract Shape" fill className="object-contain" />
         </div>
-        {/* <div className="absolute w-80 h-80 bg-blueSky rounded-full -bottom-24 right-0 opacity-70 mix-blend-multiply filter blur-xl"></div>
-        <div className="absolute w-72 h-72 bg-purple-2 rounded-full top-1/4 left-1/4 opacity-60 mix-blend-multiply filter blur-2xl"></div> */}
-
         {/* Content */}
         <div className="relative z-30 flex flex-col items-center justify-center w-full h-full">
-            {/* Logo */}
-            <div className="w-[400px] h-[400px] mb-6"> {/* Adjust size */}
+            <div className="w-[400px] h-[400px] mb-6">
                 <Image
-                src="/logos/shecodeslogohorizontal.svg" // Make sure this path is correct in /public
-                alt="SheCodes Society Logo"
-                width={600} // Match container width
-                height={600} // Match container height
-                className="" // No absolute needed if centered in flex container
-            />
+                    src="/logos/shecodeslogohorizontal.svg"
+                    alt="SheCodes Society Logo"
+                    width={600}
+                    height={600}
+                    priority
+                />
             </div>
         </div>
       </div>
@@ -111,50 +109,60 @@ const ResetPasswordPage: React.FC = () => {
             </h2>
           </div>
 
-          {/* Login Form */}
+          {/* Form */}
           <form className="space-y-4" onSubmit={handleSubmit}>
-
-            {/* Password Input */}
-            <div>
-              <label htmlFor="password" className="block text-md font-semibold text-pink mb-2">
+            {/* New Password Input */}
+            <div className='relative'>
+              <label htmlFor="new-password" className="block text-md font-semibold text-pink mb-2">
                 New Password
               </label>
               <input
-                id="password"
-                name="password"
-                type="password"
+                id="new-password"
+                name="new-password"
+                type={showNewPassword ? 'text' : 'password'} 
                 autoComplete="new-password"
                 value={newPassword}
-                required
-                className="block w-full appearance-none rounded-xl border border-[#bfbfbf] bg-white px-4 py-3 placeholder-[#bfbfbf] focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1"
-                placeholder="Enter your new password here"
+                onChange={(e) => setNewPassword(e.target.value)}
+                // required
+                disabled={loading}
+                className="block w-full appearance-none rounded-xl border border-[#bfbfbf] bg-white px-4 py-3 placeholder-[#bfbfbf] focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1 disabled:opacity-50"
+                placeholder="Enter your new password"
               />
+              <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute inset-y-0 right-0 top-7 flex items-center px-4 text-gray-600">
+                {showNewPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
             </div>
 
             {/* Confirm Password Input */}
-            <div>
-              <label htmlFor="password" className="block text-md font-semibold text-pink mb-2">
+            <div className='relative'>
+              <label htmlFor="confirm-password" className="block text-md font-semibold text-pink mb-2">
                 Confirm Password
               </label>
               <input
-                id="password"
-                name="password"
-                type="password"
+                id="confirm-password"
+                name="confirm-password"
+                type={showConfirmPassword ? 'text' : 'password'} 
                 autoComplete="new-password"
-                required
                 value={confirmPassword}
-                className="block w-full appearance-none rounded-xl border border-[#bfbfbf] bg-white px-4 py-3 placeholder-[#bfbfbf] focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1"
-                placeholder="Enter your new password here"
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                // required
+                disabled={loading}
+                className="block w-full appearance-none rounded-xl border border-[#bfbfbf] bg-white px-4 py-3 placeholder-[#bfbfbf] focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1 disabled:opacity-50"
+                placeholder="Confirm your new password"
               />
+              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 top-7 flex items-center px-4 text-gray-600">
+                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
             </div>
 
             {/* Submit Button */}
             <div>
               <button
                 type="submit"
-                className="mt-6 flex w-full justify-center rounded-xl bg-[#7E52C5] px-4 py-3 text-base font-semibold text-white shadow-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-2 transition-colors"
+                disabled={loading || !token}
+                className="mt-6 flex w-full justify-center rounded-xl bg-[#7E52C5] px-4 py-3 text-base font-semibold text-white shadow-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Save
+                {loading ? 'Saving...' : 'Save New Password'}
               </button>
             </div>
           </form>
@@ -163,5 +171,14 @@ const ResetPasswordPage: React.FC = () => {
     </div>
   );
 };
+
+// Next.js requires using Suspense for components that use `useSearchParams`
+const ResetPasswordPage: React.FC = () => {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <ResetPasswordComponent />
+        </Suspense>
+    );
+}
 
 export default ResetPasswordPage;

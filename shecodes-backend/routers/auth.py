@@ -8,11 +8,12 @@ from jose import JWTError, jwt
 
 import crud
 from schemas import user as user_schema
+from schemas import common as common_schema # <-- IMPORT THE NEW COMMON SCHEMAS
 from database import get_db
 from core.config import settings
 from core.security import (
     create_access_token, create_password_reset_token,
-    create_verification_token, get_current_user
+    create_verification_token
 )
 from core.email_service import send_email, generate_verification_email_content, generate_password_reset_email_content
 
@@ -21,7 +22,7 @@ router = APIRouter(
     tags=["Authentication"]
 )
 
-@router.post("/register", response_model=user_schema.Msg, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=common_schema.Msg, status_code=status.HTTP_201_CREATED)
 def register_user(
     user_in: user_schema.UserCreate,
     background_tasks: BackgroundTasks,
@@ -37,11 +38,10 @@ def register_user(
     
     new_user = crud.create_user(db=db, user=user_in)
     
-    # Send verification email in the background
     if settings.EMAILS_ENABLED:
         token_expires = timedelta(hours=settings.EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS)
         verification_token = create_verification_token(email=new_user.email, expires_delta=token_expires)
-        verification_link = f"{settings.FRONTEND_URL}/verify-email?token={verification_token}"
+        verification_link = f"{settings.FRONTEND_URL}/auth/verify-email?token={verification_token}"
         
         email_html = generate_verification_email_content(verification_link)
         background_tasks.add_task(
@@ -51,9 +51,9 @@ def register_user(
             html_content=email_html
         )
     
-    return user_schema.Msg(msg="Registration successful. Please check your email to verify your account.")
+    return common_schema.Msg(msg="Registration successful. Please check your email to verify your account.")
 
-@router.post("/token", response_model=user_schema.Token)
+@router.post("/token", response_model=common_schema.Token)
 def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
@@ -76,9 +76,9 @@ def login_for_access_token(
     access_token = create_access_token(
         data={"sub": user.id}, expires_delta=access_token_expires
     )
-    return user_schema.Token(access_token=access_token, token_type="bearer")
+    return common_schema.Token(access_token=access_token, token_type="bearer")
 
-@router.get("/verify-email", response_model=user_schema.Msg)
+@router.get("/verify-email", response_model=common_schema.Msg)
 def verify_email(token: str, db: Session = Depends(get_db)):
     """Verifies a user's email address using a token from the email link."""
     try:
@@ -96,23 +96,22 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if user.is_verified:
-        return user_schema.Msg(msg="Account already verified. You can log in.")
+        return common_schema.Msg(msg="Account already verified. You can log in.")
         
     crud.activate_user(db, user=user)
-    return user_schema.Msg(msg="Email verified successfully. You can now log in.")
+    return common_schema.Msg(msg="Email verified successfully. You can now log in.")
 
-@router.post("/password-reset/request", response_model=user_schema.Msg, status_code=status.HTTP_202_ACCEPTED)
+@router.post("/password-reset/request", response_model=common_schema.Msg, status_code=status.HTTP_202_ACCEPTED)
 def request_password_reset(
     request_body: user_schema.PasswordResetRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
-    """Sends a password reset email if the user exists."""
     user = crud.get_user_by_email(db, email=request_body.email)
     if user and settings.EMAILS_ENABLED:
         token_expires = timedelta(hours=settings.PASSWORD_RESET_TOKEN_EXPIRE_HOURS)
         reset_token = create_password_reset_token(email=user.email, expires_delta=token_expires)
-        reset_link = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
+        reset_link = f"{settings.FRONTEND_URL}/auth/reset-password?token={reset_token}"
         email_html = generate_password_reset_email_content(reset_link)
         background_tasks.add_task(
             send_email,
@@ -120,14 +119,13 @@ def request_password_reset(
             subject=settings.PASSWORD_RESET_SUBJECT,
             html_content=email_html
         )
-    return user_schema.Msg(msg="If an account with that email exists, a password reset link has been sent.")
+    return common_schema.Msg(msg="If an account with that email exists, a password reset link has been sent.")
 
-@router.post("/password-reset/confirm", response_model=user_schema.Msg)
+@router.post("/password-reset/confirm", response_model=common_schema.Msg)
 def confirm_password_reset(
     body: user_schema.PasswordResetConfirm,
     db: Session = Depends(get_db)
 ):
-    """Resets the user's password using a token."""
     try:
         payload = jwt.decode(body.token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         if payload.get("scope") != "password_reset":
@@ -141,4 +139,4 @@ def confirm_password_reset(
         raise HTTPException(status_code=404, detail="User not found")
     
     crud.update_user_password(db, user=user, new_password=body.new_password)
-    return user_schema.Msg(msg="Password has been successfully reset.")
+    return common_schema.Msg(msg="Password has been successfully reset.")

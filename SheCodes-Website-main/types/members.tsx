@@ -12,4 +12,5 @@ export interface Member {
     profilePicUrl: string;
     createdAt: string;
     updatedAt: string;
+    role: 'admin' | 'mentor' | 'member' | 'alumni';
 }

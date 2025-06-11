@@ -36,7 +36,6 @@ from core.security import get_password_hash, verify_password
 # ===============================================
 #               User CRUD
 # ===============================================
-
 def get_user(db: Session, user_id: str) -> Optional[user_model.User]:
     return db.query(user_model.User).filter(user_model.User.id == user_id).first()
 
@@ -47,11 +46,14 @@ def get_all_users(db: Session, skip: int = 0, limit: int = 100) -> List[user_mod
     return db.query(user_model.User).offset(skip).limit(limit).all()
 
 def create_user(db: Session, user: user_schema.UserCreate) -> user_model.User:
+    """Creates a new user in the database with a hashed password."""
     hashed_password = get_password_hash(user.password)
+    
+    # Create the user model with only the required fields
+    # The other fields in the DB will use their default values (e.g., NULL, 'member')
     db_user = user_model.User(
         email=user.email,
         name=user.name,
-        role=user.role,
         password=hashed_password,
         is_verified=False
     )
@@ -61,25 +63,10 @@ def create_user(db: Session, user: user_schema.UserCreate) -> user_model.User:
     return db_user
 
 def update_user(db: Session, db_user: user_model.User, user_in: user_schema.UserUpdate) -> user_model.User:
-    update_data = user_in.model_dump(exclude_unset=True)
-    if "password" in update_data and update_data["password"]:
-        hashed_password = get_password_hash(update_data["password"])
-        update_data["password"] = hashed_password
-    
-    for key, value in update_data.items():
-        setattr(db_user, key, value)
-        
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
+    return update_generic_item(db, db_item=db_user, schema_in=user_in)
 
 def delete_user(db: Session, user_id: str) -> Optional[user_model.User]:
-    db_user = get_user(db, user_id)
-    if db_user:
-        db.delete(db_user)
-        db.commit()
-    return db_user
+    return delete_generic_item(db, model=user_model.User, item_id=user_id)
 
 def authenticate_user(db: Session, email: str, password: str) -> Optional[user_model.User]:
     user = get_user_by_email(db, email=email)
@@ -197,9 +184,9 @@ def delete_comment(db: Session, comment_id: int) -> Optional[comment_model.Comme
     return db_comment
 
 # ===============================================
-#       Generic CRUD Functions (for simple models)
+#               Generic CRUD Functions
 # ===============================================
-
+# These can be used for simple models like Contact, FAQ, Documentation, Champion, Admin, Portfolio
 def get_generic_item(db: Session, model, item_id):
     return db.query(model).filter(model.id == item_id).first()
 

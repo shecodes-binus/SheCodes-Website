@@ -1,37 +1,66 @@
 // src/app/signup/page.tsx (or your preferred route)
+"use client"
+
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
-import { FcGoogle } from 'react-icons/fc'; // Google Icon
-import { FaGithub } from 'react-icons/fa'; // GitHub Icon
+import toast from 'react-hot-toast';
+import apiService from '@/lib/apiService';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const SignupPage: React.FC = () => {
   const [form, setForm] = useState({
-      name: '',
-      email: '',
-      password: '',
-      role: 'member',
-      profile_picture: null,
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
   });
-
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+
+    if (!form.name || !form.email || !form.password || !form.confirmPassword) {
+      toast.error('Please fill in all fields');
+      setLoading(false);
+      return;
+    }
+
+    if (form.password.length < 9) {
+      toast.error('Password must be at least 9 characters long');
+      setLoading(false);
+      return;
+    }
+
+    if (form.password !== form.confirmPassword) {
+      toast.error('Passwords do not match');
+      setLoading(false);
+      return;
+    }
 
     try {
-      await axios.post('api/users/', form);
+      await apiService.post('/auth/register', form);
+      // On success, show success message and redirect to login
+      toast.success('Registration successful! Please check your email to verify your account.');
       router.push('/auth/login');
-    } catch (error) {
-      console.error(error);
-      alert("Signup failed: " + (error as any).response?.data?.detail || "Unknown error");
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      if (err.response?.status === 400) {
+        toast.error('An account with this email already exists.');
+      } else {
+        toast.error(err.response?.data?.detail || 'An unknown error occurred.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -45,24 +74,24 @@ const SignupPage: React.FC = () => {
           <Image
             src="/blobs/blobs1.svg"
             alt="Abstract Shape"
-            layout="fill"
-            objectFit="contain"
+            fill
+            className="object-contain"
           />
         </div>
         <div className="absolute top-10 -right-20 w-[550px] h-[550px] transform z-10">
           <Image
             src="/blobs/blobs2.svg" 
             alt="Abstract Shape"
-            layout="fill"
-            objectFit="contain"
+            fill
+            className="object-contain"
           />
         </div>
         <div className="absolute top-20 -left-5 w-[600px] h-[600px] transform z-0">
           <Image
             src="/blobs/blobs3.svg" 
             alt="Abstract Shape"
-            layout="fill"
-            objectFit="contain"
+            fill
+            className="object-contain"
           />
         </div>
         {/* <div className="absolute w-80 h-80 bg-blueSky rounded-full -bottom-24 right-0 opacity-70 mix-blend-multiply filter blur-xl"></div>
@@ -77,7 +106,7 @@ const SignupPage: React.FC = () => {
               alt="SheCodes Society Logo"
               width={600} // Match container width
               height={600} // Match container height
-              className="" // No absolute needed if centered in flex container
+              priority
             />
           </div>
         </div>
@@ -94,20 +123,20 @@ const SignupPage: React.FC = () => {
           </div>
 
           {/* Signup Form */}
-          <form className="space-y-4" action="#" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
             {/* Full Name Input */}
             <div>
-              <label htmlFor="full-name" className="block text-md font-semibold text-pink mb-2">
+              <label htmlFor="name" className="block text-md font-semibold text-pink mb-2">
                 Full Name
               </label>
               <input
-                id="full-name"
-                name="full-name"
+                id="name"
+                name="name"
                 type="text"
                 value={form.name}
+                disabled={loading}
                 onChange={handleChange}
                 autoComplete="name"
-                required
                 className="block w-full appearance-none rounded-xl border border-[#bfbfbf] bg-white px-4 py-3 placeholder-[#bfbfbf] focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1"
                 placeholder="Enter your full name here"
               />
@@ -123,42 +152,63 @@ const SignupPage: React.FC = () => {
                 name="email"
                 type="email"
                 value={form.email}
+                disabled={loading}
                 onChange={handleChange}
                 autoComplete="email"
-                required
                 className="block w-full appearance-none rounded-xl border border-[#bfbfbf] bg-white px-4 py-3  placeholder-[#bfbfbf] focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1"
                 placeholder="Enter your email here"
               />
             </div>
 
             {/* Password Input */}
-            <div>
+            <div className='relative'>
               <label htmlFor="password" className="block text-md font-semibold text-pink mb-2">
                 Password
               </label>
               <input
                 id="password"
                 name="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'} 
                 value={form.password}
                 onChange={handleChange}
+                disabled={loading}
                 autoComplete="new-password"
-                required
                 className="block w-full appearance-none rounded-xl border border-[#bfbfbf] bg-white px-4 py-3 placeholder-[#bfbfbf] focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1"
                 placeholder="Enter your password here"
               />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 top-7 flex items-center px-4 text-gray-600">
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+
+            {/* Confirm Password Input */}
+            <div className='relative'>
+              <label htmlFor="confirmPassword" className="block text-md font-semibold text-pink mb-2">
+                Confirm Password
+              </label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'} 
+                value={form.confirmPassword}
+                onChange={handleChange}
+                disabled={loading}
+                autoComplete="new-password"
+                className="block w-full appearance-none rounded-xl border border-[#bfbfbf] bg-white px-4 py-3 placeholder-[#bfbfbf] focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1"
+                placeholder="Confirm your password"
+              />
+              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 top-7 flex items-center px-4 text-gray-600">
+                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
             </div>
 
             {/* hidden default role (or make dropdown if needed) */}
-            <input type="hidden" name="role" value="member" />
+            {/* <input type="hidden" name="role" value="member" /> */}
 
             {/* Submit Button */}
             <div>
-              <button
-                type="submit"
-                className="mt-6 flex w-full justify-center rounded-xl bg-[#7E52C5] px-4 py-3 text-base font-semibold text-white shadow-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-2 transition-colors"
-              >
-                Create Account
+              <button type="submit" disabled={loading} className="mt-6 flex w-full justify-center rounded-xl bg-[#7E52C5] px-4 py-3 text-base font-semibold text-white shadow-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                {loading ? 'Creating Account...' : 'Create Account'}
               </button>
             </div>
           </form>

@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { Toaster } from 'react-hot-toast';
 // Removed Header and Footer imports
 
 const inter = Inter({ subsets: ["latin"] });
@@ -35,11 +37,37 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        {/* ThemeProvider wraps everything */}
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-           {/* No Header/Footer wrapper here, just render children */}
-          {children}
-        </ThemeProvider>
+        <AuthProvider>
+          {/* ThemeProvider wraps everything */}
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+            {/* No Header/Footer wrapper here, just render children */}
+            {children}
+            <Toaster
+              position="top-center"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: '#ffffff',
+                  color: '#000',
+                },
+                // success: {
+                //   duration: 3000,
+                //   style: {
+                //     background: '#10B981',
+                //     color: '#fff',
+                //   },
+                // },
+                // error: {
+                //   duration: 4000,
+                //   style: {
+                //     background: '#EF4444',
+                //     color: '#fff',
+                //   },
+                // },
+              }}
+            />
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

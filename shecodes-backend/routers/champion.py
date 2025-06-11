@@ -28,7 +28,7 @@ def create_champion(
 
 @router.get("/", response_model=List[champion_schema.ChampionResponse])
 def get_all_champions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return crud.get_all_champions(db, skip=skip, limit=limit)
+    return crud.get_all_generic_items(db, model=champion_model.Champion, skip=skip, limit=limit)
 
 @router.put("/update/{champion_id}", response_model=champion_schema.ChampionResponse)
 def update_champion(
