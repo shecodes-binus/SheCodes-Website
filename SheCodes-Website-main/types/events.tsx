@@ -31,36 +31,37 @@ export interface Mentor {
   }
 
   export interface Session {
-    id: number; // Unique ID for the session
-    start: string | null;     // ISO 8601 string for session start
-    end: string | null;       // ISO 8601 string for session end
-    topic?: string;     // Optional: Specific topic for this session
-    description?: string; // Optional: Description of the session
-    location?: string;  // Optional: Override main event location
-  }
+  id: number; // Unique ID for the session
+  start: string;     // ISO 8601 string for session start
+  end: string;       // ISO 8601 string for session end
+  topic: string;     // Specific topic for this session
+  description: string; // Description of the session
+}
 
   export interface CombinedEventData {
-  id: number; // Unique ID for each event
-  status: 'upcoming' | 'past' | 'ongoing';
-  type: string; // Workshop, Seminar, Mentorship
-  image_src: string; // Main image for the event
-  image_alt: string;
+  id: number;
   title: string;
   description: string; // Short description
-  start_date: string; // Single date for list view
-  end_date: string;
-  created_at: string;
+  event_type: "Workshop" | "Seminar" | "Webinar" | "Mentorship";
   location: string;
-  // --- Fields primarily for Detail View ---
-  tags: string[];
-  sessions: Session[];
-  long_description?: string; // Optional longer description
-  date_range?: string; // For multi-day events
-  register_link: string; // Link for registration
-  tools: { name: string; logo_src: string }[];
-  key_points: string[];
+  start_date: string; // ISO String
+  end_date: string; // ISO String
+  status: 'upcoming' | 'past' | 'ongoing';
+  created_at: string; // ISO String
+  
+  // Optional detailed fields
+  image_src?: string | null;
+  image_alt?: string | null;
+  tags?: string[] | null;
+  long_description?: string | null;
+  register_link?: string | null;
+  tools?: { name: string; logo_src: string }[] | null;
+  key_points?: string[] | null;
+  group_link?: string;
+
+  // Relationships
   mentors: Mentor[];
-  skills_needed: Skill[];
+  skills: Skill[];
   benefits: Benefit[];
-  group_link: string;
+  sessions: Session[];
 }

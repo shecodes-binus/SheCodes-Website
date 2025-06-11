@@ -16,32 +16,82 @@ import apiService from "@/lib/apiService"
 export default function EventsPage() {
   const [upcomingEvents, setUpcomingEvents] = useState<CombinedEventData[]>([]);
   const [pastEvents, setPastEvents] = useState<CombinedEventData[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // const now = new Date();
   // const status = new Date(event.date) > now ? "upcoming" : "past";
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        const [eventResponse] = await Promise.all([
-          apiService.get('/events'),      
-        ]);
+        const response = await apiService.get('/events');
+        const allEvents: CombinedEventData[] = response.data;
         
         const now = new Date();
-        const upcoming = eventResponse.data.filter((event: any) => new Date(event.start_date) > now);
-        const past = eventResponse.data.filter((event: any) => new Date(event.start_date) <= now);
+        const upcoming = allEvents.filter((event) => new Date(event.start_date) > now);
+        const past = allEvents.filter((event) => new Date(event.start_date) <= now);
+        
         setUpcomingEvents(upcoming);
         setPastEvents(past);
 
       } catch (error) {
         console.error("Failed to fetch page data:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchData();
-
-    console.log(upcomingEvents);
   }, []);
+
+  const renderEventList = (events: CombinedEventData[]) => (
+    <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
+      {events.map((event) => (
+        <Card key={event.id}>
+          <CardHeader className="p-0">
+            <div className="relative h-72 w-full">
+              <Image
+                src={event.image_src || '/photo2.png'}
+                alt={event.image_alt || 'Event Image'}
+                fill
+                className="object-cover rounded-xl shadow-lg"
+              />
+              <Badge className={`absolute top-4 right-4 text-white ${
+                event.event_type === "Workshop" ? "bg-blueSky" :
+                event.event_type === "Seminar" ? "bg-pink" :
+                event.event_type === "Mentorship" ? "bg-purple-2" : 
+                event.event_type === "Webinar" ? "bg-green-500" : "bg-gray-600"
+              }`}>{event.event_type}</Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="py-6 px-4">
+            <CardTitle className="text-pink mb-4">{event.title}</CardTitle>
+            <CardDescription className="leading-relaxed mb-4 line-clamp-3">{event.description}</CardDescription>
+            <div className="space-y-2 text-sm text-gray-600">
+              <div className="flex items-center">
+                <Calendar className="mr-2 shrink-0 h-4 w-4" />
+                <span className="text-grey-3">{formatStartDate(event.start_date)}</span>
+              </div>
+              <div className="flex items-center">
+                <Clock className="mr-2 shrink-0 h-4 w-4" />
+                <span className="text-grey-3">{formatEventDateTime(event.start_date, event.end_date).timeRange}</span>
+              </div>
+              <div className="flex items-center">
+                <MapPin className="mr-2 shrink-0 h-4 w-4" />
+                <span className="text-grey-3">{event.location}</span>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="px-4 py-2">
+            <Link href={`/app/register-event/${event.id}`} passHref legacyBehavior={false} className="w-full">
+            <Button className="w-full bg-blueSky text-white font-semibold hover:shadow-lg transition-all duration-200 hover:bg-blueSky">Register Now</Button>
+            </Link>
+          </CardFooter>
+        </Card>
+      ))}
+    </div>
+  );
 
   return (
     <div className="container px-4 py-12 md:py-16">
@@ -69,16 +119,17 @@ export default function EventsPage() {
                   <CardHeader className="p-0">
                     <div className="relative h-72 w-full">
                       <Image
-                        src={event.image_src}
-                        alt={event.image_alt}
+                        src={event.image_src || '/photo2.png'}
+                        alt={event.image_alt || 'Event Image'}
                         fill
                         className="object-cover rounded-xl shadow-lg"
                       />
                       <Badge className={`absolute top-4 right-4 text-white ${
-                        event.type === "Workshop" ? "bg-blueSky" :
-                        event.type === "Seminar" ? "bg-pink" :
-                        event.type === "Mentorship" ? "bg-purple-2" : "bg-gray-600"
-                      }`}>{event.type}</Badge>
+                        event.event_type === "Workshop" ? "bg-blueSky" :
+                        event.event_type === "Seminar" ? "bg-pink" :
+                        event.event_type === "Mentorship" ? "bg-purple-2" : 
+                        event.event_type === "Webinar" ? "bg-green-500" : "bg-gray-600"
+                      }`}>{event.event_type}</Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="py-6 px-4">
@@ -125,16 +176,16 @@ export default function EventsPage() {
                   <CardHeader className="p-0">
                     <div className="relative h-72 w-full">
                       <Image
-                        src={event.image_src}
-                        alt={event.image_alt}
+                        src={event.image_src || '/photo2.png'}
+                        alt={event.image_alt || 'Event Image'}
                         fill
                         className="object-cover rounded-xl"
                       />
                       <Badge className={`absolute top-4 right-4 text-white ${
-                        event.type === "Workshop" ? "bg-blueSky" :
-                        event.type === "Seminar" ? "bg-pink" :
-                        event.type === "Mentorship" ? "bg-purple-2" : "bg-gray-600"
-                      }`}>{event.type}</Badge>
+                        event.event_type === "Workshop" ? "bg-blueSky" :
+                        event.event_type === "Seminar" ? "bg-pink" :
+                        event.event_type === "Mentorship" ? "bg-purple-2" : "bg-gray-600"
+                      }`}>{event.event_type}</Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="py-6 px-4">

@@ -1,3 +1,5 @@
+import { EventParticipant } from "./eventParticipant";
+
 export interface Member {
   id: string;
   email: string;
@@ -14,4 +16,5 @@ export interface Member {
   cv_link?: string | null;
   linkedin?: string | null;
   profile_picture?: string | null;
+  participations: EventParticipant[];
 }

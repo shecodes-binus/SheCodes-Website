@@ -2,8 +2,9 @@
 
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, date
+from .participant import ParticipantResponse
 
 # --- User Role Definition ---
 class RoleEnum(str, Enum):
@@ -70,4 +71,5 @@ class UserResponse(UserBase):
     is_verified: bool
     created_at: datetime
     updated_at: datetime
+    participations: List[ParticipantResponse] = []
     model_config = ConfigDict(from_attributes=True)

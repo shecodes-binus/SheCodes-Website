@@ -1,3 +1,5 @@
+import { CombinedEventData } from "./events";
+
 export interface EventParticipant {
     id: number,
     event_id: number;        // Foreign key linking to CombinedEventData.id
@@ -6,4 +8,5 @@ export interface EventParticipant {
     status: 'registered' | 'attended' | 'cancelled'; // Status of the participation
     certificate_url?: string; 
     feedback?: string; 
+    event: CombinedEventData;
   }

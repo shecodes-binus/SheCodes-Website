@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import {useState, useEffect} from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,13 @@ import { allEventsData } from '@/data/dummyEvent'; // Adjust path
 import type { CombinedEventData } from '@/types/events'; // Adjust path
 import { getEventStatus, formatEventDateTime } from '@/lib/eventUtils'; // Adjust path
 import { useAuth } from '@/contexts/AuthContext';
+import apiService from '@/lib/apiService';
+
+interface UserWithEvents {
+    participations: {
+        event: CombinedEventData;
+    }[];
+}
 
 // --- Sidebar Component (Reuse or adapt) ---
 const SidebarNav = () => {
@@ -73,9 +80,27 @@ const SidebarNav = () => {
 // --- Main Page Component ---
 export default function MyActivitiesPage() {
 
-  // Filter events if necessary (e.g., only show 'enrolled' events)
-  // For now, we display all from dummy data
-  const myEvents = allEventsData;
+  const [myEvents, setMyEvents] = useState<CombinedEventData[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchMyActivities = async () => {
+            setLoading(true);
+            try {
+                const response = await apiService.get<UserWithEvents>('/users/me');
+                const events = response.data.participations.map(p => p.event);
+                setMyEvents(events);
+            } catch (err) {
+                console.error("Failed to fetch user activities:", err);
+                setError("Could not load your activities.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchMyActivities();
+    }, []);
 
   return (
     <div className="flex min-h-screen w-full bg-gray-50">
@@ -90,94 +115,87 @@ export default function MyActivitiesPage() {
       <main className="flex-1 p-6 md:p-8 lg:py-16 lg:px-10">
         <div className='bg-white rounded-lg space-y-8 p-10 rounded-xl shadow-md'>
           <h1 className="text-3xl font-bold text-gray-800 mb-8">My Activities</h1>
-          <div className="grid grid-cols-1 gap-10">
-            {myEvents.map((event) => {
-              const { status, currentLessonTopic } = getEventStatus(event);
 
-              // Don't display 'upcoming' events in this specific design? Or handle differently.
-              // if (status === 'upcoming') return null; // Option to hide upcoming
+          {loading && <p className="text-center text-gray-500">Loading your activities...</p>}
+          {error && <p className="text-center text-red-500">{error}</p>}
 
-              return (
-                <Card key={event.id} className="overflow-hidden rounded-none h-full">
-                  <CardContent className="p-0 flex flex-col md:flex-row items-stretch h-full"> {/* No padding, flex layout */}
+          {!loading && !error && (
+            <div className="grid grid-cols-1 gap-10">
+                {myEvents.length > 0 ? (
+                    myEvents.map((event) => {
+                        const { status: eventStatus } = getEventStatus(event);
 
-                    {/* Date Block */}
-                    <div className="w-56 flex flex-col justify-center flex-shrink-0 bg-purple-3 p-4 text-black relative overflow-hidden">
-                      {/* Optional decorative pattern - tricky with pure tailwind */}
-                      {/* <div className="absolute top-2 right-2 opacity-20">...</div> */}
-                      <div className='absolute -top-4 -right-6 z-0'> 
-                        <Image
-                            src="/cardelement.png"
-                            alt={"Card Element"}
-                            width={96}
-                            height={96}
-                            className="object-contain"
-                          />
-                      </div>
-                      
-                      <div className="relative z-10 space-y-4 md:space-y-5">
-                        <p className="text-sm font-semibold text-black">Start:</p>
-                        <div className='space-y-2'>
-                          <p className="text-sm font-semibold text-black">
-                              {formatEventDateTime(event.startDate, event.endDate).dateRange}
-                          </p>
-                          <p className="text-sm font-semibold text-black">{formatEventDateTime(event.startDate, event.endDate).timeRange}</p>
-                        </div>
-                      </div>
+                        return (
+                            <Card key={event.id} className="overflow-hidden rounded-none h-full">
+                            <CardContent className="p-0 flex flex-col md:flex-row items-stretch h-full">
+
+                                {/* Date Block */}
+                                <div className="w-56 flex flex-col justify-center flex-shrink-0 bg-purple-3 p-4 text-black relative overflow-hidden">
+                                <div className='absolute -top-4 -right-6 z-0'> 
+                                    <Image
+                                        src="/cardelement.png"
+                                        alt={"Card Element"}
+                                        width={96}
+                                        height={96}
+                                        className="object-contain"
+                                    />
+                                </div>
+                                <div className="relative z-10 space-y-4 md:space-y-5">
+                                    <p className="text-sm font-semibold text-black">Start:</p>
+                                    <div className='space-y-2'>
+                                    <p className="text-sm font-semibold text-black">
+                                        {formatEventDateTime(event.start_date, event.end_date).dateRange}
+                                    </p>
+                                    <p className="text-sm font-semibold text-black">{formatEventDateTime(event.start_date, event.end_date).timeRange}</p>
+                                    </div>
+                                </div>
+                                </div>
+
+                                {/* Event Info Block */}
+                                <div className="flex-grow px-4 md:px-5 space-y-1.5 flex flex-col justify-center min-h-[120px]">
+                                    <h3 className="text-lg font-semibold text-gray-800">{event.title}</h3>
+                                    <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 flex-grow">{event.description}</p>
+                                    {event.tags && event.tags.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 pt-1">
+                                        {event.tags.map((tag) => (
+                                        <span key={tag} className="px-3 py-1 bg-grey-2/50 text-grey-3 font-semibold text-xs rounded-full">
+                                            {tag}
+                                        </span>
+                                        ))}
+                                    </div>
+                                    )}
+                                </div>
+
+                                {/* Status/Action Block */}
+                                <div className="w-full md:w-40 lg:w-48 flex-shrink-0 flex items-center justify-end text-right px-4 md:px-5 py-1 space-y-1.5 md:border-l border-gray-200/60">
+                                    {eventStatus === 'Finished' ? (
+                                        <Button className="bg-purple-2 text-white hover:bg-purple-2/90 text-xs px-6 py-2 rounded-sm">
+                                            View Certificate 
+                                        </Button>
+                                    ) : (
+                                        <Link href={`/app/event-details/${event.id}`} passHref legacyBehavior={false} className="w-auto">
+                                            <Button size="icon" variant="ghost" className="bg-blueSky text-white rounded-sm h-7 w-8 hover:bg-blueSky/80 hover:text-white">
+                                                <ArrowRight className="h-6 w-6" />
+                                            </Button>
+                                        </Link>
+                                    )}
+                                </div>
+
+                            </CardContent>
+                            </Card>
+                        );
+                    })
+                ) : (
+                    <div className="text-center text-gray-500 mt-10 space-y-4">
+                        <p>You are not currently enrolled in any activities.</p>
+                        <Link href="/app/events">
+                            <Button variant="outline">Browse Events</Button>
+                        </Link>
                     </div>
-
-                    {/* Event Info Block */}
-                    <div className="flex-grow px-4 md:px-5 space-y-1.5 flex flex-col justify-center min-h-[120px]">
-                        <h3 className="text-lg font-semibold text-gray-800">{event.title}</h3>
-                        <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 flex-grow">{event.description}</p>
-                        {event.tags && event.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 pt-1">
-                            {event.tags.map((tag) => (
-                              <span key={tag} className="px-3 py-1 bg-grey-2/50 text-grey-3 font-semibold text-xs rounded-full">
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                    </div>
-
-                    {/* Status/Action Block */}
-                    <div className="w-full md:w-40 lg:w-48 flex-shrink-0 flex flex-col items-end justify-between text-right px-4 md:px-5 py-1 space-y-1.5 md:border-l border-gray-200/60">
-                      <p className="text-sm font-semibold text-black">
-                          {status === 'Finished' ? 'Finished' : (status || 'Upcoming')}
-                      </p>
-                      {status === 'Finished' ? (
-                          <button className="bg-purple-2 text-white hover:bg-certificate-button-bg/90 text-xs px-6 py-1 rounded-sm">
-                              Certificate 
-                          </button>
-                      ) : ( // Assuming 'ongoing' or 'upcoming' shows lesson/continue
-                          
-
-                          <Link href={`/app/event-details/${event.id}`} passHref legacyBehavior={false} className="w-full">
-                            <Button size="icon" variant="ghost" className="bg-blueSky text-white rounded-sm h-7 w-8 hover:bg-blueSky/80 hover:text-white">
-                                <ArrowRight className="h-6 w-6" />
-                            </Button>
-                          </Link>
-
-                          // <Link href={`/courses/${event.id}/continue`} passHref className='mt-auto'> {/* mt-auto pushes to bottom */}
-                          // <Button size="icon" variant="ghost" className="bg-blue-400 text-white rounded-md h-8 w-8 hover:bg-blue-500">
-                          //     <ArrowRight className="h-4 w-4" />
-                          // </Button>
-                          // </Link>
-                      )}
-                    </div>
-
-                  </CardContent>
-                </Card>
-              );
-            })}
-
-            {myEvents.length === 0 && (
-              <p className="text-center text-gray-500 mt-10">You are not currently enrolled in any courses or activities.</p>
-            )}
-          </div>
+                )}
+            </div>
+          )}
         </div>
-        
       </main>
     </div>
   );

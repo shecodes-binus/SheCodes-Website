@@ -1,36 +1,107 @@
+"use client"
+
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation"; // <-- Import useRouter
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Clock, MapPin, CheckCircle2, ArrowUp } from "lucide-react";
-
-import { allEventsData } from '@/data/dummyEvent'; 
+import { Calendar, Clock, MapPin, CheckCircle2 } from "lucide-react";
 import { ScrollUpButton } from "@/components/scroll-up-button";
 import type { CombinedEventData } from '@/types/events'; 
-import { normalizeDate, formatEventGroupDate, calculateDuration, formatEventDateTime, formatStartDate } from '@/lib/eventUtils';
-
-function getEventDataById(id: string): CombinedEventData | undefined {
-    // Convert id from string to number for comparison
-    const numericId = parseInt(id, 10);
-    if (isNaN(numericId)) {
-        return undefined; // Handle cases where id is not a valid number
-    }
-    return allEventsData.find(event => event.id === numericId);
-}
+import { formatEventDateTime, formatStartDate } from '@/lib/eventUtils';
+import apiService from "@/lib/apiService";
+import { useAuth } from "@/contexts/AuthContext"; // <-- Import useAuth
 
 export default function RegisterEventPage( { params }: { params: { id: string } }) {
+    const router = useRouter();
+    const { isAuthenticated, user } = useAuth(); // <-- Get auth status and user data
 
-    const eventData = getEventDataById(params.id);
+    const [eventData, setEventData] = useState<CombinedEventData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    
+    // State for registration flow
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [registrationError, setRegistrationError] = useState<string | null>(null);
+    const [isRegistered, setIsRegistered] = useState(false);
 
-    if (!eventData) {
+
+    useEffect(() => {
+        if (!params.id) return;
+
+        const fetchEventData = async () => {
+            setLoading(true);
+            try {
+                const response = await apiService.get(`/events/${params.id}`);
+                const event: CombinedEventData = response.data;
+                setEventData(event);
+                
+                // After fetching event and if user is logged in, check if they are already registered
+                if (user && event) {
+                    const alreadyRegistered = user.participations.some(p => p.event.id === event.id);
+                    setIsRegistered(alreadyRegistered);
+                }
+
+            } catch (err) {
+                console.error("Failed to fetch event data:", err);
+                setError("Could not load event details. It might not exist.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchEventData();
+    }, [params.id, user]); // Re-run if user logs in/out
+
+    const handleRegister = async () => {
+        // 1. Handle unauthenticated user
+        if (!isAuthenticated) {
+            router.push(`/auth/login?redirect=/app/register-event/${params.id}`);
+            return;
+        }
+
+        // 2. Handle authenticated user
+        if (!user || !eventData) {
+            setRegistrationError("User or event data is missing.");
+            return;
+        }
+
+        setIsRegistering(true);
+        setRegistrationError(null);
+
+        try {
+            const payload = {
+                event_id: eventData.id,
+                member_id: user.id
+            };
+            await apiService.post('/participants/', payload);
+            setIsRegistered(true);
+        } catch (err: any) {
+            console.error("Registration failed:", err);
+            if (err.response?.status === 409) {
+                setRegistrationError("You are already registered for this event.");
+                setIsRegistered(true); // Sync UI to show registered status
+            } else {
+                setRegistrationError("Registration failed. Please try again later.");
+            }
+        } finally {
+            setIsRegistering(false);
+        }
+    };
+
+    if (loading) {
+        return <div className="min-h-screen text-center p-16">Loading event details...</div>
+    }
+
+    if (error || !eventData) {
         return (
-            <div className="container mx-auto px-4 py-16 text-center">
+            <div className="container mx-auto px-4 py-16 text-center min-h-screen">
                 <h1 className="text-2xl font-bold text-red-600">Event Not Found</h1>
                 <p className="text-gray-600 mt-4">
-                    Sorry, we couldn't find the event you were looking for.
+                    {error || "Sorry, we couldn't find the event you were looking for."}
                 </p>
-                <Link href="/events" className="mt-6 inline-block">
+                <Link href="/app/events" className="mt-6 inline-block">
                     <Button variant="outline">Back to Events</Button>
                 </Link>
             </div>
@@ -48,7 +119,7 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
             {eventData.title}
           </h1>
           <div className="flex flex-wrap gap-2">
-            {eventData.tags.map((tag) => (
+            {eventData.tags?.map((tag) => (
               <Badge key={tag} variant="secondary" className="bg-gray-200 text-grey-3 hover:bg-gray-300 px-4 py-1 text-base">
                 {tag}
               </Badge>
@@ -62,69 +133,87 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
             <div className="space-y-3">
               <div className="flex items-center text-black font-normal">
                 <Calendar className="mr-3 shrink-0 h-5 w-5 text-blueSky" />
-                <span>{formatEventDateTime(eventData.startDate, eventData.endDate).dateRange}</span>
+                <span>{formatEventDateTime(eventData.start_date, eventData.end_date).dateRange}</span>
               </div>
               <div className="flex items-center text-black font-normal">
                 <Clock className="mr-3 shrink-0 h-5 w-5 text-blueSky" />
-                <span>{formatEventDateTime(eventData.startDate, eventData.endDate).timeRange}</span>
+                <span>{formatEventDateTime(eventData.start_date, eventData.end_date).timeRange}</span>
               </div>
-              <div className="flex items-start text-black font-normal"> {/* items-start for long text */}
+              <div className="flex items-start text-black font-normal">
                 <MapPin className="mr-3 shrink-0 h-5 w-5 text-blueSky flex-shrink-0" />
                 <span>{eventData.location}</span>
               </div>
             </div>
-            <Link href="/auth/login" passHref legacyBehavior>
-                <a className="block"> {/* Opens in new tab */}
-                    <Button size="lg" className="w-full bg-blueSky hover:shadow-lg hover:bg-blueSky text-white text-base rounded-full">
-                        Register Now
-                    </Button>
-                 </a>
-            </Link>
+            {/* --- MODIFIED REGISTRATION BUTTON --- */}
+            <Button 
+                size="lg" 
+                className="w-full text-white text-base rounded-full"
+                onClick={handleRegister}
+                disabled={isRegistering || isRegistered}
+                style={{
+                    backgroundColor: isRegistered ? '#6c757d' : (isRegistering ? '#a1c4fd' : '#72A1E0'),
+                    cursor: (isRegistering || isRegistered) ? 'not-allowed' : 'pointer'
+                }}
+            >
+                {isRegistering ? 'Registering...' : (isRegistered ? 'Registered' : 'Register Now')}
+            </Button>
+            {registrationError && (
+                <p className="text-red-500 text-sm mt-2 text-center">{registrationError}</p>
+            )}
+            {isRegistered && !registrationError && (
+                <div className="text-center mt-2 space-y-2">
+                    <p className="text-green-600 text-sm font-semibold">Registration successful!</p>
+                    <Link href="/app/my-activity">
+                        <Button variant="link" className="text-blueSky">View in My Activities</Button>
+                    </Link>
+                </div>
+            )}
           </div>
         </div>
 
         {/* Image Content */}
         <div className="relative aspect-video lg:aspect-square rounded-lg overflow-hidden shadow-lg">
           <Image
-            src={eventData.imageSrc} // Make sure this image exists in /public
+            src={eventData.image_src || '/photo2.png'} 
             alt={eventData.title}
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover"
           />
           <Badge className={`absolute top-6 right-6 text-white px-5 py-3 rounded-full text-sm ${
-              eventData.type === "Workshop" ? "bg-blueSky" : "bg-pink" // Example conditional color
+              eventData.event_type === "Workshop" ? "bg-blueSky" : "bg-pink" // Example conditional color
             }`}
           >
-            {eventData.type}
+            {eventData.event_type}
           </Badge>
         </div>
       </section>
 
       {/* --- Tools Section --- */}
-      <section className="text-center space-y-6">
-        <h2 className="text-4xl font-bold text-pink">Tools</h2>
-        <div className="flex justify-center items-center gap-8 md:gap-16 flex-wrap">
-          {eventData.tools.map((tool) => (
-            <div key={tool.name} className="flex flex-col items-center gap-2">
-               <Image
-                 src={tool.logoSrc} // Make sure logos exist in /public/logos
-                 alt={`${tool.name} logo`}
-                 width={220} // Adjust size as needed
-                 height={220}
-                 className="object-contain"
-               />
-               {/* <span className="text-sm text-gray-600">{tool.name}</span> */}
+      {eventData.tools && eventData.tools.length > 0 && (
+        <section className="text-center space-y-6">
+            <h2 className="text-4xl font-bold text-pink">Tools</h2>
+            <div className="flex justify-center items-center gap-8 md:gap-16 flex-wrap">
+            {eventData.tools.map((tool) => (
+                <div key={tool.name} className="flex flex-col items-center gap-2">
+                <Image
+                    src={tool.logo_src}
+                    alt={`${tool.name} logo`}
+                    width={220}
+                    height={220}
+                    className="object-contain"
+                />
+                </div>
+            ))}
             </div>
-          ))}
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* --- Key Points Section --- */}
       <section className="space-y-12">
         <h2 className="text-4xl font-bold text-pink text-center">Key Points</h2>
         <div className="grid md:grid-cols-2 gap-x-16 gap-y-4 mx-auto">
-          {eventData.keyPoints.map((point, index) => (
+          {eventData.key_points?.map((point, index) => (
             <div key={index} className="flex items-center gap-5">
               <CheckCircle2 className="h-10 w-10 text-blueSky flex-shrink-0" />
               <p className="text-gray-700">{point}</p>
@@ -140,7 +229,7 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
               {eventData.mentors.map((mentor) => (
                   <div key={mentor.id} className="bg-white p-6 rounded-lg shadow-md flex flex-col sm:flex-row items-start sm:items-center gap-6 border border-purple-2/30">
                       <Image
-                        src="/photo.png"
+                        src={mentor.image_src || "/photo.png"}
                         alt="SheCodes Society Binus"
                         width={100}
                         height={100}
@@ -160,7 +249,7 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
       <section className="space-y-8">
         <h2 className="text-4xl font-bold text-pink text-center">Why Do You Need These Skills?</h2>
         <div className="flex flex-wrap justify-center gap-16 md:gap-20">
-          {eventData.skillsNeeded.map((skill) => (
+          {eventData.skills.map((skill) => (
             <div key={skill.id} className="flex flex-col items-center text-center space-y-10 p-6">
               <div className="h-32 w-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
                 {/* Placeholder for icon - Replace with actual icons if available */}

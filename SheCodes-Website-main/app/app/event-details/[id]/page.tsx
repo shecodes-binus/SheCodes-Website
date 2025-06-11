@@ -21,6 +21,8 @@ import { ScrollUpButton } from "@/components/scroll-up-button";
 import type { CombinedEventData } from '@/types/events';
 import { normalizeDate, formatEventGroupDate, calculateDuration, formatEventDateTime, formatStartDate } from '@/lib/eventUtils';
 import { useAuth } from "@/contexts/AuthContext";
+import apiService from "@/lib/apiService";
+import { useEffect, useState } from "react";
 
 // --- Sidebar Component (Reuse or adapt) ---
 const SidebarNav = () => {
@@ -83,18 +85,42 @@ function getEventDataById(id: string): CombinedEventData | undefined {
 }
 
 export default function EventDetailPage( { params }: { params: { id: string } }) {
-    const eventData = getEventDataById(params.id);
+    const [eventData, setEventData] = useState<CombinedEventData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const now = new Date();
 
-    if (!eventData) {
+    useEffect(() => {
+      if (!params.id) return;
+      const fetchEvent = async () => {
+        setLoading(true);
+        try {
+          const response = await apiService.get(`/events/${params.id}`);
+          setEventData(response.data);
+        } catch (err) {
+          console.error("Failed to fetch event:", err);
+          setError("Failed to load event data.");
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchEvent();
+    }, [params.id]);
+
+
+    if (loading) {
+        return <div className="flex-1 p-10 text-center">Loading...</div>
+    }
+
+    if (error || !eventData) {
         return (
-            <div className="container mx-auto px-4 py-16 text-center">
+            <div className="flex-1 container mx-auto px-4 py-16 text-center">
                 <h1 className="text-2xl font-bold text-red-600">Event Not Found</h1>
                 <p className="text-gray-600 mt-4">
-                    Sorry, we couldn't find the event you were looking for.
+                    {error || "Sorry, we couldn't find the event you were looking for."}
                 </p>
-                <Link href="/events" className="mt-6 inline-block">
-                    <Button variant="outline">Back to Events</Button>
+                <Link href="/app/my-activity" className="mt-6 inline-block">
+                    <Button variant="outline">Back to My Activities</Button>
                 </Link>
             </div>
         );
@@ -118,7 +144,7 @@ export default function EventDetailPage( { params }: { params: { id: string } })
                     {eventData.title}
                 </h1>
                 <div className="flex flex-wrap gap-2">
-                    {eventData.tags.map((tag) => (
+                    {eventData.tags?.map((tag) => (
                     <Badge key={tag} variant="secondary" className="bg-gray-200 text-grey-3 hover:bg-gray-300 px-4 py-1 text-sm"> {/* Adjusted styling slightly */}
                         {tag}
                     </Badge>
@@ -135,14 +161,14 @@ export default function EventDetailPage( { params }: { params: { id: string } })
                     <div className="flex flex-col items-center gap-2 md:flex-1">
                         <Calendar className="h-7 w-7 text-blueSky mb-1" /> 
                         <span className="text-sm font-semibold text-blueSky">Date</span>
-                        <span className="text-sm text-gray-800">{formatEventDateTime(eventData.startDate, eventData.endDate).dateRange}</span>
+                        <span className="text-sm text-gray-800">{formatEventDateTime(eventData.start_date, eventData.end_date).dateRange}</span>
                     </div>
 
                     {/* Time Column */}
                     <div className="flex flex-col items-center gap-2 md:flex-1">
                         <Clock className="h-7 w-7 text-blueSky mb-1" /> 
                         <span className="text-sm font-semibold text-blueSky">Time</span>
-                        <span className="text-sm text-gray-800">{formatEventDateTime(eventData.startDate, eventData.endDate).timeRange}</span>
+                        <span className="text-sm text-gray-800">{formatEventDateTime(eventData.start_date, eventData.end_date).timeRange}</span>
                     </div>
 
                     {/* Location Column */}
@@ -163,7 +189,7 @@ export default function EventDetailPage( { params }: { params: { id: string } })
                 {/* This already uses flex correctly */}
                 <div className="flex justify-start items-start gap-8 md:gap-16 flex-wrap">
                     <div className="flex flex-col items-center gap-2">
-                        <a href={eventData.groupLink} target="_blank" rel="noopener noreferrer" className="text-black text-lg font-medium underline">
+                        <a href={eventData.group_link} target="_blank" rel="noopener noreferrer" className="text-black text-lg font-medium underline hover:text-blueSky">
                             Link to Whatsapp Group
                         </a>
                     </div>                
@@ -171,24 +197,24 @@ export default function EventDetailPage( { params }: { params: { id: string } })
             </section>
 
             {/* --- Tools Section --- */}
-            <section className="text-center space-y-12">
-                <h2 className="text-4xl font-bold text-pink text-left">Tools</h2>
-                {/* This already uses flex correctly */}
-                <div className="flex justify-start items-start gap-8 md:gap-16 flex-wrap">
-                {eventData.tools.map((tool) => (
-                    <div key={tool.name} className="flex flex-col items-center gap-2">
-                    <Image
-                        src={tool.logoSrc} // Make sure logos exist in /public/logos
-                        alt={`${tool.name} logo`}
-                        width={220} // Adjust size as needed
-                        height={220}
-                        className="object-contain"
-                    />
-                    {/* <span className="text-sm text-gray-600">{tool.name}</span> */}
+            {eventData.tools && eventData.tools.length > 0 && (
+                <section className="text-left space-y-6">
+                    <h2 className="text-4xl font-bold text-pink">Tools</h2>
+                    <div className="flex justify-start items-start gap-8 md:gap-16 flex-wrap">
+                    {eventData.tools.map((tool) => (
+                        <div key={tool.name} className="flex flex-col items-center gap-2">
+                        <Image
+                            src={tool.logo_src}
+                            alt={`${tool.name} logo`}
+                            width={100}
+                            height={100}
+                            className="object-contain"
+                        />
+                        </div>
+                    ))}
                     </div>
-                ))}
-                </div>
-            </section>
+                </section>
+            )}
 
             {/* --- About Mentors Section --- */}
             <section className="bg-gradient-to-b from-blueSky to-purple-2 py-10 md:py-12 px-6 md:px-10 rounded-xl">
@@ -198,7 +224,7 @@ export default function EventDetailPage( { params }: { params: { id: string } })
                     {eventData.mentors.map((mentor) => (
                         <div key={mentor.id} className="bg-white p-6 rounded-lg shadow-md flex flex-col sm:flex-row items-start sm:items-start gap-6 border border-purple-2/30">
                             <Image
-                                src="/photo.png" // Assuming this is the correct path
+                                src={mentor.image_src || "/photo.png"}
                                 alt={mentor.name} // More specific alt text
                                 width={100}
                                 height={100}
@@ -292,12 +318,14 @@ export default function EventDetailPage( { params }: { params: { id: string } })
 
             {/* --- Scroll Up Button --- */}
             {/* Position remains unchanged, centered */}
-            <section className="space-y-10">
-                <h2 className="text-3xl font-bold text-pink text-left">Certificate</h2>
-                <button className=" bg-purple-2 text-white hover:bg-purple-2/90 text-sm px-10 py-3 rounded-xl flex items-center gap-2">
-                  Download Certificate
-                </button>
-            </section>
+            {eventData.status === 'past' && (
+                <section className="space-y-6">
+                    <h2 className="text-3xl font-bold text-pink text-left">Certificate</h2>
+                    <Button className=" bg-purple-2 text-white hover:bg-purple-2/90 text-sm px-10 py-3 rounded-xl flex items-center gap-2">
+                    Download Certificate
+                    </Button>
+                </section>
+            )}
 
          </div> {/* End of vertical spacing wrapper */}
       </main> {/* End Main Content Area */}

@@ -43,18 +43,17 @@ export const allEventsData: CombinedEventData[] = [
   {
     id: 1,
     status: "upcoming",
-    type: "Workshop",
+    event_type: "Workshop",
     image_src: "/photo2.png", // Assign specific placeholders
     image_alt: "Workshop Event Image",
     title: "Intro to Web Development",
     description: "Learn the fundamentals of HTML, CSS, and JavaScript in this hands-on workshop.",
-    start_date: createISOString("June 15, 2025", "10:00 AM"),
-    end_date: createISOString("June 15, 2025", "04:00 PM"),
+    start_date: "2025-06-15T10:00:00",
+    end_date: "2025-06-15T16:00:00",
     location: "Binus University International, JWC Campus",
     // --- Detail Fields ---
     tags: ["Web Development", "Beginner", "HTML", "CSS", "JavaScript"],
     long_description: "Dive deep into web development basics. This workshop covers everything you need to start building your own websites, from structuring content with HTML to styling with CSS and adding interactivity with JavaScript. No prior experience needed!",
-    date_range: "June 15, 2025", // Single day
     register_link: "/register/event-1",
     tools: [ { name: "Visual Studio Code", logo_src: "/tools/vsc.png" }, { name: "Browser DevTools", logo_src: "/tools/python.png" /* Example */ } ],
     key_points: [ "Understand HTML document structure.", "Apply CSS for styling and layout.", "Basic JavaScript for interactivity.", "Using browser developer tools." ],
@@ -69,54 +68,53 @@ export const allEventsData: CombinedEventData[] = [
       linkedin: "https://www.linkedin.com/in/dewanti-subijantoro-49732923/",
       status: 'active',
     } ],
-    skills_needed: [ { id: 1, title: "Problem Solving", description: "Debugging simple code issues." }, { id: 2, title: "Attention to Detail", description: "Writing syntactically correct code." } ],
+    skills: [ { id: 1, title: "Problem Solving", description: "Debugging simple code issues." }, { id: 2, title: "Attention to Detail", description: "Writing syntactically correct code." } ],
     benefits: [
       { id: 1, title: "Build Your First Website", text: "Gain practical experience by creating a static website from scratch during the workshop." },
       { id: 2, title: "Foundational Skills", text: "Acquire the essential HTML, CSS, and JavaScript knowledge needed for further web development learning." },
     ],
     sessions: [
       {
-        id: '1-1',
-        start: createISOString("June 15, 2025", "10:00 AM"),
-        end: createISOString("June 15, 2025", "11:00 AM"),
+        id: 101,
+        start: "2025-06-15T10:00:00",
+        end: "2025-06-15T11:00:00",
         topic: "HTML Basics",
         description: "Learn the structure of a webpage using HTML elements and tags."
       },
       {
-        id: '1-2',
-        start: createISOString("June 15, 2025", "11:00 AM"),
-        end: createISOString("June 15, 2025", "01:00 PM"),
+        id: 102,
+        start: "2025-06-15T11:00:00",
+        end: "2025-06-15T13:00:00",
         topic: "CSS Styling",
         description: "Understand how to style HTML content using CSS properties and layouts."
       },
       {
-        id: '1-3',
-        start: createISOString("June 15, 2025", "02:00 PM"),
-        end: createISOString("June 15, 2025", "04:00 PM"),
+        id: 103,
+        start: "2025-06-15T14:00:00",
+        end: "2025-06-15T16:00:00",
         topic: "JS Intro",
         description: "Explore the basics of JavaScript for interactivity and DOM manipulation."
       }
     ],
     group_link: "https://www.whatsapp.com/",  //whatsapp group link
-    created_at: '2025-06-01 09:00:00'
+    created_at: '2025-06-01T09:00:00'
   },
   // Event 2 (Upcoming Seminar)
   {
     id: 2,
     status: "upcoming",
-    type: "Seminar",
+    event_type: "Seminar",
     image_src: "/photo2.png",
     image_alt: "Seminar Event Image",
     title: "AI in Modern Tech",
     description: "Explore the impact and applications of Artificial Intelligence across various industries.",
-    start_date: createISOString("June 22, 2025", "02:00 PM"),
-    end_date: createISOString("June 22, 2025", "04:00 PM"),
+    start_date: "2025-06-22T14:00:00",
+    end_date: "2025-06-22T16:00:00",
      // --- Location ---
     location: "Online via Zoom",
      // --- Detail Fields (Simplified examples) ---
     tags: ["AI", "Technology", "Future Trends"],
     long_description: "Join industry experts as they discuss the latest advancements in AI, ethical considerations, and future career opportunities in this rapidly evolving field.",
-    date_range: "June 22, 2025",
     register_link: "/register/event-2",
     tools: [ { name: "Zoom", logo_src: "/tools/zoom.png" } ],
     key_points: [ "Current state of AI.", "Ethical implications.", "Career paths in AI." ],
@@ -131,23 +129,23 @@ export const allEventsData: CombinedEventData[] = [
       linkedin: "https://www.linkedin.com/in/ananta-besty-906b46104/",
       status: 'active',
     } ],
-    skills_needed: [ { id: 3, title: "Critical Thinking", description: "Analyzing AI trends." }, { id: 4, title: "Curiosity", description: "Exploring new technologies." } ],
+    skills: [ { id: 3, title: "Critical Thinking", description: "Analyzing AI trends." }, { id: 4, title: "Curiosity", description: "Exploring new technologies." } ],
     benefits: [
-      { id: 1, title: "Build Your First Website", text: "Gain practical experience by creating a static website from scratch during the workshop." },
-      { id: 2, title: "Foundational Skills", text: "Acquire the essential HTML, CSS, and JavaScript knowledge needed for further web development learning." },
+      { id: 3, title: "Industry Insights", text: "Hear directly from professionals working with AI every day." },
+      { id: 4, title: "Networking", text: "Connect with peers and speakers interested in the future of technology." },
     ],
     sessions: [
-      { id: '2-1', start: createISOString("June 22, 2025", "02:00 PM"), end: createISOString("June 22, 2025", "03:00 PM"), topic: "Keynote: AI Trends" },
-      { id: '2-2', start: createISOString("June 22, 2025", "03:00 PM"), end: createISOString("June 22, 2025", "04:00 PM"), topic: "Panel Q&A" }
+      { id: 201, start: "2025-06-22T14:00:00", end: "2025-06-22T15:00:00", topic: "Keynote: AI Trends", description: "An overview of current and future AI trends." },
+      { id: 202, start: "2025-06-22T15:00:00", end: "2025-06-22T16:00:00", topic: "Panel Q&A", description: "Ask your questions to our panel of experts." }
     ],  
     group_link: "https://www.whatsapp.com/",  //whatsapp group link
-    created_at: '2025-06-10 09:00:00'
+    created_at: '2025-06-10T09:00:00'
   },
    // Event 3 (Upcoming Mentorship) - Add similar detail fields
   {
     id: 3,
     status: "upcoming",
-    type: "Mentorship",
+    event_type: "Mentorship",
     image_src: "/photo2.png",
     image_alt: "Mentorship Program",
     title: "Mentorship Program Kickoff",
@@ -158,10 +156,10 @@ export const allEventsData: CombinedEventData[] = [
     tags: ["Mentorship", "Career Growth", "Networking"],
     register_link: "/register/event-3",
     sessions: [
-      { id: '3-1', start: createISOString("July 1, 2025", "06:00 PM"), end: createISOString("July 1, 2025", "08:00 PM"), topic: "Kickoff & Introductions" }
+      { id: 301, start: "2025-07-01T14:00:00", end: "2025-06-22T16:00:00", topic: "Kickoff & Introductions", description: "An overview of current and future AI trends." }
   ],
     // ... add other dummy detail fields
-    tools: [], key_points: [], mentors: [], skills_needed: [], benefits: [],
+    tools: [], key_points: [], mentors: [], skills: [], benefits: [],
     group_link: "https://www.whatsapp.com/",  //whatsapp group link,
     created_at: '2025-06-20 09:00:00'
   },
@@ -169,7 +167,7 @@ export const allEventsData: CombinedEventData[] = [
   {
     id: 4,
     status: "upcoming",
-    type: "Workshop",
+    event_type: "Workshop",
     image_src: "/photo2.png",
     image_alt: "Data Analysis Workshop",
     title: "Data Analysis with Python",
@@ -180,12 +178,12 @@ export const allEventsData: CombinedEventData[] = [
     tags: ["Data Analysis", "Python", "Pandas", "Matplotlib"],
     register_link: "/register/event-4",
     sessions: [ // Already had multiple sessions defined
-      { id: '4-1', start: createISOString("April 24, 2025", "09:00 AM"), end: createISOString("April 24, 2025", "01:00 PM"), topic: "Day 1: Pandas Basics" },
-      { id: '4-2', start: createISOString("April 25, 2025", "09:00 AM"), end: createISOString("April 25, 2025", "01:00 PM"), topic: "Day 2: Data Cleaning & Manipulation" },
-      { id: '4-3', start: createISOString("April 28, 2025", "09:00 AM"), end: createISOString("April 28, 2025", "01:00 PM"), topic: "Day 3: Matplotlib Visualization" },
+      { id: 401, start: "2025-04-24T09:00:00", end: "2025-04-24T13:00:00", topic: "Day 1: Pandas Basics" , description: "An overview of current and future AI trends."},
+      { id: 402, start: "2025-04-24T09:00:00", end: "2025-04-24T13:00:00", topic: "Day 2: Data Cleaning & Manipulation" , description: "An overview of current and future AI trends."},
+      { id: 403, start: "2025-04-24T09:00:00", end: "2025-04-24T13:00:00", topic: "Day 3: Matplotlib Visualization" , description: "An overview of current and future AI trends."},
     ],
     // ... add other dummy detail fields
-    tools: [], key_points: [], mentors: [], skills_needed: [], benefits: [],
+    tools: [], key_points: [], mentors: [], skills: [], benefits: [],
     group_link: "https://www.whatsapp.com/",  //whatsapp group link
     created_at: '2025-04-10 09:00:00'
   },
@@ -193,7 +191,7 @@ export const allEventsData: CombinedEventData[] = [
   {
     id: 5,
     status: "upcoming",
-    type: "Seminar",
+    event_type: "Seminar",
     image_src: "/photo2.png",
     image_alt: "Cybersecurity Seminar",
     title: "Cybersecurity Essentials",
@@ -204,10 +202,10 @@ export const allEventsData: CombinedEventData[] = [
     tags: ["Cybersecurity", "Security Awareness"],
     register_link: "/register/event-5",
     sessions: [
-      { id: '5-1', start: createISOString("July 18, 2025", "03:00 PM"), end: createISOString("July 18, 2025", "04:30 PM"), topic: "Cybersecurity Essentials Overview" }
+      { id: 501, start: "2025-07-18T15:00:00", end: "2025-07-18T16:30:00", topic: "Cybersecurity Essentials Overview", description: "An overview of current and future AI trends. "}
   ],
     // ... add other dummy detail fields
-    tools: [], key_points: [], mentors: [], skills_needed: [], benefits: [],
+    tools: [], key_points: [], mentors: [], skills: [], benefits: [],
     group_link: "https://www.whatsapp.com/",  //whatsapp group link
     created_at: '2025-07-01 09:00:00'
   },
@@ -215,29 +213,28 @@ export const allEventsData: CombinedEventData[] = [
   {
     id: 6,
     status: "past",
-    type: "Mentorship",
+    event_type: "Mentorship",
     image_src: "/photo2.png",
     image_alt: "Past Mentorship Session",
     title: "Past Mentorship Goal Setting",
     description: "Session focused on setting achievable goals for the mentorship period.",
-    start_date: createISOString("March 5, 2024", "07:00 PM"),
-    end_date: createISOString("March 5, 2024", "08:30 PM"),
+    start_date: "2024-03-05T19:00:00",
+    end_date: "2024-03-05T20:30:00",
     location: "Virtual Platform",
     tags: ["Mentorship", "Goal Setting"],
     register_link: "/event-recap/6", // Link might go to a recap page for past events
     sessions: [
-      { id: '6-1', start: createISOString("March 5, 2024", "07:00 PM"), end: createISOString("March 5, 2024", "08:30 PM") }
+      { id: 601, start: "2024-03-05T19:00:00", end: "2024-03-05T20:30:00", topic: "Goal Setting", description: "A session on setting SMART goals." }
     ],
-     // ... add other dummy detail fields
-    tools: [], key_points: [], mentors: [], skills_needed: [], benefits: [],
+    tools: [], key_points: [], mentors: [], skills: [], benefits: [],
     group_link: "https://www.whatsapp.com/",  //whatsapp group link
-    created_at: '2024-02-20 09:00:00'
+    created_at: '2024-02-20T09:00:00'
   },
   // Event 7 (Past Seminar) - Add similar detail fields
   {
     id: 7,
     status: "past",
-    type: "Seminar",
+    event_type: "Seminar",
     image_src: "/photo2.png",
     image_alt: "Past Tech Talk",
     title: "Tech Talk: Cloud Computing",
@@ -247,11 +244,11 @@ export const allEventsData: CombinedEventData[] = [
     location: "Online Recording Available",
     tags: ["Cloud Computing", "AWS", "Azure", "GCP"],
     sessions: [
-      { id: '7-1', start: createISOString("February 12, 2024", "01:00 PM"), end: createISOString("February 12, 2024", "02:00 PM") }
+      { id: 701, start: "2024-02-12T10:00:00", end: "2024-02-12T14:00:00", topic: "Goal Setting", description: "A session on setting SMART goals." }
    ],
     register_link: "/event-recap/7",
     // ... add other dummy detail fields
-    tools: [], key_points: [], mentors: [], skills_needed: [], benefits: [],
+    tools: [], key_points: [], mentors: [], skills: [], benefits: [],
     group_link: "https://www.whatsapp.com/",  //whatsapp group link
     created_at: '2024-02-01 09:00:00'
   },
