@@ -132,7 +132,7 @@ const EditArticlePage: React.FC = () => {
         if (articlePhoto) formData.append("file", articlePhoto);
 
         try {
-            const res = await fetch(`http://localhost:8000/articles/${params.id}`, {
+            const res = await fetch(`http://localhost:8000/blogs/${params.id}`, {
                 method: "PUT",
                 body: formData,
             });

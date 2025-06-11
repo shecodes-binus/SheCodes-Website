@@ -1,10 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Literal, Optional, List
 from datetime import datetime
 
 class BlogArticleBase(BaseModel):
     title: str
-    description: str
     category: Literal[
         'Tech Trends',
         'Career Growth',
@@ -17,7 +16,6 @@ class BlogArticleBase(BaseModel):
     date: str
     authorName: str
     authorInitials: str
-    imageSrc: str
     link: str
     sections: Optional[List[str]] = []
     viewCount: int = 0
@@ -32,9 +30,12 @@ class BlogArticleUpdate(BlogArticleBase):
 
 class BlogArticleResponse(BlogArticleBase):
     id: str
+    slug: str
     createdAt: datetime
     updatedAt: datetime
-
+    featuredImageUrl: str = Field(..., alias="imageSrc")
+    excerpt: str = Field(..., alias="description")
 
     class Config:
         orm_mode = True
+        allow_population_by_field_name = True

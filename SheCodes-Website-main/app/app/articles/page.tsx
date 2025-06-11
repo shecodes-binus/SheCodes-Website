@@ -69,7 +69,7 @@ export default function BlogPage() {
     const fetchArticles = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:8000/articles`);
+        const res = await fetch(`http://localhost:8000/blogs`);
         const data = await res.json();
         setArticles(data);
       } catch (err) {
