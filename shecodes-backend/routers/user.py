@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Body
 from sqlalchemy.orm import Session
 from typing import List
 import models
 from database import get_db
 from schemas.user import UserCreate, UserResponse, UserUpdate
+from utils.security import hash_password
 
 router = APIRouter(
     prefix="/users",
@@ -16,7 +17,9 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     if db_user:
         raise HTTPException(status_code=400, detail="ENMail already registered")
     
-    new_user = models.User(**user.dict())
+    new_user_data = user.dict()
+    new_user_data['password'] = hash_password(new_user_data['password'])
+    new_user = models.User(**new_user_data) 
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -55,3 +58,15 @@ def delete_user(user_id: str, db: Session = Depends(get_db)):
     db.delete(db_user)
     db.commit()
     return {"message": "user deleted successfully"}
+
+@router.post("/reset-password/{user_id}", response_model=dict)
+def reset_password(user_id: str, password: str = Body(...), db: Session = Depends(get_db)):
+    from utils.security import hash_password
+
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.password = hash_password(password)
+    db.commit()
+    return {"message": "Password updated successfully"}
