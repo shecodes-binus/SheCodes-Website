@@ -5,6 +5,8 @@ import models
 from database import get_db
 from schemas.user import UserCreate, UserResponse, UserUpdate
 from utils.security import hash_password
+from datetime import datetime, timedelta
+import uuid
 
 router = APIRouter(
     prefix="/users",
@@ -59,14 +61,15 @@ def delete_user(user_id: str, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "user deleted successfully"}
 
-@router.post("/reset-password/{user_id}", response_model=dict)
-def reset_password(user_id: str, password: str = Body(...), db: Session = Depends(get_db)):
-    from utils.security import hash_password
-
-    user = db.query(models.User).filter(models.User.id == user_id).first()
+@router.post("/request-password-reset", response_model=dict)
+def request_password_reset(email: str = Body(...), db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
-    user.password = hash_password(password)
+    
+    token = str(uuid.uuid4())
+    user.reset_token = token
+    user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
     db.commit()
-    return {"message": "Password updated successfully"}
+
+    return {"message": "Password reset link sent to email"}

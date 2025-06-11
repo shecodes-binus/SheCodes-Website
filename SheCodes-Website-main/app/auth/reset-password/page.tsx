@@ -1,11 +1,58 @@
 // src/app/signup/page.tsx (or your preferred route)
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { FcGoogle } from 'react-icons/fc'; // Google Icon
 import { FaGithub } from 'react-icons/fa'; // GitHub Icon
 
 const ResetPasswordPage: React.FC = () => {
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
+  
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage('');
+
+    if (!token) {
+      setMessage("Invalid or missing token.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setMessage("Passwords do not match.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/reset-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          token,
+          new_password: newPassword
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setIsSuccess(true);
+        setMessage("Password updated successfully!");
+      } else {
+        setMessage(data.detail || "Error resetting password.");
+      }
+    } catch (err) {
+      setMessage("Server error.");
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-stretch text-gray-800 bg-[#4A287F]">
       {/* Left Decorative Column */}
@@ -65,7 +112,7 @@ const ResetPasswordPage: React.FC = () => {
           </div>
 
           {/* Login Form */}
-          <form className="space-y-4" action="#" method="POST">
+          <form className="space-y-4" onSubmit={handleSubmit}>
 
             {/* Password Input */}
             <div>
@@ -77,6 +124,7 @@ const ResetPasswordPage: React.FC = () => {
                 name="password"
                 type="password"
                 autoComplete="new-password"
+                value={newPassword}
                 required
                 className="block w-full appearance-none rounded-xl border border-[#bfbfbf] bg-white px-4 py-3 placeholder-[#bfbfbf] focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1"
                 placeholder="Enter your new password here"
@@ -94,6 +142,7 @@ const ResetPasswordPage: React.FC = () => {
                 type="password"
                 autoComplete="new-password"
                 required
+                value={confirmPassword}
                 className="block w-full appearance-none rounded-xl border border-[#bfbfbf] bg-white px-4 py-3 placeholder-[#bfbfbf] focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-1"
                 placeholder="Enter your new password here"
               />

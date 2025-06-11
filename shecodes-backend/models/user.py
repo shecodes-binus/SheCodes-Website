@@ -17,5 +17,7 @@ class User(Base):
     refresh_token = Column(String, nullable=True)
     profile_picture = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    reset_token = Column(String, nullable=True)
+    reset_token_expires = Column(DateTime, nullable=True)
 
 # SUBJECT TO CHANGE
