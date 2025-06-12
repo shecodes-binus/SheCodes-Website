@@ -88,7 +88,7 @@ const eventTypeStyles: { [key: string]: { icon: React.ElementType; bg: string; c
 
 // --- Sidebar Component (Reuse or adapt) ---
 const SidebarNav = () => {
-    const activePath = '/app/settings'; // Set active path for this page
+    const activePath = '/app/dashboard'; // Set active path for this page
     const { logout } = useAuth();
 
     const navItems = [

@@ -17,7 +17,7 @@ const AuthButton: React.FC = () => {
     // If the user is authenticated, show their profile picture
     if (isAuthenticated && user) {
         // Use the user's profile picture or the placeholder if it's null/empty
-        const profileImageSrc = user.profilePicture || '/logonotext-v2.svg';
+        const profileImageSrc = user.profile_picture || '/logonotext-v2.svg';
         // console.log(user);
 
         return (

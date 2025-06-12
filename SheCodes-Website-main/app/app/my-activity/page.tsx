@@ -28,7 +28,7 @@ interface UserWithEvents {
 
 // --- Sidebar Component (Reuse or adapt) ---
 const SidebarNav = () => {
-    const activePath = '/app/settings'; // Set active path for this page
+    const activePath = '/app/my-activity'; // Set active path for this page
     const { logout } = useAuth();
 
     const navItems = [
@@ -186,8 +186,8 @@ export default function MyActivitiesPage() {
                         );
                     })
                 ) : (
-                    <div className="text-center text-gray-500 mt-10 space-y-4">
-                        <p>You are not currently enrolled in any activities.</p>
+                    <div className="text-center text-gray-500 space-y-4">
+                        <p className='mb-4'>You are not currently enrolled in any activities.</p>
                         <Link href="/app/events">
                             <Button variant="outline">Browse Events</Button>
                         </Link>

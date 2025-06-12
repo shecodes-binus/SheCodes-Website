@@ -3,15 +3,17 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // <-- Import useRouter
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MapPin, CheckCircle2 } from "lucide-react";
-import { ScrollUpButton } from "@/components/scroll-up-button";
+import toast from "react-hot-toast"; // <-- Import toast for notifications
+
 import type { CombinedEventData } from '@/types/events'; 
 import { formatEventDateTime, formatStartDate } from '@/lib/eventUtils';
 import apiService from "@/lib/apiService";
-import { useAuth } from "@/contexts/AuthContext"; // <-- Import useAuth
+import { useAuth } from "@/contexts/AuthContext";
+import { ScrollUpButton } from "@/components/scroll-up-button";
 
 export default function RegisterEventPage( { params }: { params: { id: string } }) {
     const router = useRouter();
@@ -23,9 +25,7 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
     
     // State for registration flow
     const [isRegistering, setIsRegistering] = useState(false);
-    const [registrationError, setRegistrationError] = useState<string | null>(null);
     const [isRegistered, setIsRegistered] = useState(false);
-
 
     useEffect(() => {
         if (!params.id) return;
@@ -36,13 +36,6 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
                 const response = await apiService.get(`/events/${params.id}`);
                 const event: CombinedEventData = response.data;
                 setEventData(event);
-                
-                // After fetching event and if user is logged in, check if they are already registered
-                if (user && event) {
-                    const alreadyRegistered = user.participations.some(p => p.event.id === event.id);
-                    setIsRegistered(alreadyRegistered);
-                }
-
             } catch (err) {
                 console.error("Failed to fetch event data:", err);
                 setError("Could not load event details. It might not exist.");
@@ -52,39 +45,52 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
         };
 
         fetchEventData();
-    }, [params.id, user]); // Re-run if user logs in/out
+    }, [params.id]);
 
-    const handleRegister = async () => {
-        // 1. Handle unauthenticated user
+    // Separate useEffect to check registration status after user and event data are loaded
+    useEffect(() => {
+        if (user && eventData) {
+            const alreadyRegistered = user.participations.some(p => p.event_id === eventData.id);
+            setIsRegistered(alreadyRegistered);
+        }
+    }, [user, eventData]);
+
+     const handleRegister = async () => {
         if (!isAuthenticated) {
+            toast.error("Please log in to register for an event.");
             router.push(`/auth/login?redirect=/app/register-event/${params.id}`);
             return;
         }
 
-        // 2. Handle authenticated user
         if (!user || !eventData) {
-            setRegistrationError("User or event data is missing.");
+            toast.error("User or event data is missing.");
             return;
         }
 
         setIsRegistering(true);
-        setRegistrationError(null);
+        const toastId = toast.loading('Registering...');
 
         try {
             const payload = {
                 event_id: eventData.id,
-                member_id: user.id
+                member_id: user.id // user.id is a string, which is correct
             };
-            await apiService.post('/participants/', payload);
+            // CORRECTED: Removed trailing slash to exactly match backend router prefix
+            await apiService.post('/participants', payload); 
+            
+            toast.success('Successfully registered for the event!', { id: toastId });
             setIsRegistered(true);
+
         } catch (err: any) {
             console.error("Registration failed:", err);
+            let errorMessage = "Registration failed. Please try again later.";
             if (err.response?.status === 409) {
-                setRegistrationError("You are already registered for this event.");
-                setIsRegistered(true); // Sync UI to show registered status
-            } else {
-                setRegistrationError("Registration failed. Please try again later.");
+                errorMessage = "You are already registered for this event.";
+                setIsRegistered(true); // Sync UI if backend says we're already registered
+            } else if (err.response?.data?.detail) {
+                errorMessage = err.response.data.detail;
             }
+            toast.error(errorMessage, { id: toastId });
         } finally {
             setIsRegistering(false);
         }
@@ -115,7 +121,7 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
       <section className="grid lg:grid-cols-2 gap-8 lg:gap-24 items-center">
         {/* Text Content */}
         <div className="space-y-6">
-          <h1 className="text-5xl md:text-5xl lg:text-6xl font-bold text-blueSky tracking-normal">
+          <h1 className="text-5xl md:text-5xl lg:text-6xl font-bold text-blueSky leading-relaxed ">
             {eventData.title}
           </h1>
           <div className="flex flex-wrap gap-2">
@@ -147,23 +153,19 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
             {/* --- MODIFIED REGISTRATION BUTTON --- */}
             <Button 
                 size="lg" 
-                className="w-full text-white text-base rounded-full"
+                className="w-full text-white text-base rounded-full transition-colors duration-300"
                 onClick={handleRegister}
                 disabled={isRegistering || isRegistered}
                 style={{
-                    backgroundColor: isRegistered ? '#6c757d' : (isRegistering ? '#a1c4fd' : '#72A1E0'),
+                    backgroundColor: isRegistered ? '#28a745' : (isRegistering ? '#a1c4fd' : '#72A1E0'), // Green for success
                     cursor: (isRegistering || isRegistered) ? 'not-allowed' : 'pointer'
                 }}
             >
-                {isRegistering ? 'Registering...' : (isRegistered ? 'Registered' : 'Register Now')}
+                {isRegistering ? 'Registering...' : (isRegistered ? 'Successfully Registered!' : 'Register Now')}
             </Button>
-            {registrationError && (
-                <p className="text-red-500 text-sm mt-2 text-center">{registrationError}</p>
-            )}
-            {isRegistered && !registrationError && (
+            {isRegistered && (
                 <div className="text-center mt-2 space-y-2">
-                    <p className="text-green-600 text-sm font-semibold">Registration successful!</p>
-                    <Link href="/app/my-activity">
+                      <Link href="/app/my-activity">
                         <Button variant="link" className="text-blueSky">View in My Activities</Button>
                     </Link>
                 </div>

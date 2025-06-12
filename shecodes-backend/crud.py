@@ -70,9 +70,13 @@ def delete_user(db: Session, user_id: str) -> Optional[user_model.User]:
 
 def authenticate_user(db: Session, email: str, password: str) -> Optional[user_model.User]:
     user = get_user_by_email(db, email=email)
-    if not user or not verify_password(password, user.password):
-        return None
-    return user
+    if not user:
+        return {"status": "not_found"}
+    if not verify_password(password, user.password):
+        return {"status": "wrong_password"}
+    if user.is_verified == False:
+        return {"status": "inactive"}
+    return {"status": "authenticated", "user": user}
 
 def activate_user(db: Session, user: user_model.User) -> user_model.User:
     user.is_verified = True

@@ -5,16 +5,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowRight, Calendar, Users, BookOpen, Sparkles, ChevronLeft, ChevronRight } from "lucide-react"
-import UpcomingEvents from "@/components/upcoming-events"
-import FeaturedStories from "@/components/featured-stories"
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel" 
 
 import type { Alumni } from '@/types/alumnis'; 
 import { dummyAlumnis } from '@/data/dummyAlumnis'; 
@@ -23,10 +13,12 @@ import { dummyTeam } from '@/data/dummyTeam';
 import { SuccessStoriesCarousel } from "@/components/success-story-carousel"
 import { useEffect, useState } from "react"
 import apiService from "@/lib/apiService";
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function Home() {
   const [alumnis, setAlumnis] = useState<Alumni[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const { isAuthenticated, user } = useAuth();
 
   const missionData = [
     {
@@ -100,11 +92,15 @@ export default function Home() {
                   By uniting students, professionals, and industry leaders, we aim to elevate the presence of women in STEM.
                 </p>
               </div>
-              <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                <Link href="/auth/register">
-                  <Button className="w-2/5 bg-blueSky text-white rounded-lg px-16 py-3 font-bold hover:bg-blueSky/80 transition-all duration-300">Join Us</Button>
-                </Link>
-              </div>
+              
+              {!isAuthenticated && !user && (
+                <div className="flex flex-col gap-2 min-[400px]:flex-row">
+                  <Link href="/auth/register">
+                    <Button className="w-2/5 bg-blueSky text-white rounded-lg px-16 py-3 font-bold hover:bg-blueSky/80 transition-all duration-300">Join Us</Button>
+                  </Link>
+                </div>
+              )}
+                
             </div>
             {/* <div className="flex items-center justify-center">
               <Image

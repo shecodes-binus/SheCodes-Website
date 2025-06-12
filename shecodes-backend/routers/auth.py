@@ -59,22 +59,30 @@ def login_for_access_token(
     db: Session = Depends(get_db)
 ):
     """Provides a JWT token for valid credentials."""
-    user = crud.authenticate_user(db, email=form_data.username, password=form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    if not user.is_verified:
+    result = crud.authenticate_user(db, email=form_data.username, password=form_data.password)
+    if result["status"] == "inactive":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is not verified. Please check your email.",
+            detail="Account not verified. Please check your email.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    elif result["status"] == "not_found":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Email not found. Please register.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    elif result["status"] == "wrong_password":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password.",
+            headers={"WWW-Authenticate": "Bearer"},
         )
         
+    user = result["user"]
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.id}, expires_delta=access_token_expires
+        data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
     return common_schema.Token(access_token=access_token, token_type="bearer")
 

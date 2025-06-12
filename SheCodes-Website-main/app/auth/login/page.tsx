@@ -46,11 +46,13 @@ const LoginPage: React.FC = () => {
     } catch (err: any) {
       console.error('Login error:', err);
       if (err.response?.status === 401) {
-        toast.error('Invalid email or password');
+        toast.error('Invalid password. Please try again.');
       } else if (err.response?.status === 403) {
-        toast.error('Account not verified. Please check your email.');
+        toast.error('Your account is not activated. Please check your email to verify.', { duration: 5000 });
+      } else if (err.response?.status === 404) {
+        toast.error('Email not found. Please register.', { duration: 5000 });
       } else {
-        toast.error(err.response?.data?.detail || "An unexpected error occurred.");
+        toast.error(err.response?.data?.detail || "An unexpected error occurred during login.");
       }
     } finally {
       setLoading(false);
