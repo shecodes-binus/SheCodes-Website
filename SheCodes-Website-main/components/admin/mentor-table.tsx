@@ -76,7 +76,7 @@ const MentorTable: React.FC<MentorTableProps> = ({
                                 />
                             </td>
                             <td className="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-gray-900 flex items-center space-x-3">
-                                <img src={mentor.imageSrc} alt={`${mentor.name}'s avatar`} className="w-10 h-10 rounded-full bg-gray-200 object-cover" />
+                                <img src={mentor.image_src} alt={`${mentor.name}'s avatar`} className="w-10 h-10 rounded-full bg-gray-200 object-cover" />
                                 <div>{mentor.name}</div>
                             </td>
                             <td className="pl-10 px-4 py-3.5 whitespace-nowrap text-sm text-textMuted">

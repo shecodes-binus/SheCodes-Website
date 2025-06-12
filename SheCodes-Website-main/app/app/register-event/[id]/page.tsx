@@ -14,10 +14,17 @@ import { formatEventDateTime, formatStartDate } from '@/lib/eventUtils';
 import apiService from "@/lib/apiService";
 import { useAuth } from "@/contexts/AuthContext";
 import { ScrollUpButton } from "@/components/scroll-up-button";
+import { 
+  PiNumberCircleOneLight,
+  PiNumberCircleTwoLight,
+  PiNumberCircleThreeLight,
+  PiNumberCircleFourLight
+} from "react-icons/pi";
+
 
 export default function RegisterEventPage( { params }: { params: { id: string } }) {
     const router = useRouter();
-    const { isAuthenticated, user } = useAuth(); // <-- Get auth status and user data
+    const { user, isAuthenticated, loading: authLoading, revalidateUser } = useAuth(); // <-- Get auth status and user data
 
     const [eventData, setEventData] = useState<CombinedEventData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -26,6 +33,8 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
     // State for registration flow
     const [isRegistering, setIsRegistering] = useState(false);
     const [isRegistered, setIsRegistered] = useState(false);
+
+    const numberIcons = [PiNumberCircleOneLight, PiNumberCircleTwoLight, PiNumberCircleThreeLight, PiNumberCircleFourLight];
 
     useEffect(() => {
         if (!params.id) return;
@@ -81,11 +90,18 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
             toast.success('Successfully registered for the event!', { id: toastId });
             setIsRegistered(true);
 
+            await revalidateUser();
+
+            setTimeout(() => {
+              router.push('/app/my-activity');
+            }, 1000);
+
         } catch (err: any) {
             console.error("Registration failed:", err);
             let errorMessage = "Registration failed. Please try again later.";
             if (err.response?.status === 409) {
                 errorMessage = "You are already registered for this event.";
+                toast.error(errorMessage, { id: toastId });
                 setIsRegistered(true); // Sync UI if backend says we're already registered
             } else if (err.response?.data?.detail) {
                 errorMessage = err.response.data.detail;
@@ -153,7 +169,9 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
             {/* --- MODIFIED REGISTRATION BUTTON --- */}
             <Button 
                 size="lg" 
-                className="w-full text-white text-base rounded-full transition-colors duration-300"
+                className={`w-full text-white text-base rounded-full transition-colors duration-300 ${
+                  (isRegistering || isRegistered) ? '' : 'hover:bg-blueSky/90'
+                }`}
                 onClick={handleRegister}
                 disabled={isRegistering || isRegistered}
                 style={{
@@ -193,7 +211,7 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
 
       {/* --- Tools Section --- */}
       {eventData.tools && eventData.tools.length > 0 && (
-        <section className="text-center space-y-6">
+        <section className="text-center space-y-10">
             <h2 className="text-4xl font-bold text-pink">Tools</h2>
             <div className="flex justify-center items-center gap-8 md:gap-16 flex-wrap">
             {eventData.tools.map((tool) => (
@@ -251,18 +269,25 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
       <section className="space-y-8">
         <h2 className="text-4xl font-bold text-pink text-center">Why Do You Need These Skills?</h2>
         <div className="flex flex-wrap justify-center gap-16 md:gap-20">
-          {eventData.skills.map((skill) => (
-            <div key={skill.id} className="flex flex-col items-center text-center space-y-10 p-6">
-              <div className="h-32 w-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
-                {/* Placeholder for icon - Replace with actual icons if available */}
-                <span className="text-xs">ICON</span>
+          {eventData.skills.map((skill, index) => {
+            const IconComponent = numberIcons[index];
+
+            return (
+              <div key={skill.id} className="flex flex-col items-center text-center space-y-10 p-6 max-w-xs">
+                <div className="h-32 w-32 flex items-center justify-center text-blueSky">
+                  {IconComponent ? (
+                    <IconComponent size={120} /> 
+                  ) : (
+                    <span className="text-8xl font-bold">{index + 1}</span>
+                  )}
+                </div>
+                <div className="space-y-4">
+                  <h3 className="text-2xl font-semibold text-gray-800">{skill.title}</h3>
+                  <p className="text-lg text-gray-600">{skill.description}</p>
+                </div>
               </div>
-              <div className="space-y-4">
-                <h3 className="text-2xl font-semibold text-gray-800">{skill.title}</h3>
-                <p className="text-lg text-gray-600">{skill.description}</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -306,7 +331,7 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
             <div key={session.id} className="p-6 rounded-xl border border-gray-200 bg-white shadow-md space-y-3">
               <p className="font-semibold text-2xl text-gray-800">{formatStartDate(session.start)} ({formatEventDateTime(session.start, session.end).timeRange})</p>
               <div className="space-y-5">
-                <p className="font-semibold text-pink text-base ">{session.topic}</p>
+                <p className="font-semibold text-black text-base ">{session.topic}</p>
                 <p className="text-gray-600 text-base">{session.description}</p>
               </div>
             </div>

@@ -1,7 +1,9 @@
 # /shecodes-backend/crud.py
 
 from sqlalchemy.orm import Session
-from typing import Optional, List
+from typing import Optional, List, Type
+from sqlalchemy import or_
+from pydantic import BaseModel
 
 # Import all models and schemas with aliases to prevent name conflicts
 from models import (
@@ -15,6 +17,7 @@ from models import (
     faq as faq_model,
     mentor as mentor_model,
     participant as participant_model,
+    portfolio as portfolio_model,
     partner as partner_model
 )
 from schemas import (
@@ -28,6 +31,7 @@ from schemas import (
     faq as faq_schema,
     mentor as mentor_schema,
     participant as participant_schema,
+    portfolio as portfolio_schema,
     partner as partner_schema
 )
 
@@ -188,14 +192,25 @@ def delete_blog(db: Session, blog_id: str) -> Optional[blog_model.BlogArticle]:
     return db_blog
 
 # ===============================================
-#               Comment CRUD
+#               Comment CRUD (Updated)
 # ===============================================
 
 def get_comment(db: Session, comment_id: int) -> Optional[comment_model.Comment]:
     return db.query(comment_model.Comment).filter(comment_model.Comment.id == comment_id).first()
 
 def get_comments_by_discussion(db: Session, discussion_id: str) -> List[comment_model.Comment]:
-    return db.query(comment_model.Comment).filter(comment_model.Comment.discussion_id == discussion_id).order_by(comment_model.Comment.date).all()
+    try:
+        main_comment_id = int(discussion_id)
+        return db.query(comment_model.Comment).filter(
+            or_(
+                comment_model.Comment.id == main_comment_id, 
+                comment_model.Comment.parent_id == main_comment_id
+            )
+        ).order_by(comment_model.Comment.date).all()
+    except ValueError:
+        return db.query(comment_model.Comment).filter(
+            comment_model.Comment.discussion_id == discussion_id
+        ).order_by(comment_model.Comment.date.desc()).all()
 
 def create_comment(db: Session, comment: comment_schema.CommentCreate) -> comment_model.Comment:
     db_comment = comment_model.Comment(**comment.model_dump())
@@ -204,12 +219,38 @@ def create_comment(db: Session, comment: comment_schema.CommentCreate) -> commen
     db.refresh(db_comment)
     return db_comment
 
-def increment_comment_like(db: Session, db_comment: comment_model.Comment) -> comment_model.Comment:
-    db_comment.likes += 1
-    db.add(db_comment)
-    db.commit()
-    db.refresh(db_comment)
-    return db_comment
+def toggle_comment_like(db: Session, comment_id: int, user_id: str) -> Optional[comment_model.Comment]:
+    """
+    Adds a like if it doesn't exist, or removes it if it does.
+    Returns the updated comment object.
+    """
+    like = db.query(comment_model.CommentLike).filter(
+        comment_model.CommentLike.comment_id == comment_id,
+        comment_model.CommentLike.user_id == user_id
+    ).first()
+
+    if like:
+        # User has already liked it, so unlike (delete the record)
+        db.delete(like)
+        db.commit()
+    else:
+        # User has not liked it, so like (create the record)
+        new_like = comment_model.CommentLike(comment_id=comment_id, user_id=user_id)
+        db.add(new_like)
+        db.commit()
+
+    # Return the updated comment to get the new like count
+    return get_comment(db, comment_id)
+
+def get_liked_comment_ids_by_user(db: Session, user_id: str) -> List[int]:
+    """
+    Returns a list of all comment IDs a specific user has liked.
+    """
+    liked_comments = db.query(comment_model.CommentLike.comment_id).filter(
+        comment_model.CommentLike.user_id == user_id
+    ).all()
+    # The result is a list of tuples, e.g., [(1,), (5,)], so we extract the first element
+    return [item[0] for item in liked_comments]
 
 def delete_comment(db: Session, comment_id: int) -> Optional[comment_model.Comment]:
     db_comment = get_comment(db, comment_id)
@@ -288,12 +329,77 @@ def create_event(db: Session, event_data: event_schema.EventCreate) -> event_mod
     db.refresh(new_event)
     return new_event
 
+def _update_one_to_many_relationship(
+    db: Session,
+    db_collection: List[Type[BaseModel]],
+    incoming_data: List[BaseModel],
+    model_class: Type[event_model.Base] # type: ignore
+):
+    """
+    Synchronizes a one-to-many database collection with incoming data.
+
+    - Deletes items from the database that are not in the incoming data.
+    - Updates items that are in both the database and incoming data.
+    - Creates new items from the incoming data that are not in the database.
+
+    Args:
+        db: The database session.
+        db_collection: The SQLAlchemy relationship collection from the parent object (e.g., db_event.skills).
+        incoming_data: The list of Pydantic models from the request.
+        model_class: The SQLAlchemy model class for the items (e.g., event_model.Skill).
+    """
+    db_items_map = {item.id: item for item in db_collection}
+    incoming_ids = {item.id for item in incoming_data if item.id is not None}
+
+    # 1. Delete: Find items in the DB that are not in the incoming data
+    ids_to_delete = db_items_map.keys() - incoming_ids
+    for id_to_delete in ids_to_delete:
+        db.delete(db_items_map[id_to_delete])
+
+    # 2. Update and Create
+    for item_data in incoming_data:
+        item_dict = item_data.model_dump(exclude_unset=True)
+        
+        if item_data.id is not None and item_data.id in db_items_map:
+            # Update existing item
+            db_item = db_items_map[item_data.id]
+            for key, value in item_dict.items():
+                setattr(db_item, key, value)
+        elif item_data.id is None:
+            # Create new item
+            new_item = model_class(**item_dict)
+            db_collection.append(new_item)
+
 def update_event(db: Session, db_event: event_model.Event, event_in: event_schema.EventUpdate) -> event_model.Event:
-    # NOTE: This is a simple update. A full update for relationships (mentors, skills, etc.)
-    # would require more complex logic to add/remove/update nested items.
-    update_data = event_in.model_dump(exclude_unset=True)
+    # 1. Get update data, excluding relationships which are handled separately
+    update_data = event_in.model_dump(
+        exclude_unset=True,
+        exclude={'mentors', 'skills', 'benefits', 'sessions'}
+    )
+    
+    # 2. Update the top-level fields on the Event object
     for key, value in update_data.items():
         setattr(db_event, key, value)
+        
+    # 3. Handle relationship updates if they are provided in the payload
+    
+    # Mentors (Many-to-Many): Clear and replace
+    if event_in.mentors is not None:
+        mentors = db.query(mentor_model.Mentor).filter(mentor_model.Mentor.id.in_(event_in.mentors)).all()
+        db_event.mentors = mentors
+
+    # Skills (One-to-Many): Synchronize
+    if event_in.skills is not None:
+        _update_one_to_many_relationship(db, db_event.skills, event_in.skills, event_model.Skill)
+
+    # Benefits (One-to-Many): Synchronize
+    if event_in.benefits is not None:
+        _update_one_to_many_relationship(db, db_event.benefits, event_in.benefits, event_model.Benefit)
+
+    # Sessions (One-to-Many): Synchronize
+    if event_in.sessions is not None:
+        _update_one_to_many_relationship(db, db_event.sessions, event_in.sessions, event_model.Session)
+
     db.add(db_event)
     db.commit()
     db.refresh(db_event)
@@ -305,6 +411,22 @@ def delete_event(db: Session, event_id: int) -> Optional[event_model.Event]:
         db.delete(db_event)
         db.commit()
     return db_event
+
+# ===============================================
+#               Portfolio CRUD (User-Specific)
+# ===============================================
+
+def create_portfolio_project(db: Session, schema: portfolio_schema.PortfolioProjectCreate, user_id: str) -> portfolio_model.PortfolioProject:
+    """Creates a new portfolio project linked to a specific user."""
+    db_item = portfolio_model.PortfolioProject(**schema.model_dump(), user_id=user_id)
+    db.add(db_item)
+    db.commit()
+    db.refresh(db_item)
+    return db_item
+
+def get_portfolio_projects_by_user_id(db: Session, user_id: str, skip: int = 0, limit: int = 100) -> List[portfolio_model.PortfolioProject]:
+    """Retrieves all portfolio projects for a specific user."""
+    return db.query(portfolio_model.PortfolioProject).filter(portfolio_model.PortfolioProject.user_id == user_id).offset(skip).limit(limit).all()
 
 # ===============================================
 #               Participant CRUD
@@ -361,8 +483,18 @@ def update_participant_status(db: Session, db_participant: participant_model.Par
     db.refresh(db_participant)
     return db_participant
 
+def update_participant_certificate(db: Session, db_participant: participant_model.Participant, certificate_url: str) -> participant_model.Participant:
+    """Updates the certificate URL for a single participant."""
+    db_participant.certificate_url = certificate_url
+    db.add(db_participant)
+    db.commit()
+    db.refresh(db_participant)
+    return db_participant
+
 def delete_participants_by_ids(db: Session, ids: List[int]) -> int:
     """Deletes multiple participants by their IDs and returns the count of deleted rows."""
+    if not ids:
+        return 0
     num_deleted = db.query(participant_model.Participant).filter(participant_model.Participant.id.in_(ids)).delete(synchronize_session=False)
     db.commit()
     return num_deleted

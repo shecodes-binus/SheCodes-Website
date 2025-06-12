@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Enum, Integer, DateTime, Text
+from sqlalchemy import Column, String, Enum, Integer, DateTime, Text, func
 from datetime import datetime
 from database import Base
 from custom_types import JsonEncodedList
@@ -20,7 +20,7 @@ class BlogArticle(Base):
         'Success Stories',
         name="blog_category"
     ), nullable=False)
-    published_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    published_at = Column(DateTime, default=datetime.utcnow, nullable=False, server_default=func.now())
     author_name = Column(String, nullable=False)
     author_avatar_url = Column(String, nullable=False)
     image_src = Column(String, nullable=False)
@@ -29,5 +29,5 @@ class BlogArticle(Base):
     sections = Column(JsonEncodedList, nullable=False) 
     view_count = Column(Integer, default=0)
     like_count = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow, server_default=func.now())
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, server_default=func.now())

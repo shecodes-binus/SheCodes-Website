@@ -1,31 +1,29 @@
-// app/admin/events/edit/[id]/page.tsx
 "use client";
-
-import * as React from 'react';
-import { useState, useEffect, useRef, useCallback } from 'react'; // Added useEffect
-import { useRouter, useParams } from 'next/navigation'; // Added useParams
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DatePicker from 'react-datepicker';
-import { UploadCloud, Clock, Trash2, PlusCircle } from 'lucide-react';
+import { Trash2, PlusCircle } from 'lucide-react';
 import "react-datepicker/dist/react-datepicker.css";
 import { CustomDateInput } from '@/components/custom-date-picker';
 import { CustomTimeInput } from '@/components/custom-time-picker';
-import { CombinedEventData, Mentor, Skill, Benefit, Session } from '@/types/events'; // Adjusted import path
-import { allEventsData } from '@/data/dummyEvent'; // Import the source data
-import { dummyMentors } from '@/data/dummyPartnershipData'; // Import available mentors
+import { CombinedEventData, Mentor, Skill, Benefit, Session } from '@/types/events';
+import apiService from '@/lib/apiService';
+import toast from 'react-hot-toast';
 
 const EditEventPage: React.FC = () => {
     const router = useRouter();
     const params = useParams(); // Hook to get route parameters
-    const eventId = params.id ? parseInt(params.id as string, 10) : null; // Get ID from URL
+    const eventId = params.id; // Get ID from URL
 
-    const [eventData, setEventData] = useState<CombinedEventData | null>(null);
+    // const [eventData, setEventData] = useState<CombinedEventData | null>(null);
     const [loading, setLoading] = useState(true); // Loading state
     const [error, setError] = useState<string | null>(null); // Error state
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // --- Form State (Initialize empty, will be set by useEffect) ---
     const [eventPhoto, setEventPhoto] = useState<File | null>(null);
@@ -49,64 +47,76 @@ const EditEventPage: React.FC = () => {
     const [sessions, setSessions] = useState<Session[]>([]);
 
     // Available mentors (can be fetched or from dummy data)
-    const availableMentors = dummyMentors;
+    const [availableMentors, setAvailableMentors] = useState<Mentor[]>([]);
 
     // Ref for hidden file input
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // --- Fetch and Pre-fill Data ---
+    // --- Data Fetching ---
     useEffect(() => {
-        if (eventId === null) {
-            setError("Invalid Event ID.");
+        if (!eventId) {
+            toast.error("Invalid Event ID.");
             setLoading(false);
+            router.push('/admin/events');
             return;
         }
 
-        const foundEvent = allEventsData.find(event => event.id === eventId);
+        const fetchEventAndMentors = async () => {
+            try {
+                setLoading(true);
+                // Fetch both event data and the list of all available mentors
+                const [eventRes, mentorsRes] = await Promise.all([
+                    apiService.get<CombinedEventData>(`/events/${eventId}`),
+                    apiService.get<Mentor[]>('/mentors')
+                ]);
 
-        if (foundEvent) {
-            setEventData(foundEvent);
-            // Pre-fill form state
-            setEventTitle(foundEvent.title);
-            setCategory(foundEvent.type); // Assuming category maps to event type
-            setDescription(foundEvent.description); // Use short description for the main textarea
+                const eventData = eventRes.data;
+                setAvailableMentors(mentorsRes.data);
 
-            // Safely parse dates and times from ISO strings
-            const parseDateSafe = (dateString: string | undefined | null): Date | null => {
-                return dateString ? new Date(dateString) : null;
-            };
+                // Pre-fill form state from fetched data
+                setEventTitle(eventData.title);
+                setCategory(eventData.event_type);
+                setDescription(eventData.description);
 
-            const eventStartDate = parseDateSafe(foundEvent.startDate);
-            const eventEndDate = parseDateSafe(foundEvent.endDate);
+                const eventStartDate = new Date(eventData.start_date);
+                const eventEndDate = new Date(eventData.end_date);
+                setStartDate(eventStartDate);
+                setEndDate(eventEndDate);
+                setStartTime(eventStartDate);
+                setEndTime(eventEndDate);
+                
+                setLocation(eventData.location);
+                setWhatsappLink(eventData.group_link || '');
+                setToolsInput(Array.isArray(eventData.tools) ? eventData.tools.map(tool => tool.name).join(', ') : '');
+                setKeyPointsInput(Array.isArray(eventData.key_points) ? eventData.key_points.join(', ') : '');
 
-            setStartDate(eventStartDate);
-            setEndDate(eventEndDate);
-            setStartTime(eventStartDate); // Extract time from start date
-            setEndTime(eventEndDate); // Extract time from end date
+                // Pre-fill relationship data
+                setSelectedMentors(eventData.mentors || []);
+                setSkills(eventData.skills || []);
+                setBenefits(eventData.benefits || []);
+                setSessions(eventData.sessions?.map(s => ({
+                    ...s,
+                    start:s.start,
+                    end: s.end,
+                })) || []);
 
-            setLocation(foundEvent.location);
-            setWhatsappLink(foundEvent.groupLink || ''); // Use groupLink for whatsapp
-            setToolsInput(foundEvent.tools?.map(t => t.name).join(', ') || ''); // Join tool names
-            setKeyPointsInput(foundEvent.keyPoints?.join(', ') || ''); // Join key points
-            setSelectedMentors(foundEvent.mentors || []);
-            setSkills(foundEvent.skillsNeeded || []);
-            setBenefits(foundEvent.benefits || []);
-            // Ensure session dates are Date objects
-            setSessions(foundEvent.sessions?.map(s => ({
-                ...s,
-                start: parseDateSafe(s.start as string)?.toISOString() || null, // Convert Date to ISO string
-                end: parseDateSafe(s.end as string)?.toISOString() || null // Convert Date to ISO string
-            })) || []);
+                // Handle image
+                if (eventData.image_src) {
+                    setExistingImageSrc(eventData.image_src);
+                    setEventPhotoPreview(eventData.image_src);
+                }
 
-            setExistingImageSrc(foundEvent.imageSrc || null); // Store existing image URL
-            setEventPhotoPreview(foundEvent.imageSrc || null); // Set initial preview
+            } catch (error: any) {
+                const errorMessage = error.response?.data?.detail || "Failed to load event data.";
+                console.error("API Error:", errorMessage);
+                toast.error(errorMessage);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-            setLoading(false);
-        } else {
-            setError(`Event with ID ${eventId} not found.`);
-            setLoading(false);
-        }
-    }, [eventId]); // Re-run effect if eventId changes
+        fetchEventAndMentors();
+    }, [eventId, router]);
 
     // --- Handlers (Mostly identical to Add page, but operate on Edit page's state) ---
 
@@ -171,7 +181,8 @@ const EditEventPage: React.FC = () => {
 
     // Sessions (Timeline)
     const addSession = () => {
-        setSessions([...sessions, { id: `session_${Date.now()}`, topic: '', description: '', start: null, end: null }]);
+        const now = new Date().toISOString();
+        setSessions([...sessions, { id: Date.now(), topic: '', description: '', start: now, end: now }]);
     };
     const updateSession = (index: number, field: keyof Session, value: string | Date | null) => {
         const updatedSessions = [...sessions];
@@ -183,28 +194,23 @@ const EditEventPage: React.FC = () => {
         }
         setSessions(updatedSessions);
     };
-     const removeSession = (id: string) => { // Keep ID as string for sessions if generated that way
+     const removeSession = (id: number) => { // Keep ID as string for sessions if generated that way
         setSessions(sessions.filter(s => s.id !== id));
     };
 
     const uploadImageIfNeeded = async (): Promise<string | null> => {
-        if (!eventPhoto) return existingImageSrc;
-
-        const formData = new FormData();
-        formData.append("file", eventPhoto);
-
-        const res = await fetch("http://localhost:8000/upload", {
-            method: "POST",
-            body: formData
-        });
-
-        if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.detail || "Image upload failed");
+        if (eventPhoto) { // A new file was selected
+            const formData = new FormData();
+            formData.append("file", eventPhoto);
+            try {
+                const response = await apiService.post("/upload", formData);
+                return response.data.url;
+            } catch (error) {
+                toast.error("New image upload failed.");
+                throw new Error("Image upload failed");
+            }
         }
-
-        const data = await res.json();
-        return data.url; // e.g., /static/images/abc.jpg
+        return existingImageSrc; // Return the old image URL if no new one was uploaded
     };
 
     // --- Update Event ---
@@ -212,9 +218,12 @@ const EditEventPage: React.FC = () => {
         e.preventDefault();
 
         if (!eventId || !startDate || !endDate || !startTime || !endTime) {
-            alert("Missing required fields.");
+            toast.error("Please ensure all date and time fields are filled.");
             return;
         }
+        setIsSubmitting(true);
+        const toastId = toast.loading('Updating event...');
+
         const combinedStart = new Date(startDate);
         combinedStart.setHours(startTime.getHours(), startTime.getMinutes());
         
@@ -243,29 +252,10 @@ const EditEventPage: React.FC = () => {
             }))
         };
 
-        try {
-            const res = await fetch(`http://localhost:8000/events/${eventId}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
-            });
+        await apiService.put(`/events/${eventId}`, payload);
 
-            if (!res.ok) {
-                const error = await res.json();
-                throw new Error(error.detail || "Failed to update event.");
-            }
-
-            const data = await res.json();
-            console.log("Event updated successfully:", data);
-            alert("Event updated successfully.");
-            // router.push("/admin/events");
-
-        } catch (err: any) {
-            console.error("Error updating event:", err);
-            alert("Error: " + err.message);
-        }
+        toast.success("Event updated successfully!", { id: toastId});
+        router.push("/admin/events");
     };
 
     // --- Styles (Identical to Add page) ---
@@ -281,11 +271,6 @@ const EditEventPage: React.FC = () => {
 
     if (error) {
         return <main className="flex-1 p-6 lg:p-10"><p className="text-red-600">{error}</p></main>;
-    }
-
-    if (!eventData) {
-        // Should be caught by error state, but as a fallback
-        return <main className="flex-1 p-6 lg:p-10"><p>Event data could not be loaded.</p></main>;
     }
 
     return (
@@ -772,9 +757,9 @@ const EditEventPage: React.FC = () => {
                     <div className="flex justify-start pt-3">
                         <Button
                             type="submit"
-                            className="bg-blueSky hover:bg-blueSky/90 text-white font-semibold py-2.5 px-8 rounded-md cursor-pointer transition-colors"
+                            className="bg-blueSky hover:bg-blueSky/90 text-white font-semibold py-3 px-8 rounded-md cursor-pointer transition-colors"
                         >
-                            Update Event {/* Changed button text */}
+                            {isSubmitting ? 'Saving...' : 'Update Event'}
                         </Button>
                     </div>
                 </form>

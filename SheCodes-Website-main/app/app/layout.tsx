@@ -21,6 +21,7 @@ export default function AppLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
@@ -35,6 +36,3 @@ export default function AppLayout({
     </html>
   )
 }
-
-
-import '../globals.css'

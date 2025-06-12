@@ -16,6 +16,7 @@ import {
     DialogTrigger,
     // DialogContent, DialogHeader etc. are NOT needed here anymore for these modals
   } from "@/components/ui/dialog";
+import apiService from '@/lib/apiService';
 
 
 const EventPage: React.FC = () => {
@@ -31,8 +32,21 @@ const EventPage: React.FC = () => {
     const [selectedEvents, setSelectedEvents] = useState<number[]>([]);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); 
 
+    useEffect(() => {
+        const fetchEvents = async () => {
+            try {
+                const response = await apiService.get<CombinedEventData[]>('/events');
+                setAllEvents(response.data);
+            } catch (err) {
+                console.error('Failed to fetch events:', err);
+            }
+        };
+        fetchEvents();
+    }, []);
+
+
     const now = new Date();
-    const computedEvents = useMemo(() =>
+    const computedEvents: CombinedEventData[]= useMemo(() =>
         allEvents.map(event => ({
             ...event,
             status: new Date(event.end_date) < now ? 'past' : 'upcoming'
@@ -56,19 +70,6 @@ const EventPage: React.FC = () => {
     const paginatedEvents = useMemo(() => {
         return filteredEvents.slice(startIndex, endIndex);
     }, [filteredEvents, startIndex, endIndex]);
-
-    useEffect(() => {
-        const fetchEvents = async () => {
-            try {
-                const res = await fetch('/api/events');
-                const data = await res.json();
-                setAllEvents(data);
-            } catch (err) {
-                console.error('Failed to fetch events:', err);
-            }
-        };
-        fetchEvents();
-    }, []);
 
     // Handlers
     const handlePageChange = useCallback((page: number) => {

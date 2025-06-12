@@ -1,138 +1,81 @@
 "use client";
 
-import * as React from 'react';
-import { useState, useRef } from 'react'; 
-import { v4 as uuidv4 } from 'uuid';
+import React, { useState, useRef } from 'react'; 
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {  Trash2, PlusCircle } from 'lucide-react'; // Added Trash2, PlusCircle
-import { ArticleCategory } from "@/types/blog";
-
-interface BlogArticleFormData {
-    featuredImage: File | null; 
-    title: string;
-    slug: string;
-    category: ArticleCategory; 
-    description: string; 
-    authorName: string;
-    sections: string[];
-}
+import { Trash2, PlusCircle } from 'lucide-react';
+import type { ArticleCategory } from "@/types/blog";
+import apiService from '@/lib/apiService';
+import toast from 'react-hot-toast';
 
 const ArticleFormPage: React.FC = () => {
     const router = useRouter();
     const [articlePhoto, setArticlePhoto] = useState<File | null>(null);
     const [articlePhotoPreview, setArticlePhotoPreview] = useState<string | null>(null);
-    const [articleTitle, setArticleTitle] = useState('');
-    const [category, setCategory] = useState<ArticleCategory>('Tech & Innovation'); // Default to a valid category
-     const [description, setDescription] = useState('');
+    const [title, setTitle] = useState('');
+    const [category, setCategory] = useState<ArticleCategory>('Tech & Innovation');
+    const [excerpt, setExcerpt] = useState('');
     const [authorName, setAuthorName] = useState('');
     const [slug, setSlug] = useState('');
     const [sections, setSections] = useState<string[]>(['']); 
-
-    // Ref for hidden file input
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // --- Handlers ---
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
             setArticlePhoto(file);
-            // Generate preview
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setArticlePhotoPreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        } else {
-            setArticlePhoto(null);
-            setArticlePhotoPreview(null); // Clear preview
+            setArticlePhotoPreview(URL.createObjectURL(file));
         }
     };
 
-    // Trigger hidden file input click when the upload area is clicked
-    const handleUploadAreaClick = () => {
-        fileInputRef.current?.click();
-    };
-
-    // --- Sections Handlers ---
-    const addSection = () => {
-        setSections([...sections, '']); // Add a new empty string for a new section description
-    };
-
+    const handleUploadAreaClick = () => { fileInputRef.current?.click(); };
+    const addSection = () => { setSections([...sections, '']); };
     const updateSectionDescription = (index: number, value: string) => {
-         const updatedSections = [...sections];
-         updatedSections[index] = value;
-         setSections(updatedSections);
+        setSections(sections.map((s, i) => i === index ? value : s));
+    };
+    const removeSection = (index: number) => {
+        setSections(sections.filter((_, i) => i !== index));
     };
 
-    const removeSection = (indexToRemove: number) => {
-        setSections(sections.filter((_, index) => index !== indexToRemove));
-    };
     // --- End Sections Handlers ---
 
     const handleSaveArticle = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-
-        const id = uuidv4();
-        const date = new Date().toISOString();
-        const authorInitials = authorName
-            .split(" ")
-            .map((word) => word[0])
-            .join("")
-            .toUpperCase();
-
-        let imageSrc = '';
-        if (articlePhoto) {
-            const imageForm = new FormData();
-            imageForm.append("file", articlePhoto);
-
-            try {
-                const res = await fetch("api/upload", {
-                    method: "POST",
-                    body: imageForm,
-                });
-                const data = await res.json();
-                imageSrc = data.url;
-            } catch (err) {
-                console.error("Image upload failed:", err);
-                alert("Failed to upload image");
-                return;
-            }
-        } else {
-            alert("Please upload a featured image");
+        if (!articlePhoto) {
+            toast.error("Please upload a featured image.");
             return;
         }
 
-        const payload = {
-            id,
-            title: articleTitle,
-            description: excerpt,
-            category,
-            date,
-            authorName,
-            authorInitials,
-            imageSrc,
-            link: slug,
-            sections,
-        };
+        setIsSubmitting(true);
+        const toastId = toast.loading("Creating article...");
+
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('slug', slug);
+        formData.append('category', category);
+        formData.append('excerpt', excerpt);
+        formData.append('author_name', authorName);
+        formData.append('image', articlePhoto);
+        sections.forEach((section) => formData.append('sections', section));
+        // The backend expects published_at, let's send the current time
+        formData.append('published_at', new Date().toISOString());
 
         try {
-            const res = await fetch("api/blogs", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
+            await apiService.post("/blogs/upload", formData, {
+                headers: { "Content-Type": "multipart/form-data" },
             });
-
-            if (!res.ok) throw new Error("Failed to create article");
-            alert("Article successfully created!");
+            toast.success("Article created successfully!", { id: toastId });
             router.push("/admin/articles");
         } catch (err) {
-            console.error("Failed to create article:", err);
-            alert("Something went wrong while saving the article.");
+            toast.error("Failed to create article.", { id: toastId });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -207,8 +150,8 @@ const ArticleFormPage: React.FC = () => {
                             type="text"
                             id="articleTitle"
                             name="articleTitle"
-                            value={articleTitle}
-                            onChange={(e) => setArticleTitle(e.target.value)}
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
                             placeholder="Enter title here"
                             className={inputStyles}
                             required
@@ -245,7 +188,7 @@ const ArticleFormPage: React.FC = () => {
                             id="description"
                             name="description"
                             value={excerpt}
-                            onChange={(e) => setDescription(e.target.value)}
+                            onChange={(e) => setExcerpt(e.target.value)}
                             placeholder="Enter description here"
                             className={`${inputStyles} min-h-[100px]`} // Adjusted styling
                             rows={4}
@@ -335,9 +278,10 @@ const ArticleFormPage: React.FC = () => {
                     <div className="flex justify-start pt-3">
                         <Button
                             type="submit"
-                            className="bg-blueSky hover:bg-blueSky/90 text-white font-semibold py-2.5 px-8 rounded-md cursor-pointer transition-colors" // Darker save button
+                            disabled={isSubmitting}
+                            className="bg-blueSky hover:bg-blueSky/90 text-white font-semibold py-3 px-8 rounded-md cursor-pointer transition-colors" // Darker save button
                         >
-                            Save
+                            {isSubmitting ? "Adding..." : "Add"}
                         </Button>
                     </div>
                 </form>

@@ -1,75 +1,72 @@
 "use client"
 
-import React, { useState, useMemo, useCallback } from 'react';
-// Import the new type and data
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Member } from '@/types/members';
-import { dummyMembers } from '@/data/dummyMembers'; // Adjust path as needed
 import MemberTable from '@/components/admin/member-table';
 import Pagination from '@/components/admin/pagination';
-import { PlusIcon, SearchIcon, DeleteIcon } from '@/components/admin/icon';
+import { DeleteIcon } from '@/components/admin/icon';
 import { FiChevronDown } from 'react-icons/fi';
 import { IoMdSearch } from "react-icons/io";
 import { DeleteConfirmationModal } from '@/components/admin/confirm-delete-modal';
-import {
-    Dialog,
-    DialogTrigger,
-    // DialogContent, DialogHeader etc. are NOT needed here anymore for these modals
-  } from "@/components/ui/dialog";
-import { useRouter } from 'next/navigation';
+import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
+import apiService from '@/lib/apiService';
+import toast from 'react-hot-toast';
 
 
 const MemberPage: React.FC = () => {
     const router = useRouter();
-    // Use the imported dummy data and the correct type
-    const [allMembers] = useState<Member[]>(dummyMembers);
+    const [allMembers, setAllMembers] = useState<Member[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isDeleting, setIsDeleting] = useState(false);
+    
     const [searchTerm, setSearchTerm] = useState('');
-    // Filter status now aligns with the 'status' field in your data
     const [filterStatus, setFilterStatus] = useState<'All' | 'recent' | 'last'>('All');
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
-    // Selected events store numbers (IDs) now
-    const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
+    
+    const [selectedMembers, setSelectedMembers] = useState<string[]>([]); // IDs are strings (UUIDs)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); 
 
-    // Filtering Logic
-    const filteredMembers = useMemo(() => {
-        const searchLower = searchTerm.toLowerCase();
-      
-        // Filter by fullName only
-        let result = allMembers.filter(member =>
-          member.fullName.toLowerCase().includes(searchLower)
-        );
-      
-        // Sort logic based on filterStatus
-        if (filterStatus === 'recent') {
-          // Sort by most recent `createdAt`
-          result = result.sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        } else if (filterStatus === 'last') {
-          // Sort by oldest `createdAt`
-          result = result.sort(
-            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          );
+    const fetchMembers = useCallback(async () => {
+        setLoading(true);
+        try {
+            const response = await apiService.get<Member[]>('/users');
+            // Filter out any non-member roles if necessary, e.g., admins
+            setAllMembers(response.data.filter(u => u.role === 'member'));
+        } catch (err) {
+            toast.error("Could not load member data.");
+        } finally {
+            setLoading(false);
         }
-      
-        return result;
-      }, [allMembers, searchTerm, filterStatus]);
+    }, []);
 
-    // Pagination Logic (remains the same logic)
+    useEffect(() => {
+        fetchMembers();
+    }, [fetchMembers]);
+
+    const filteredMembers = useMemo(() => {
+        let result = allMembers.filter(member =>
+          member.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        if (filterStatus === 'recent') {
+          result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        } else if (filterStatus === 'last') {
+          result.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        }
+        return result;
+    }, [allMembers, searchTerm, filterStatus]);
+
     const totalItems = filteredMembers.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const paginatedEvents = useMemo(() => {
-        return filteredMembers.slice(startIndex, endIndex);
-    }, [filteredMembers, startIndex, endIndex]);
+    const paginatedMembers = useMemo(() => {
+        return filteredMembers.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredMembers, startIndex, itemsPerPage]);
 
-
-    // Handlers
     const handlePageChange = useCallback((page: number) => {
         setCurrentPage(page);
-        setSelectedMembers([]); // Clear selection when changing page
+        setSelectedMembers([]);
     }, []);
 
     const handleItemsPerPageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -78,51 +75,42 @@ const MemberPage: React.FC = () => {
         setSelectedMembers([]);
     };
 
-     // Handler for selecting/deselecting a single event (ID is number)
-     const handleSelectMember = useCallback((id: number, checked: boolean) => {
-        setSelectedMembers(prev =>
-            checked ? [...prev, id] : prev.filter(membersId => membersId !== id)
-        );
+    const handleSelectMember = useCallback((id: string, checked: boolean) => {
+        setSelectedMembers(prev => checked ? [...prev, id] : prev.filter(memberId => memberId !== id));
     }, []);
 
-    // Handler for the "Select All" checkbox in the header
     const handleSelectAll = useCallback((checked: boolean) => {
-        if (checked) {
-            // Select all IDs *on the current page*
-            setSelectedMembers(paginatedEvents.map(member => member.id));
-        } else {
-            // Deselect all IDs *on the current page*
-            // Note: If you want "Select All" to truly select *all* filtered events across pages,
-            // you would need to adjust this logic to use `filteredEvents` instead of `paginatedEvents`.
-            // For simplicity matching most UI patterns, this selects/deselects current page.
-            const currentPageIds = paginatedEvents.map(member => member.id);
-             // Keep selections from other pages
-             setSelectedMembers(prev => prev.filter(id => !currentPageIds.includes(id)));
-            // Or simply clear all selections:
-            // setSelectedEvents([]);
-        }
-    }, [paginatedEvents]); // Depend on paginatedEvents
+        setSelectedMembers(checked ? paginatedMembers.map(member => member.id) : []);
+    }, [paginatedMembers]);
 
-    const handleViewEvent = (id: number) => {
-        console.log("View Event Clicked");
+    const handleViewEvent = (id: string) => {
         router.push(`/admin/members/${id}/events`);
     };
 
-    // Handlers now receive number IDs
-    const handleViewMember = (id: number) => {
-        console.log("View Member Clicked:", id);
+    const handleViewMember = (id: string) => {
         router.push(`/admin/members/${id}/details`);
     };
 
-    const handleDeleteConfirmed = () => {
+    const handleDeleteConfirmed = async () => {
         if (selectedMembers.length === 0) return;
-
-        console.log("Deleting Mentors:", selectedMembers);
-
-        setSelectedMembers([]);
-        setIsDeleteModalOpen(false); // Close the modal
-        console.log("Simulated Delete Complete. Selection cleared.");
+        setIsDeleting(true);
+        const toastId = toast.loading(`Deleting ${selectedMembers.length} member(s)...`);
+        try {
+            await Promise.all(
+                selectedMembers.map(id => apiService.delete(`/users/${id}`))
+            );
+            toast.success("Members deleted successfully!", { id: toastId });
+            setSelectedMembers([]);
+            fetchMembers(); // Refresh data
+        } catch (err) {
+            toast.error("Failed to delete members.", { id: toastId });
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteModalOpen(false);
+        }
     };
+    
+    if (loading) return <div className="p-10 text-center">Loading members...</div>;
 
     return (
         <div className="px-10 py-6">
@@ -194,7 +182,7 @@ const MemberPage: React.FC = () => {
             <div className="bg-white rounded-lg shadow-card overflow-hidden border border-gray-200">
                 <MemberTable
                     // Pass the currently visible page of events
-                    members={paginatedEvents}
+                    members={paginatedMembers}
                     selectedMember={selectedMembers}
                     onSelectMember={handleSelectMember}
                     onSelectAll={handleSelectAll}
@@ -231,14 +219,14 @@ const MemberPage: React.FC = () => {
             </div>
 
             <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                    itemsPerPage={itemsPerPage}
-                    totalItems={totalItems}
-                    startIndex={startIndex}
-                    endIndex={endIndex}
-                />
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                itemsPerPage={itemsPerPage}
+                totalItems={totalItems}
+                startIndex={startIndex}
+                endIndex={startIndex + paginatedMembers.length}
+            />
         </div>
     );
 };

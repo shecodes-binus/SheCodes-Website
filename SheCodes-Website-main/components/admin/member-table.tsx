@@ -6,11 +6,11 @@ import { EyeIcon, InfoIcon } from 'lucide-react';
 
 interface MemberTableProps {
     members: Member[]; // Use the new type
-    selectedMember: number[];    // IDs are numbers now
-    onSelectMember: (id: number, checked: boolean) => void; // ID is number
+    selectedMember: string[];    // IDs are numbers now
+    onSelectMember: (id: string, checked: boolean) => void; // ID is number
     onSelectAll: (checked: boolean) => void;
-    onViewEvent: (id: number) => void;     // ID is number
-    onViewMember: (id: number) => void;     // ID is number
+    onViewEvent: (id: string) => void;     // ID is number
+    onViewMember: (id: string) => void;     // ID is number
 }
 
 const MentorTable: React.FC<MemberTableProps> = ({
@@ -60,6 +60,9 @@ const MentorTable: React.FC<MemberTableProps> = ({
                             Email
                         </th>
                         <th className="px-4 py-3 text-left text-base font-semibold">
+                            Status
+                        </th>
+                        <th className="px-4 py-3 text-left text-base font-semibold">
                             Action
                         </th>
                     </tr>
@@ -79,14 +82,19 @@ const MentorTable: React.FC<MemberTableProps> = ({
                                 />
                             </td>
                             <td className="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-gray-900 flex items-center space-x-3">
-                                <img src={member.profilePicUrl} alt={`${member.fullName}'s avatar`} className="w-10 h-10 rounded-full bg-gray-200 object-cover" />
-                                <div>{member.fullName}</div>
+                                <img src={member.profile_picture || '/placeholder-woman.png'} alt={`${member.name}'s avatar`} className="w-10 h-10 rounded-full bg-gray-200 object-cover" />
+                                <div>{member.name}</div>
                             </td>
                             <td className="pl-10 px-4 py-3.5 text-sm text-textMuted">
                                 {member.gender}
                             </td>
                             <td className="pl-10 px-4 py-3.5 text-sm text-textMuted">
-                                {member.occupation}
+                                {member.email}
+                            </td>
+                            <td className="px-4 py-3.5 text-sm text-textMuted">
+                                <span className={`px-3 py-1 text-xs font-medium rounded-full ${member.is_verified ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                    {member.is_verified ? 'Active' : 'Inactive'}
+                                </span>
                             </td>
                             <td className="pr-10 px-4 py-3.5 whitespace-nowrap text-sm font-medium">
                                 <div className="flex space-x-5">

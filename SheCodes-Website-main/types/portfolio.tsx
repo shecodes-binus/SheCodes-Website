@@ -1,7 +1,8 @@
 export interface PortfolioProject {
-    id: number | string;
-    name: string;
-    description: string;
-    imageUrl: string; // Path to project image in /public
-    projectUrl?: string; // Optional link to live project or repo
-  }
+  id: number;
+  user_id: string; // Add this line
+  name: string;
+  description: string;
+  image_url: string;
+  project_url?: string;
+}

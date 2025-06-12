@@ -4,8 +4,8 @@ from typing import Optional
 class PortfolioProjectBase(BaseModel):
     name: str
     description: Optional[str] = None
-    imageUrl: str
-    projectUrl: Optional[str] = None
+    image_url: str
+    project_url: Optional[str] = None
 
 class PortfolioProjectCreate(PortfolioProjectBase):
     pass

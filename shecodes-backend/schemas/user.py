@@ -71,5 +71,9 @@ class UserResponse(UserBase):
     is_verified: bool
     created_at: datetime
     updated_at: datetime
-    participations: List[ParticipantResponse] = []
+    participations: List[ParticipantResponse] = [] 
     model_config = ConfigDict(from_attributes=True)
+    
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str = Field(..., min_length=8)

@@ -1,30 +1,27 @@
-// app/admin/mentors/edit/[id]/page.tsx
 "use client";
 
-import * as React from 'react';
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import type { Mentor } from '@/types/events'; // Adjust path to your Mentor type
-import { dummyMentors } from '@/data/dummyPartnershipData'; // Adjust path to your dummy mentors data
+import type { Mentor } from '@/types/partnership';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import apiService from '@/lib/apiService';
+import toast from 'react-hot-toast';
 
 const EditMentorPage: React.FC = () => {
     const router = useRouter();
     const params = useParams();
     const mentorId = params.id ? parseInt(params.id as string, 10) : null;
 
-    const [mentorData, setMentorData] = useState<Mentor | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // --- Form State ---
     const [mentorPhoto, setMentorPhoto] = useState<File | null>(null);
     const [mentorPhotoPreview, setMentorPhotoPreview] = useState<string | null>(null);
-    const [existingImageSrc, setExistingImageSrc] = useState<string | null>(null);
     const [mentorName, setMentorName] = useState('');
     const [mentorOccupation, setMentorOccupation] = useState('');
     const [mentorDescription, setMentorDescription] = useState('');
@@ -35,79 +32,72 @@ const EditMentorPage: React.FC = () => {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // --- Fetch and Pre-fill Data ---
     useEffect(() => {
-        if (mentorId === null) {
-            setError("Invalid Mentor ID.");
-            setLoading(false);
-            return;
-        }
-
-        const foundMentor = dummyMentors.find(mentor => mentor.id === mentorId);
-
-        if (foundMentor) {
-            setMentorData(foundMentor);
-            setMentorName(foundMentor.name);
-            setMentorOccupation(foundMentor.occupation);
-            setMentorDescription(foundMentor.description); 
-            setMentorStory(foundMentor.story);
-            setInstagramLink(foundMentor.instagram || '');
-            setLinkedinLink(foundMentor.linkedin || '');
-            setMentorStatus(foundMentor.status || 'active');
-
-            if (foundMentor.imageSrc) {
-                setExistingImageSrc(foundMentor.imageSrc);
-                setMentorPhotoPreview(foundMentor.imageSrc);
+        if (!mentorId) return;
+        const fetchMentorData = async () => {
+            setLoading(true);
+            try {
+                const response = await apiService.get<Mentor>(`/mentors/${mentorId}`);
+                const data = response.data;
+                setMentorName(data.name);
+                setMentorOccupation(data.occupation);
+                setMentorDescription(data.description);
+                setMentorStory(data.story);
+                setInstagramLink(data.instagram || '');
+                setLinkedinLink(data.linkedin || '');
+                setMentorStatus(data.status || 'active');
+                setMentorPhotoPreview(data.image_src);
+            } catch (err) {
+                setError("Failed to fetch mentor data.");
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
-        } else {
-            setError(`Mentor with ID ${mentorId} not found.`);
-            setLoading(false);
-        }
+        };
+        fetchMentorData();
     }, [mentorId]);
 
-    // --- Handlers ---
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
             setMentorPhoto(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setMentorPhotoPreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-            setExistingImageSrc(null); // Clear existing image if new one is chosen
-        } else if (existingImageSrc) { // Revert to existing if selection is cancelled
-            setMentorPhoto(null);
-            setMentorPhotoPreview(existingImageSrc);
-        } else {
-            setMentorPhoto(null);
-            setMentorPhotoPreview(null);
+            setMentorPhotoPreview(URL.createObjectURL(file));
         }
     };
 
-    // Trigger hidden file input click when the "Choose file" button is clicked
     const handleChooseFileClick = () => {
         fileInputRef.current?.click();
     };
 
-    const handleUpdateMentor = (event: React.FormEvent<HTMLFormElement>) => {
+    const handleUpdateMentor = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        console.log("Updating Mentor Data (ID:", mentorId, "):", {
-            id: mentorId,
-            mentorPhoto, // New File object or null
-            existingImageSrc, // Original image URL if photo not changed
-            mentorName,
-            mentorOccupation,
-            mentorDescription,
-            instagramLink,
-            linkedinLink,
-            // Preserve other fields not in the form from original mentorData
-            status: mentorData?.status,
-            story: mentorData?.story,
-        });
-        alert("Mentor Updated (Placeholder - Check Console)");
-        // router.push('/admin/mentors'); // Optionally navigate back
+        if (!mentorId) return;
+
+        setIsSubmitting(true);
+        const toastId = toast.loading("Updating mentor...");
+
+        const formData = new FormData();
+        formData.append('name', mentorName);
+        formData.append('occupation', mentorOccupation);
+        formData.append('description', mentorDescription);
+        formData.append('story', mentorStory);
+        formData.append('status', mentorStatus);
+        if (instagramLink) formData.append('instagram', instagramLink);
+        if (linkedinLink) formData.append('linkedin', linkedinLink);
+        if (mentorPhoto) {
+            formData.append('image', mentorPhoto);
+        }
+
+        try {
+            await apiService.put(`/mentors/update/${mentorId}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            toast.success("Mentor updated successfully!", { id: toastId });
+            router.push('/admin/mentors');
+        } catch (err) {
+            toast.error("Failed to update mentor.", { id: toastId });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // --- Styles ---
@@ -123,10 +113,6 @@ const EditMentorPage: React.FC = () => {
 
     if (error) {
         return <main className="flex-1 p-6 lg:p-10 bg-gray-50"><p className="text-red-600">{error}</p></main>;
-    }
-
-    if (!mentorData) {
-        return <main className="flex-1 p-6 lg:p-10 bg-gray-50"><p>Mentor data could not be loaded.</p></main>;
     }
 
     return (
@@ -145,26 +131,19 @@ const EditMentorPage: React.FC = () => {
                         <label className={`${labelStyles}`}>
                             Photo<span className="text-red-500">*</span>
                         </label>
-                        <div className="mt-1 flex flex-col items-start">
-                            <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 mb-3 flex items-center justify-center">
+                        <div className="mt-2 flex flex-col items-start">
+                            <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 mb-4 flex items-center justify-center">
                                 {mentorPhotoPreview ? (
                                     <Image src={mentorPhotoPreview} alt="Mentor Preview" width={128} height={128} className="object-cover w-full h-full" />
                                 ) : (
                                     <span className="text-gray-400 text-sm">Preview</span>
                                 )}
                             </div>
-                            <div className="flex items-center space-x-3">
-                                <Button
-                                    type="button"
-                                    onClick={handleChooseFileClick}
-                                    variant="outline"
-                                    className="px-4 py-2 text-sm border-gray-300 text-gray-700 hover:bg-gray-50"
-                                >
+                            <div className="flex items-center space-x-3 mb-1">
+                                <Button type="button" onClick={handleChooseFileClick} variant="outline" className="px-4 py-2 text-sm bg-grey-2/50 text-gray-700 hover:bg-grey-2/40 border-none rounded-none">
                                     Choose file
                                 </Button>
-                                <span className="text-sm text-gray-600">
-                                    {mentorPhoto ? mentorPhoto.name : (existingImageSrc ? "Current image" : "No file chosen")}
-                                </span>
+                                <span className="text-sm text-gray-600">{mentorPhoto ? mentorPhoto.name : "No new file chosen"}</span>
                             </div>
                             <input
                                 ref={fileInputRef}
@@ -309,9 +288,9 @@ const EditMentorPage: React.FC = () => {
                         <Button
                             type="submit"
                             // Style to match the light gray button in the image
-                            className="bg-blueSky hover:bg-blueSky/90 text-white font-semibold py-2.5 px-8 rounded-md cursor-pointer transition-colors"
+                            className="bg-blueSky hover:bg-blueSky/90 text-white font-semibold py-3 px-8 rounded-md cursor-pointer transition-colors"
                         >
-                            Save
+                            {isSubmitting ? "Saving..." : "Save Changes"}
                         </Button>
                     </div>
                 </form>

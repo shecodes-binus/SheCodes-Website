@@ -1,85 +1,64 @@
 "use client"
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-// Import the new type and data
-import { Alumni } from '@/types/alumnis';
-import { dummyAlumnis } from '@/data/dummyAlumnis'; // Adjust path as needed
+import { useRouter } from 'next/navigation';
 import AlumniTable from '@/components/admin/alumni-table';
 import Pagination from '@/components/admin/pagination';
-import { PlusIcon, SearchIcon, DeleteIcon } from '@/components/admin/icon';
+import { PlusIcon, DeleteIcon } from '@/components/admin/icon';
 import { FiChevronDown } from 'react-icons/fi';
 import { IoMdSearch } from "react-icons/io";
 import { DeleteConfirmationModal } from '@/components/admin/confirm-delete-modal';
-import {
-    Dialog,
-    DialogTrigger,
-    // DialogContent, DialogHeader etc. are NOT needed here anymore for these modals
-  } from "@/components/ui/dialog";
-import { useRouter } from 'next/navigation';
-
+import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
+import apiService from '@/lib/apiService';
+import { Alumni } from '@/types/alumnis';
+import toast from 'react-hot-toast';
 
 const AlumniPage: React.FC = () => {
     const router = useRouter();
-    // Use the imported dummy data and the correct type
+    
     const [allAlumni, setAllAlumni] = useState<Alumni[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    // Filter status now aligns with the 'status' field in your data
-    const [filterStatus, setFilterStatus] = useState<'All' | "1" | "2">('All');
+    const [filterStatus, setFilterStatus] = useState<'All' | '1' | '2'>('All');
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
-    // Selected events store numbers (IDs) now
     const [selectedAlumni, setSelectedAlumni] = useState<number[]>([]);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); 
 
-    useEffect(() => {
-        const fetchAlumni = async () => {
-            try {
-            const res = await fetch("api/alumni");
-            const data = await res.json();
-            setAllAlumni(data);
-            } catch (err) {
-            console.error("Failed to fetch alumni:", err);
-            } finally {
+    const fetchAlumni = useCallback(async () => {
+        setLoading(true);
+        try {
+            const response = await apiService.get<Alumni[]>("/alumni");
+            setAllAlumni(response.data);
+        } catch (err) {
+            toast.error("Could not load alumni data.");
+        } finally {
             setLoading(false);
-            }
-        };
-
-        fetchAlumni();
+        }
     }, []);
 
-    // Filtering Logic
+    useEffect(() => {
+        fetchAlumni();
+    }, [fetchAlumni]);
+
     const filteredAlumni = useMemo(() => {
-        return allAlumni.filter(alumni => {
-            // Filter by status ('upcoming' or 'past')
-            const statusMatch = filterStatus === 'All' || String(alumni.batch) === filterStatus;
-
-            // Filter by search term (checking the title)
-            const searchLower = searchTerm.toLowerCase();
-            const alumniName = alumni.name.toLowerCase().includes(searchLower);
-            // You could also add description or tags to search:
-            // const descriptionMatch = event.description.toLowerCase().includes(searchLower);
-            // const tagMatch = event.tags.some(tag => tag.toLowerCase().includes(searchLower));
-            // return statusMatch && (titleMatch || descriptionMatch || tagMatch);
-
-            return statusMatch && alumniName;
+        return allAlumni.filter(alumnus => {
+            const statusMatch = filterStatus === 'All' || String(alumnus.batch) === filterStatus;
+            const searchMatch = alumnus.name.toLowerCase().includes(searchTerm.toLowerCase());
+            return statusMatch && searchMatch;
         });
     }, [allAlumni, searchTerm, filterStatus]);
 
-    // Pagination Logic (remains the same logic)
     const totalItems = filteredAlumni.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
     const paginatedEvents = useMemo(() => {
-        return filteredAlumni.slice(startIndex, endIndex);
-    }, [filteredAlumni, startIndex, endIndex]);
+        return filteredAlumni.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredAlumni, startIndex, itemsPerPage]);
 
-
-    // Handlers
     const handlePageChange = useCallback((page: number) => {
         setCurrentPage(page);
-        setSelectedAlumni([]); // Clear selection when changing page
+        setSelectedAlumni([]);
     }, []);
 
     const handleItemsPerPageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -88,54 +67,40 @@ const AlumniPage: React.FC = () => {
         setSelectedAlumni([]);
     };
 
-     // Handler for selecting/deselecting a single event (ID is number)
-     const handleSelectAlumni = useCallback((id: number, checked: boolean) => {
+    const handleSelectAlumni = useCallback((id: number, checked: boolean) => {
         setSelectedAlumni(prev =>
             checked ? [...prev, id] : prev.filter(alumniId => alumniId !== id)
         );
     }, []);
 
-    // Handler for the "Select All" checkbox in the header
     const handleSelectAll = useCallback((checked: boolean) => {
         if (checked) {
-            // Select all IDs *on the current page*
-            setSelectedAlumni(paginatedEvents.map(alumni => alumni.id));
+            setSelectedAlumni(paginatedEvents.map(alumnus => alumnus.id));
         } else {
-            // Deselect all IDs *on the current page*
-            // Note: If you want "Select All" to truly select *all* filtered events across pages,
-            // you would need to adjust this logic to use `filteredEvents` instead of `paginatedEvents`.
-            // For simplicity matching most UI patterns, this selects/deselects current page.
-            const currentPageIds = paginatedEvents.map(alumni => alumni.id);
-             // Keep selections from other pages
-            setSelectedAlumni(prev => prev.filter(id => !currentPageIds.includes(id)));
-            // Or simply clear all selections:
-            // setSelectedEvents([]);
+            setSelectedAlumni([]);
         }
-    }, [paginatedEvents]); // Depend on paginatedEvents
+    }, [paginatedEvents]);
 
     const handleAddAlumni = () => {
-        console.log("Add Alumni Clicked");
         router.push('/admin/alumni/add-alumni'); 
     };
 
-    // Handlers now receive number IDs
     const onEditAlumni = (id: number) => {
-        console.log("Edit Alumni Clicked:", id);
-        router.push(`/admin/alumni/edit-alumni/${id}`); // Adjust the path as needed
+        router.push(`/admin/alumni/edit-alumni/${id}`);
     };
 
     const handleDeleteConfirmed = async () => {
-    if (selectedAlumni.length === 0) return;
+        if (selectedAlumni.length === 0) return;
+        const toastId = toast.loading(`Deleting ${selectedAlumni.length} alumni...`);
         try {
             await Promise.all(
-            selectedAlumni.map(id =>
-                fetch(`api/alumni/${id}`, { method: "DELETE" })
-            )
+                selectedAlumni.map(id => apiService.delete(`/alumni/${id}`))
             );
-            setAllAlumni(prev => prev.filter(alumni => !selectedAlumni.includes(alumni.id)));
+            toast.success("Alumni deleted successfully!", { id: toastId });
             setSelectedAlumni([]);
+            fetchAlumni();
         } catch (err) {
-            console.error("Failed to delete alumni:", err);
+            toast.error("Failed to delete alumni.", { id: toastId });
         } finally {
             setIsDeleteModalOpen(false);
         }
@@ -161,7 +126,6 @@ const AlumniPage: React.FC = () => {
 
              {/* Filters and Search Section */}
              <div className="mb-4 flex flex-wrap gap-6 items-center pb-2 rounded-lg">
-                 {/* Show X entries */}
                  <div className="flex items-center space-x-4 text-sm">
                      <label htmlFor="itemsPerPage" className="text-black">Show</label>
                      <div className='relative'>
@@ -174,48 +138,36 @@ const AlumniPage: React.FC = () => {
                             <option value={10}>10</option>
                             <option value={25}>25</option>
                             <option value={50}>50</option>
-                            {/* Add total count if you want a huge list */}
-                            {/* <option value={totalItems}>All</option> */}
                         </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none"> {/* Adjust right padding (pr-3) to move icon left/right */}
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                             <FiChevronDown className="w-4 h-4 text-gray-500" />
                         </div>
                      </div>
                  </div>
 
-                 {/* Status Filter */}
-                <div className="flex items-center space-x-2 text-sm relative">
-                    
-                    {/* Bind value to filterStatus state */}
+                 <div className="flex items-center space-x-2 text-sm relative">
                     <select
                         value={filterStatus}
-                        // Update state and reset page on change
                         onChange={(e) => { setFilterStatus(e.target.value as 'All' | "1" | "2"); setCurrentPage(1); setSelectedAlumni([]); }}
                         className="appearance-none w-32 py-3.5 px-3.5 pr-8 bg-white rounded-lg shadow-sm focus:border-blueSky focus:ring-blueSky text-sm"
                     >
-                         <option value="All">All</option>
-                         {/* Use the actual status values from your data */}
+                         <option value="All">All Batches</option>
                          <option value="1">Batch 1</option>
                          <option value="2">Batch 2</option>
-                         {/* Add Draft if you add it to your data */}
-                         {/* <option value="Draft">Draft</option> */}
                     </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"> {/* Adjust right padding (pr-3) to move icon left/right */}
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                         <FiChevronDown className="w-4 h-4 text-gray-500" />
                     </div>
                 </div>
 
-
-                 {/* Event Search (searches title) */}
                 <div className="relative ml-auto min-w-[400px]">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <IoMdSearch className="h-4 w-4 text-grey-2" />
                     </div>
                     <input
                         type="text"
-                        placeholder="Search Alumni Name" // Be more specific
+                        placeholder="Search Alumni Name"
                         value={searchTerm}
-                        // Update state and reset page on change
                         onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); setSelectedAlumni([]); }}
                         className="w-full pl-9 pr-3 py-3.5 rounded-lg focus:ring-blueSky focus:border-blueSky text-sm bg-white shadow-sm placeholder:text-grey-2"
                     />
@@ -239,20 +191,18 @@ const AlumniPage: React.FC = () => {
             <div className="mt-6 flex flex-col justify-end items-end">
                 <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
                      <DialogTrigger asChild>
-                         <button
-                            // Button is disabled if nothing is selected OR modal is open (prevent double click)
+                        <button
                             disabled={selectedAlumni.length === 0 || isDeleteModalOpen}
                             className={`flex items-center space-x-2 px-6 py-3.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-offset-1 ${
                                 selectedAlumni.length > 0
                                 ? 'bg-[#EE7373] text-white hover:bg-[#EE7373]/90 focus:ring-[#EE7373]/50'
-                                : 'bg-[#BFBFBF]/45 text-white cursor-not-allowed' // Adjusted disabled style
+                                : 'bg-[#BFBFBF]/45 text-white cursor-not-allowed'
                             }`}
                         >
                             <DeleteIcon className="w-4 h-4"/>
                             <span>Delete ({selectedAlumni.length})</span>
                         </button>
                     </DialogTrigger>
-                    {/* Render Modal Content when open */}
                     <DeleteConfirmationModal
                         itemCount={selectedAlumni.length}
                         itemName="alumni"
@@ -263,14 +213,14 @@ const AlumniPage: React.FC = () => {
             </div>
 
             <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                    itemsPerPage={itemsPerPage}
-                    totalItems={totalItems}
-                    startIndex={startIndex}
-                    endIndex={endIndex}
-                />
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                itemsPerPage={itemsPerPage}
+                totalItems={totalItems}
+                startIndex={startIndex}
+                endIndex={paginatedEvents.length > 0 ? startIndex + paginatedEvents.length : 0}
+            />
         </div>
     );
 };

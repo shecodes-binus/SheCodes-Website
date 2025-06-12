@@ -1,7 +1,7 @@
 // components/ChangePasswordModal.tsx
 'use client';
 
-import * as React from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,17 +12,19 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import apiService from '@/lib/apiService';
+import toast from 'react-hot-toast';
 
 interface ChangePasswordModalProps {
   onSuccess?: () => void;
 }
 
 export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = (/* props */) => {
-  const [currentPassword, setCurrentPassword] = React.useState('');
-  const [newPassword, setNewPassword] = React.useState('');
-  const [confirmPassword, setConfirmPassword] = React.useState('');
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -32,30 +34,32 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = (/* props
       setError("New passwords do not match.");
       return;
     }
-    if (newPassword.length < 8) { // Example validation
-        setError("Password must be at least 8 characters long.");
-        return;
+    if (newPassword.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
     }
-    // Add check for currentPassword if your API requires it
 
     setIsLoading(true);
-    console.log("Attempting to change password"); // Don't log passwords
+    const toastId = toast.loading("Saving new password...");
 
-    // --- Replace with your actual API call ---
     try {
-        // await api.changeUserPassword(currentPassword, newPassword); // Example API call
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
-        alert("Password changed successfully (Placeholder)!");
-        // props.onSuccess?.();
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-        // Rely on DialogClose button
-    } catch (err) {
-        console.error("Failed to change password:", err);
-        setError("Failed to change password. Check current password or try again.");
+      const response = await apiService.put('/users/me/password', {
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
+      toast.success(response.data.msg || "Password changed successfully!", { id: toastId });
+      // Clear form and implicitly close via DialogClose button
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      // In a real app, you might programmatically close the dialog here
+      // but clicking the 'Cancel' or 'X' button after success also works.
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || "Failed to change password. Please try again.";
+      setError(errorMessage);
+      toast.error(errorMessage, { id: toastId });
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 

@@ -1,156 +1,116 @@
 "use client";
 
-import * as React from 'react';
-import { useState, useRef, useEffect } from 'react'; 
+import React, { useState, useRef, useEffect } from 'react'; 
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {  Trash2, PlusCircle } from 'lucide-react'; // Added Trash2, PlusCircle
-import { ArticleCategory, BlogArticle } from "@/types/blog";
-import { dummyArticles } from "@/data/dummyBlogs"; // Adjust the import path as necessary
-
-interface BlogArticleFormData {
-    featuredImage: File | null; 
-    title: string;
-    slug: string;
-    category: ArticleCategory; 
-    description: string; 
-    authorName: string;
-    sections: string[];
-}
+import { Trash2, PlusCircle } from 'lucide-react';
+import type { ArticleCategory, BlogArticle } from "@/types/blog";
+import apiService from '@/lib/apiService';
+import toast from 'react-hot-toast';
 
 const EditArticlePage: React.FC = () => {
     const params = useParams();
+    const router = useRouter();
     const articleId = params.id as string;
 
-    const [articleData, setArticleData] = useState<BlogArticle | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     
-    const router = useRouter();
     const [articlePhoto, setArticlePhoto] = useState<File | null>(null);
     const [articlePhotoPreview, setArticlePhotoPreview] = useState<string | null>(null);
-    const [existingImageSrc, setExistingImageSrc] = useState<string | null>(null);
-    const [articleTitle, setArticleTitle] = useState('');
-    const [category, setCategory] = useState<ArticleCategory>('Tech & Innovation'); // Default to a valid category
-    const [description, setDescription] = useState('');
+    const [title, setTitle] = useState('');
+    const [category, setCategory] = useState<ArticleCategory>('Tech & Innovation');
+    const [excerpt, setExcerpt] = useState('');
     const [authorName, setAuthorName] = useState('');
     const [slug, setSlug] = useState('');
     const [sections, setSections] = useState<string[]>(['']); 
 
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     // --- Fetch and Pre-fill Data ---
     useEffect(() => {
-    const fetchArticle = async () => {
-        if (!params.id) {
-            setError("Invalid article ID.");
-            setLoading(false);
-            return;
-        }
-
-        try {
-            const res = await fetch(`api/blogs/${params.id}`);
-            if (!res.ok) throw new Error("Failed to fetch article");
-            const data = await res.json();
-
-            setArticleData(data);
-            setArticleTitle(data.title);
-            setCategory(data.category);
-            setDescription(data.description);
-            setAuthorName(data.authorName);
-            setSlug(data.slug);
-            setSections(data.sections || []);
-
-            if (data.featuredImageUrl) {
-                setExistingImageSrc(data.featuredImageUrl);
-                setArticlePhotoPreview(data.featuredImageUrl);
-            }
-
-            } catch (err: any) {
-                console.error(err);
-                setError(err.message || "Unknown error");
+        if (!articleId) return;
+        const fetchArticle = async () => {
+            setLoading(true);
+            try {
+                const response = await apiService.get<BlogArticle>(`/blogs/${articleId}`);
+                const data = response.data;
+                setTitle(data.title);
+                setCategory(data.category);
+                setExcerpt(data.excerpt);
+                setAuthorName(data.author_name);
+                setSlug(data.slug);
+                setSections(data.sections || ['']);
+                setArticlePhotoPreview(data.featured_image_url);
+            } catch (err) {
+                setError("Failed to fetch article data.");
             } finally {
                 setLoading(false);
             }
         };
-
         fetchArticle();
-    }, [params.id]);
+    }, [articleId]);
 
-    // Ref for hidden file input
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // --- Handlers ---
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
             setArticlePhoto(file);
-            // Generate preview
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setArticlePhotoPreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        } else {
-            setArticlePhoto(null);
-            setArticlePhotoPreview(null); // Clear preview
+            setArticlePhotoPreview(URL.createObjectURL(file));
         }
     };
 
-    // Trigger hidden file input click when the upload area is clicked
-    const handleUploadAreaClick = () => {
-        fileInputRef.current?.click();
-    };
-
-    // --- Sections Handlers ---
-    const addSection = () => {
-        setSections([...sections, '']); // Add a new empty string for a new section description
-    };
-
+    const handleUploadAreaClick = () => { fileInputRef.current?.click(); };
+    const addSection = () => { setSections([...sections, '']); };
     const updateSectionDescription = (index: number, value: string) => {
-         const updatedSections = [...sections];
-         updatedSections[index] = value;
-         setSections(updatedSections);
+        setSections(sections.map((s, i) => i === index ? value : s));
     };
-
-    const removeSection = (indexToRemove: number) => {
-        setSections(sections.filter((_, index) => index !== indexToRemove));
+    const removeSection = (index: number) => {
+        setSections(sections.filter((_, i) => i !== index));
     };
-    // --- End Sections Handlers ---
 
     const handleSaveArticle = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        setIsSubmitting(true);
+        const toastId = toast.loading("Updating article...");
+
         const formData = new FormData();
-        formData.append("title", articleTitle);
-        formData.append("slug", slug);
-        formData.append("category", category);
-        formData.append("description", description);
-        formData.append("authorName", authorName);
-        sections.forEach((s, i) => formData.append(`sections[${i}]`, s));
-        if (articlePhoto) formData.append("file", articlePhoto);
+        formData.append('title', title);
+        formData.append('slug', slug);
+        formData.append('category', category);
+        formData.append('excerpt', excerpt);
+        formData.append('author_name', authorName);
+        sections.forEach((section) => formData.append('sections', section));
+        formData.append('published_at', new Date().toISOString());
+        if (articlePhoto) {
+            formData.append('image', articlePhoto);
+        }
 
         try {
-            const res = await fetch(`http://localhost:8000/blogs/${params.id}`, {
-                method: "PUT",
-                body: formData,
+            await apiService.put(`/blogs/update/${articleId}`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
             });
-
-            if (!res.ok) throw new Error("Failed to update article");
-            alert("Article updated!");
+            toast.success("Article updated successfully!", { id: toastId });
             router.push("/admin/articles");
         } catch (err) {
-            console.error("Update failed", err);
-            alert("Failed to update article");
+            toast.error("Failed to update article.", { id: toastId });
+        } finally {
+            setIsSubmitting(false);
         }
-};
+    };
 
     // Basic Input styling matching the image (adjust border color, placeholder color, padding)
     const inputStyles = "text-black border-[#bfbfbf] rounded-lg placeholder:text-[#bfbfbf] py-5 px-3 focus:ring-2 focus:ring-blueSky focus:ring-offset-1";
     const labelStyles = "block text-md font-semibold text-black mb-2";
     const buttonStyles = "bg-white hover:bg-blueSky border-[2px] border-blueSky text-blueSky font-semibold hover:text-white py-2 px-4 rounded-lg text-sm inline-flex items-center gap-1";
     const removeButtonStyles = "bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-2 rounded-md text-xs inline-flex items-center gap-1";
+
+    if (loading) return <main className="p-10">Loading article...</main>;
+    if (error) return <main className="p-10 text-red-500">{error}</main>;
 
     return (
         <main className="flex-1 px-10 py-6"> {/* Added background color */}
@@ -217,8 +177,8 @@ const EditArticlePage: React.FC = () => {
                             type="text"
                             id="articleTitle"
                             name="articleTitle"
-                            value={articleTitle}
-                            onChange={(e) => setArticleTitle(e.target.value)}
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
                             placeholder="Enter title here"
                             className={inputStyles}
                             required
@@ -254,8 +214,8 @@ const EditArticlePage: React.FC = () => {
                         <Textarea
                             id="description"
                             name="description"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
+                            value={excerpt}
+                            onChange={(e) => setExcerpt(e.target.value)}
                             placeholder="Enter description here"
                             className={`${inputStyles} min-h-[100px]`} // Adjusted styling
                             rows={4}
@@ -345,9 +305,10 @@ const EditArticlePage: React.FC = () => {
                     <div className="flex justify-start pt-3">
                         <Button
                             type="submit"
-                            className="bg-blueSky hover:bg-blueSky/90 text-white font-semibold py-2.5 px-8 rounded-md cursor-pointer transition-colors" // Darker save button
+                            disabled={isSubmitting}
+                            className="bg-blueSky hover:bg-blueSky/90 text-white font-semibold py-3 px-8 rounded-md cursor-pointer transition-colors" // Darker save button
                         >
-                            Save
+                            {isSubmitting ? "Saving..." : "Save Changes"}
                         </Button>
                     </div>
                 </form>

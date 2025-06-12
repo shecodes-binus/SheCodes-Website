@@ -1,6 +1,6 @@
 # /shecodes-backend/models/user.py (Corrected)
 
-from sqlalchemy import Column, String, Enum, Boolean, DateTime, Text, Date
+from sqlalchemy import Column, String, Enum, Boolean, DateTime, Text, Date, func
 from sqlalchemy.orm import relationship
 from database import Base
 import uuid
@@ -14,8 +14,8 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     password = Column(String, nullable=False) # Hashed password
     is_verified = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow, server_default=func.now())
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, server_default=func.now())
     
     # Synced with Frontend `Member` and `User` types
     name = Column(String, nullable=False)
@@ -31,3 +31,8 @@ class User(Base):
     
     # Relationships
     participations = relationship("Participant", back_populates="user")
+    portfolio_projects = relationship("PortfolioProject", back_populates="user", cascade="all, delete-orphan")
+    comment_likes = relationship("CommentLike", back_populates="user", cascade="all, delete-orphan")
+    
+from .comment import CommentLike
+CommentLike.user = relationship("User", back_populates="comment_likes")

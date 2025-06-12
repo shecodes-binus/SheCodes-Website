@@ -12,6 +12,8 @@ from schemas.user import RoleEnum # Import RoleEnum for type hinting
 from database import get_db
 from core.security import get_current_user
 from core.storage_service import upload_file_to_supabase, delete_file_from_supabase
+from schemas import common as common_schema 
+from core.security import verify_password
 
 router = APIRouter(
     prefix="/users",
@@ -119,3 +121,22 @@ def read_user_by_id(
     if db_user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return db_user
+
+@router.put("/me/password", response_model=common_schema.Msg)
+def change_current_user_password(
+    body: user_schema.PasswordChange,
+    db: Session = Depends(get_db),
+    current_user: user_model.User = Depends(get_current_user)
+):
+    """
+    Allows the currently logged-in user to change their password.
+    """
+    if not verify_password(body.current_password, current_user.password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect current password"
+        )
+    
+    # If the current password is correct, update to the new one
+    crud.update_user_password(db, user=current_user, new_password=body.new_password)
+    return common_schema.Msg(msg="Password updated successfully")

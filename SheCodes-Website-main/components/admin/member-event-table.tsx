@@ -1,23 +1,14 @@
-// src/components/admin/event-participant-table.tsx
 "use client"
 
 import React, { useState, useRef } from 'react';
-import Image from 'next/image'; // Use Next.js Image for optimization
-import type { Member } from '@/types/members'; // Import your base Member type
-import { EventParticipant } from '@/types/eventParticipant';
-import { CombinedEventData } from '@/types/events';
+import type { EventParticipant } from '@/types/eventParticipant';
 import { PlusIcon, Pencil as PencilIcon } from 'lucide-react';
 import { Dialog } from "@/components/ui/dialog";
 import { CertificateUploadModal } from '@/components/admin/certificate-modal';
-
-interface EnrichedEventParticipant extends EventParticipant {
-    title: string;          
-    eventType: string;      
-    eventStatus: 'upcoming' | 'past' | 'ongoing';
-}
+import { DialogContent } from '@radix-ui/react-dialog';
 
 interface MemberEventTableProps {
-    memberEvents: EnrichedEventParticipant[];       
+    memberEvents: EventParticipant[];       
     selectedEvents: number[];           
     onSelectEvent: (id: number, checked: boolean) => void;
     onSelectAll: (checked: boolean) => void;
@@ -36,7 +27,7 @@ const MemberEventTable: React.FC<MemberEventTableProps> = ({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [targetEventIdForUpload, setTargetEventIdForUpload] = useState<number | null>(null);
 
-    const currentEventIds = memberEvents.map(p => p.eventId).filter((id): id is number => id !== undefined);
+    const currentEventIds = memberEvents.map(p => p.id).filter((id): id is number => id !== undefined);
     const allSelectedOnPage = memberEvents.length > 0 && currentEventIds.every(id => selectedEvents.includes(id));
     const isIndeterminate = memberEvents.length > 0 && currentEventIds.some(id => selectedEvents.includes(id)) && !allSelectedOnPage;
 
@@ -77,25 +68,22 @@ const MemberEventTable: React.FC<MemberEventTableProps> = ({
         }
     };
 
-    const handleStatusChange = (participantId: number | undefined, newStatus: string) => {
-        if (participantId === undefined) return; // Should not happen with valid data
-
-        // Type assertion as we know the possible values
+    const handleStatusChange = (participantId: number, newStatus: string) => {
         const validStatus = newStatus as 'registered' | 'attended' | 'cancelled';
         onChangeStatus(participantId, validStatus);
     };
 
     const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
-    const [managingCertificateForEvent, setManagingCertificateForEvent] = useState<EnrichedEventParticipant | null>(null);
+    const [managingParticipant, setManagingParticipant] = useState<EventParticipant | null>(null);
 
-    const openCertificateModal = (eventData: EnrichedEventParticipant) => {
-        setManagingCertificateForEvent(eventData);
+    const openCertificateModal = (participant: EventParticipant) => {
+        setManagingParticipant(participant);
         setIsCertificateModalOpen(true);
     };
 
     const closeCertificateModal = () => {
         setIsCertificateModalOpen(false);
-        setManagingCertificateForEvent(null);
+        setManagingParticipant(null);
     };
 
     const handleModalUploadConfirm = async (eventId: number, file: File) => {
@@ -108,7 +96,6 @@ const MemberEventTable: React.FC<MemberEventTableProps> = ({
             alert('Certificate upload failed via modal.');
         }
     };
-
 
     return (
         <>
@@ -146,28 +133,28 @@ const MemberEventTable: React.FC<MemberEventTableProps> = ({
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200"> {/* Added row dividers */}
-                    {memberEvents.map((event) => (
-                        <tr key={event.eventId} className="hover:bg-gray-50"> {/* Subtle hover */}
+                    {memberEvents.map((p) => (
+                        <tr key={p.id} className="hover:bg-gray-50"> {/* Subtle hover */}
                             <td className="px-6 py-4 whitespace-nowrap align-middle"> {/* Adjusted padding */}
                                 <input
                                     type="checkbox"
                                     className="rounded border-gray-400 text-blueSky focus:ring-blueSky focus:ring-offset-0 h-4 w-4" // Adjusted styling
-                                    checked={selectedEvents.includes(event.eventId)}
-                                    onChange={(e) => onSelectEvent(event.eventId, e.target.checked)}
-                                    aria-labelledby={`event-name-${event.eventId}`}
+                                    checked={selectedEvents.includes(p.id)}
+                                    onChange={(e) => onSelectEvent(p.id, e.target.checked)}
+                                    aria-labelledby={`event-name-${p.id}`}
                                 />
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-textMuted"> {/* Adjusted text color */}
-                                {event.title || 'N/A'}
+                                {p.event.title || 'N/A'}
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
                                 <div className="relative w-full max-w-[150px]">
                                     {/* Status Dropdown */}
                                     <select
-                                        value={event.status || ''}
-                                        onChange={(e) => handleStatusChange(event.eventId, e.target.value)}
+                                        value={p.status || ''}
+                                        onChange={(e) => handleStatusChange(p.id, e.target.value)}
                                         className="appearance-none block w-full bg-white border border-gray-300 text-sm rounded-md shadow-sm py-1.5 pl-3 pr-10 focus:outline-none focus:ring-blueSky focus:border-blueSky"
-                                        aria-label={`Change status for ${event.title}`}
+                                        aria-label={`Change status for ${p.event.title}`}
                                     >
                                         <option value="registered">Registered</option>
                                         <option value="attended">Attended</option>
@@ -183,17 +170,17 @@ const MemberEventTable: React.FC<MemberEventTableProps> = ({
                                 </div>
                             </td>
                             <td className="py-4 whitespace-nowrap text-sm text-gray-600">
-                                {displayStatus(event.eventStatus)}
+                                {displayStatus(p.event.status)}
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                                 {/* Button to open the certificate modal */}
                                 <button
-                                    onClick={() => openCertificateModal(event)}
+                                    onClick={() => openCertificateModal(p)}
                                     className="flex items-center justify-center space-x-2 px-4 py-2.5 border border-blueSky rounded-lg text-sm text-blueSky bg-white hover:bg-blueSky hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blueSky/50"
-                                    aria-label={event.certificateUrl ? `Edit certificate for ${event.title}` : `Add certificate for ${event.title}`}
+                                    aria-label={p.certificate_url ? `Edit certificate for ${p.event.title}` : `Add certificate for ${p.event.title}`}
                                 >
-                                    {event.certificateUrl ? <PencilIcon className="w-4 h-4" /> : <PlusIcon className="w-4 h-4" />}
-                                    <span>{event.certificateUrl ? 'Edit Certificate' : 'Add Certificate'}</span>
+                                    {p.certificate_url ? <PencilIcon className="w-4 h-4" /> : <PlusIcon className="w-4 h-4" />}
+                                    <span>{p.certificate_url ? 'Edit Certificate' : 'Add Certificate'}</span>
                                 </button>
                             </td>
                         </tr>
@@ -209,17 +196,17 @@ const MemberEventTable: React.FC<MemberEventTableProps> = ({
                 </tbody>
             </table>
         </div>
-        <Dialog open={isCertificateModalOpen} onOpenChange={(isOpen) => {
-            if (!isOpen) closeCertificateModal(); 
-        }}>
-            {managingCertificateForEvent && (
-                <CertificateUploadModal
-                    eventId={managingCertificateForEvent.eventId}
-                    currentCertificateUrl={managingCertificateForEvent.certificateUrl}
-                    onUpload={handleModalUploadConfirm} 
-                    onClose={closeCertificateModal}
-                />
-            )}
+        <Dialog open={isCertificateModalOpen} onOpenChange={setIsCertificateModalOpen}>
+            <DialogContent>
+                {managingParticipant && (
+                    <CertificateUploadModal
+                        participationId={managingParticipant.id}
+                        currentCertificateUrl={managingParticipant.certificate_url}
+                        onUpload={onUploadCertificate} 
+                        onClose={closeCertificateModal}
+                    />
+                )}
+            </DialogContent>
         </Dialog>
         </>
     );

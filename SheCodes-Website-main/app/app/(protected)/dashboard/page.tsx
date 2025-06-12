@@ -23,30 +23,23 @@ import {
   LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { allEventsData } from '@/data/dummyEvent'; 
+// import { allEventsData } from '@/data/dummyEvent'; 
 import type { CombinedEventData, Session } from '@/types/events';
 import { normalizeDate, formatEventGroupDate, calculateDuration, formatEventDateTime } from '@/lib/eventUtils';
 import { format, parseISO, isSameDay, isAfter, isBefore, isEqual, min, max, differenceInMilliseconds } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
-
-// --- Interfaces ( Reuse or define if needed ) ---
-interface CourseProgress {
-    id: number;
-    name: string;
-    value: number;
-    colorClass: string; // Tailwind class for the progress bar indicator
-}
+import apiService from '@/lib/apiService';
 
 // Interface representing an aggregated entry for an event on a specific day
 interface DailyEventEntry {
-  uniqueId: string;         // e.g., "event-4-date-2025-07-10"
-  eventId: number;
-  eventTitle: string;
-  eventType: string;
-  eventLocation: string;
-  dayDate: Date;            // Normalized date object for this entry's day
-  dayStartTimeISO: string;  // ISO string of the *first* session start on this day
-  dayEndTimeISO: string;    // ISO string of the *last* session end on this day
+  uniqueId: string;
+  event_id: number;
+  event_title: string;
+  event_type: "Workshop" | "Seminar" | "Webinar" | "Mentorship";
+  event_location: string;
+  day_date: Date;
+  day_start_time_iso: string;
+  day_end_time_iso: string;
 }
 
 // Interface for the data structure used in the final grouped display list
@@ -70,14 +63,14 @@ interface EventProgressInfo {
     status: EventStatus;
     progressValue: number;
     tags: string[];
-    sessions: Session[]; // Keep sessions for potential details
-    // Add other event details if needed for display later
+    sessions: Session[]; 
 }
 
-const LucideIcons = { // Map icon names to components
-    NotebookText,
-    // Add other icons if used in event data
-};
+interface UserWithEvents {
+    participations: {
+        event: CombinedEventData;
+    }[];
+}
 
 const eventTypeStyles: { [key: string]: { icon: React.ElementType; bg: string; color: string; } } = {
   Workshop: { icon: NotebookText, bg: 'bg-pink-100', color: 'text-pink-600' },
@@ -140,20 +133,39 @@ const SidebarNav = () => {
 // --- Main Dashboard Page Component ---
 export default function DashboardPage() {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
-  const [activeFilter, setActiveFilter] = React.useState<EventStatus | 'All'>('All')
+  const [userEvents, setUserEvents] = React.useState<CombinedEventData[]>([]);
+  const [activeFilter, setActiveFilter] = React.useState<EventStatus | 'All'>('All');
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [expandedEvents, setExpandedEvents] = React.useState<Set<number>>(new Set());
+  const { isAuthenticated, loading: authLoading } = useAuth();
 
   // State to track expanded events by their ID - START EMPTY
-  const [expandedEvents, setExpandedEvents] = React.useState<Set<number>>(new Set()); // Initialize empty
+  React.useEffect(() => {
+    if (isAuthenticated) {
+        const fetchMyEvents = async () => {
+            setLoading(true);
+            try {
+                const response = await apiService.get<UserWithEvents>('/users/me');
+                const events = response.data.participations.map(p => p.event).filter(Boolean); // Filter out any null/undefined events
+                setUserEvents(events);
+            } catch (err) {
+                console.error("Failed to fetch user activities:", err);
+                setError("Could not load your activities.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchMyEvents();
+    }
+  }, [isAuthenticated]);
 
   // Function to toggle expansion state (Keep as is)
   const toggleEventExpansion = (eventId: number) => {
     setExpandedEvents(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(eventId)) {
-        newSet.delete(eventId);
-      } else {
-        newSet.add(eventId);
-      }
+      if (newSet.has(eventId)) newSet.delete(eventId);
+      else newSet.add(eventId);
       return newSet;
     });
   };
@@ -166,103 +178,83 @@ export default function DashboardPage() {
     let totalHoursSpent = 0;
     let relevantEventCount = 0;
 
-    allEventsData.forEach(event => {
+    userEvents.forEach(event => {
         if (!event.sessions || event.sessions.length === 0) return;
         relevantEventCount++;
-        let eventMinStartTime: Date | null = null;
-        let eventMaxEndTime: Date | null = null;
         let eventTotalDurationMs = 0;
-
         try {
-            const sessionStarts: Date[] = [];
-            const sessionEnds: Date[] = [];
+            const sessionStarts = event.sessions.map(s => parseISO(s.start));
+            const sessionEnds = event.sessions.map(s => parseISO(s.end));
+            if (sessionStarts.some(d => isNaN(d.getTime())) || sessionEnds.some(d => isNaN(d.getTime()))) {
+                throw new Error("Invalid date format");
+            }
+
+            const eventMinStartTime = min(sessionStarts);
+            const eventMaxEndTime = max(sessionEnds);
             event.sessions.forEach(session => {
-                const start = parseISO(session.start);
-                const end = parseISO(session.end);
-                if (isNaN(start.getTime()) || isNaN(end.getTime())) throw new Error(`Invalid date`);
-                sessionStarts.push(start);
-                sessionEnds.push(end);
-                eventTotalDurationMs += differenceInMilliseconds(end, start);
+                eventTotalDurationMs += differenceInMilliseconds(parseISO(session.end), parseISO(session.start));
             });
-            if (sessionStarts.length > 0) {
-                eventMinStartTime = min(sessionStarts);
-                eventMaxEndTime = max(sessionEnds);
+
+            if (isBefore(eventMaxEndTime, now)) {
+                completedCount++;
+                totalHoursSpent += eventTotalDurationMs / (1000 * 60 * 60);
+            } else if (isBefore(eventMinStartTime, now)) {
+                inProgressCount++;
             }
         } catch (error) {
             console.error(`Error processing dates for event ${event.id}:`, error);
-            return;
-        }
-
-        if (eventMaxEndTime && isBefore(eventMaxEndTime, now)) {
-            completedCount++;
-            totalHoursSpent += eventTotalDurationMs / (1000 * 60 * 60);
-        } else if (eventMinStartTime && isBefore(eventMinStartTime, now)) {
-            inProgressCount++;
         }
     });
 
-    const inProgressPercentage = relevantEventCount > 0
-        ? Math.round((inProgressCount / relevantEventCount) * 100)
-        : 0;
-
+    const inProgressPercentage = relevantEventCount > 0 ? Math.round((inProgressCount / relevantEventCount) * 100) : 0;
+    
     return {
       hoursSpent: Math.round(totalHoursSpent),
       completed: completedCount,
       inProgress: inProgressPercentage,
     };
-  }, []);
+  }, [userEvents]);
 
   // --- Calculate Event Progress List (NEW) ---
   const eventProgressList = React.useMemo((): EventProgressInfo[] => {
     const now = new Date();
-    return allEventsData.map(event => {
+    return userEvents.map(event => {
       let status: EventStatus = 'Upcoming';
       let progressValue = 0;
-      let eventMinStartTime: Date | null = null;
-      let eventMaxEndTime: Date | null = null;
-
+      
+      // Handle events with no sessions
       if (!event.sessions || event.sessions.length === 0) {
-        // Handle events with no sessions - treat as upcoming or skip? Let's mark as Upcoming.
-         console.warn(`Event ${event.id} has no sessions. Marking as Upcoming.`);
-         return {
-             id: event.id,
-             title: event.title,
-             status: 'Upcoming',
-             progressValue: 0,
-             sessions: [],
-             tags: event.tags || [], 
+         return { 
+           id: event.id, 
+           title: event.title, 
+           status: 'Upcoming', 
+           progressValue: 0, 
+           sessions: [], 
+           tags: event.tags || [] // FIX: Ensure tags is always an array
          };
       }
 
       try {
         const sessionStarts = event.sessions.map(s => parseISO(s.start));
         const sessionEnds = event.sessions.map(s => parseISO(s.end));
-
-        // Validate all dates before proceeding
+        
+        // FIX: Check validity by calling .getTime() on each Date object
         if (sessionStarts.some(d => isNaN(d.getTime())) || sessionEnds.some(d => isNaN(d.getTime()))) {
-            throw new Error("Invalid date format found in sessions.");
+            throw new Error("Invalid date format");
         }
-
-        eventMinStartTime = min(sessionStarts);
-        eventMaxEndTime = max(sessionEnds);
+        
+        const eventMinStartTime = min(sessionStarts);
+        const eventMaxEndTime = max(sessionEnds);
 
         if (isBefore(eventMaxEndTime, now)) {
           status = 'Completed';
           progressValue = 100;
         } else if (isBefore(eventMinStartTime, now)) {
           status = 'On Progress';
-          const totalSessions = event.sessions.length;
-          const completedSessions = event.sessions.filter(session => {
-              try {
-                  return isBefore(parseISO(session.end), now);
-              } catch { return false; } // Handle potential parsing error within filter
-          }).length;
-          progressValue = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
-        } else {
-          // Event hasn't started yet
-          status = 'Upcoming';
-          progressValue = 0;
+          const completedSessions = event.sessions.filter(s => isBefore(parseISO(s.end), now)).length;
+          progressValue = event.sessions.length > 0 ? Math.round((completedSessions / event.sessions.length) * 100) : 0;
         }
+        // If neither, status remains 'Upcoming' and progressValue remains 0
       } catch (error) {
         console.error(`Error calculating progress for event ${event.id}:`, error);
         // Default to Upcoming/0% on error
@@ -270,21 +262,20 @@ export default function DashboardPage() {
         progressValue = 0;
       }
 
-      return {
-        id: event.id,
-        title: event.title,
-        status: status,
-        progressValue: progressValue,
-        tags: event.tags,
-        sessions: event.sessions, // Include sessions data
+      return { 
+        id: event.id, 
+        title: event.title, 
+        status, 
+        progressValue, 
+        tags: event.tags || [], // FIX: Ensure tags is always an array
+        sessions: event.sessions 
       };
     });
-  }, []);
+  }, [userEvents]);
 
   const filteredEventProgressList = React.useMemo(() => {
     if (activeFilter === 'All') {
-      // Show Upcoming events last in 'All' view
-      return eventProgressList.sort((a, b) => {
+      return [...eventProgressList].sort((a, b) => {
           const statusOrder = { 'On Progress': 1, 'Completed': 2, 'Upcoming': 3 };
           return statusOrder[a.status] - statusOrder[b.status];
       });
@@ -294,151 +285,88 @@ export default function DashboardPage() {
   
   // --- Calculate unique dates with events for calendar highlighting ---
   const eventDates = React.useMemo(() => {
-    const dates = new Set<Date>(); 
-    allEventsData.forEach(event => {
-      if (Array.isArray(event.sessions)) {
-        event.sessions.forEach(session => {
-          try {
-            const sessionStartDate = parseISO(session.start);
-            const normalizedDay = normalizeDate(sessionStartDate);
-            if (!isNaN(normalizedDay.getTime())) { 
-                 dates.add(normalizedDay);
-            }
-          } catch (e) {
-            console.error(`Error parsing session date for calendar marker: ${session.id}`, e);
-          }
-        });
-      }
+    const dates = new Set<string>();
+    userEvents.forEach(event => {
+      event.sessions?.forEach(session => {
+        try {
+          const normalizedDay = normalizeDate(parseISO(session.start));
+          if (!isNaN(normalizedDay.getTime())) dates.add(normalizedDay.toISOString());
+        } catch (e) { console.error(`Error parsing session date: ${session.id}`, e); }
+      });
     });
-    return Array.from(dates); 
-  }, []); 
+    return Array.from(dates).map(iso => new Date(iso));
+  }, [userEvents]); 
 
   // --- Process, Aggregate, Filter, and Group DAILY EVENT ENTRIES for Display ---
   const displayedScheduleEvents = React.useMemo(() => {
     const todayNormalized = normalizeDate(new Date());
     const groups: GroupedEvents = {};
-    let filteredDailyEntries: DailyEventEntry[] = [];
-
-    // 1. Process sessions to create aggregated daily entries for each event
     const dailyEventEntriesMap = new Map<string, { event: CombinedEventData; sessionDates: Date[] }>();
 
-    allEventsData.forEach(event => {
-        if (!Array.isArray(event.sessions) || event.sessions.length === 0) {
-            return; // Skip events without sessions
-        }
+    userEvents.forEach(event => {
+      if (!event.sessions || event.sessions.length === 0) return;
+      event.sessions.forEach(session => {
+        try {
+            const sessionStartDate = parseISO(session.start);
+            const dayKey = format(normalizeDate(sessionStartDate), 'yyyy-MM-dd');
+            const mapKey = `event-${event.id}-date-${dayKey}`;
 
-        event.sessions.forEach(session => {
-            try {
-                const sessionStartDate = parseISO(session.start);
-                const sessionEndDate = parseISO(session.end);
-                const normalizedDay = normalizeDate(sessionStartDate);
-                const dayKey = format(normalizedDay, 'yyyy-MM-dd'); // Consistent key format
-                const mapKey = `event-${event.id}-date-${dayKey}`;
-
-                if (!dailyEventEntriesMap.has(mapKey)) {
-                    dailyEventEntriesMap.set(mapKey, {
-                        event: event,
-                        sessionDates: [] // Store actual Date objects for min/max
-                    });
-                }
-                // Add start and end Date objects for this session
-                dailyEventEntriesMap.get(mapKey)?.sessionDates.push(sessionStartDate, sessionEndDate);
-
-            } catch (e) {
-                console.error(`Error processing session ${session.id} for event ${event.id}:`, e);
+            if (!dailyEventEntriesMap.has(mapKey)) {
+                dailyEventEntriesMap.set(mapKey, { event: event, sessionDates: [] });
             }
-        });
+            dailyEventEntriesMap.get(mapKey)?.sessionDates.push(sessionStartDate, parseISO(session.end));
+        } catch (e) { console.error(`Error processing session ${session.id} for event ${event.id}:`, e); }
+      });
     });
 
     // 2. Convert Map entries into DailyEventEntry array
     const allDailyEventEntries: DailyEventEntry[] = Array.from(dailyEventEntriesMap.entries()).map(([key, data]) => {
-        const earliestStartTime = min(data.sessionDates.filter((d, i) => i % 2 === 0)); // Filter for start times
-        const latestEndTime = max(data.sessionDates.filter((d, i) => i % 2 !== 0)); // Filter for end times
-
+        const startTimes = data.sessionDates.filter((_, i) => i % 2 === 0);
+        const endTimes = data.sessionDates.filter((_, i) => i % 2 !== 0);
+        const earliestStartTime = min(startTimes);
+        const latestEndTime = max(endTimes);
         return {
             uniqueId: key,
-            eventId: data.event.id,
-            eventTitle: data.event.title,
-            eventType: data.event.type,
-            eventLocation: data.event.location || 'N/A',
-            dayDate: normalizeDate(earliestStartTime), // The date of the entry
-            dayStartTimeISO: earliestStartTime.toISOString(),
-            dayEndTimeISO: latestEndTime.toISOString(),
+            event_id: data.event.id,
+            event_title: data.event.title,
+            event_type: data.event.event_type,
+            event_location: data.event.location || 'N/A',
+            day_date: normalizeDate(earliestStartTime),
+            day_start_time_iso: earliestStartTime.toISOString(),
+            day_end_time_iso: latestEndTime.toISOString(),
         };
     });
 
     // 3. Filter daily entries based on selected date or upcoming status
-    if (!date) {
-      // --- Case 1: No date selected (Show upcoming daily entries) ---
-      // ** Sort ALL entries first by date, then by start time BEFORE filtering **
-      allDailyEventEntries.sort((a, b) => {
-        const dateComparison = a.dayDate.getTime() - b.dayDate.getTime();
-        if (dateComparison !== 0) return dateComparison;
-        // If same date, sort by start time
-        try {
-            return parseISO(a.dayStartTimeISO).getTime() - parseISO(b.dayStartTimeISO).getTime();
-        } catch { return 0; }
-      });
-      // Now filter the sorted list
-      filteredDailyEntries = allDailyEventEntries.filter(entry => {
-        return !isBefore(entry.dayDate, todayNormalized); // Show today or future
-      });
+    let filteredDailyEntries = allDailyEventEntries;
+    if (date) {
+        const selectedDateNormalized = normalizeDate(date);
+        filteredDailyEntries = allDailyEventEntries.filter(entry => isSameDay(entry.day_date, selectedDateNormalized));
     } else {
-      // --- Case 2: A specific date IS selected ---
-      const selectedDateNormalized = normalizeDate(date);
-      filteredDailyEntries = allDailyEventEntries.filter(entry => {
-        // Show entry if its day matches the selected day
-        return isSameDay(entry.dayDate, selectedDateNormalized);
-      });
-
-      filteredDailyEntries.sort((a, b) => {
-        try {
-            return parseISO(a.dayStartTimeISO).getTime() - parseISO(b.dayStartTimeISO).getTime();
-        } catch (e) {
-            console.error("Error sorting daily entries for selected date:", a, b, e);
-            return 0;
-        }
-      });
+        filteredDailyEntries = allDailyEventEntries.filter(entry => !isBefore(entry.day_date, todayNormalized))
+            .sort((a, b) => a.day_date.getTime() - b.day_date.getTime() || parseISO(a.day_start_time_iso).getTime() - parseISO(b.day_start_time_iso).getTime());
     }
 
-    // 4. Group the filtered daily entries by date
     filteredDailyEntries.forEach(entry => {
-        let groupKey: string;
-        if (isSameDay(entry.dayDate, todayNormalized)) {
-          groupKey = "Today";
-        } else {
-          groupKey = formatEventGroupDate(entry.dayDate); // Group by the entry's specific day
-        }
-
-        if (!groups[groupKey]) {
-          groups[groupKey] = [];
-        }
-
-        const styleInfo = eventTypeStyles[entry.eventType] || eventTypeStyles.Default;
-        groups[groupKey].push({
-          entry, // Pass the whole aggregated daily entry object
-          IconComponent: styleInfo.icon,
-          iconBg: styleInfo.bg,
-          iconColor: styleInfo.color,
-        });
+        const groupKey = isSameDay(entry.day_date, todayNormalized) ? "Today" : formatEventGroupDate(entry.day_date);
+        if (!groups[groupKey]) groups[groupKey] = [];
+        const styleInfo = eventTypeStyles[entry.event_type] || eventTypeStyles.Default;
+        groups[groupKey].push({ entry, IconComponent: styleInfo.icon, iconBg: styleInfo.bg, iconColor: styleInfo.color });
     });
-
-    // 5. Sort entries within each group by start time
-    for (const dateKey in groups) {
-      groups[dateKey].sort((a, b) => {
-        try {
-          // Sort by the daily start time
-          return parseISO(a.entry.dayStartTimeISO).getTime() - parseISO(b.entry.dayStartTimeISO).getTime();
-        } catch (e) {
-          console.error("Error sorting daily entries:", a.entry, b.entry, e);
-          return 0; // Keep original order if parsing fails
-        }
-      });
-    }
-
-    // console.log("Final displayedScheduleEvents (daily entries):", groups); // For debugging
+    
+    Object.values(groups).forEach(group => group.sort((a, b) => parseISO(a.entry.day_start_time_iso).getTime() - parseISO(b.entry.day_start_time_iso).getTime()));
+    
     return groups;
-  }, [date]); // Dependency is only the selected date
+  }, [userEvents, date]);
+
+  if (authLoading || loading) {
+    // A simple skeleton for loading state
+    return <div className="p-8 text-center text-gray-500">Loading Dashboard...</div>;
+  }
+
+  if (error) {
+    return <div className="p-8 text-center text-red-500">{error}</div>;
+  }
 
   return (
     // Use light background for the page container if needed, or keep it white/gray-50
@@ -665,20 +593,20 @@ export default function DashboardPage() {
                       <CardContent className="py-3 flex items-center justify-between gap-3 px-0">
                         {/* Left Side */}
                         <div className="flex items-center gap-3 flex-1 overflow-hidden">
-                          <span className="text-xs text-gray-500 w-16 text-right flex-shrink-0">{formatEventDateTime(entry.dayStartTimeISO, entry.dayEndTimeISO).startTime}</span>
+                          <span className="text-xs text-gray-500 w-16 text-right flex-shrink-0">{formatEventDateTime(entry.day_start_time_iso, entry.day_end_time_iso).startTime}</span>
                           <span className={cn("flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0", iconBg)}>
                             <IconComponent className={cn("h-5 w-5", iconColor)} />
                           </span>
                           <div className="flex-1 overflow-hidden space-y-1">
-                            <p className="text-sm font-semibold text-gray-800 truncate">{entry.eventTitle}</p>
-                            <p className="text-xs text-gray-500 truncate">{entry.eventLocation}</p>
+                            <p className="text-sm font-semibold text-gray-800 truncate">{entry.event_title}</p>
+                            <p className="text-xs text-gray-500 truncate">{entry.event_location}</p>
                           </div>
                         </div>
                         {/* Right Side - Duration Only */}
                         <div className="text-right flex-shrink-0 space-y-0.5">
-                          <p className="text-[0.8rem] font-semibold text-gray-700">{entry.eventType}</p>
+                          <p className="text-[0.8rem] font-semibold text-gray-700">{entry.event_type}</p>
                           {/* Calculate duration if needed, or use a placeholder/fixed value */}
-                          <p className="text-[0.75rem] text-gray-500">{calculateDuration(entry.dayStartTimeISO, entry.dayEndTimeISO)}</p>
+                          <p className="text-[0.75rem] text-gray-500">{calculateDuration(entry.day_end_time_iso, entry.day_end_time_iso)}</p>
                         </div>
                       </CardContent>
                     </Card>

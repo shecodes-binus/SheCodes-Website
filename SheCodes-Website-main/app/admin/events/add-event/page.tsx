@@ -1,7 +1,6 @@
 "use client";
 
-import * as React from 'react';
-import { useState, useRef, useCallback } from 'react'; 
+import React, { useState, useRef, useEffect } from 'react'; // Added useEffect
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -9,15 +8,18 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DatePicker from 'react-datepicker';
-import { UploadCloud, Clock, Trash2, PlusCircle } from 'lucide-react'; // Added Trash2, PlusCircle
+import { Trash2, PlusCircle } from 'lucide-react';
 import "react-datepicker/dist/react-datepicker.css";
 import { CustomDateInput } from '@/components/custom-date-picker';
 import { CustomTimeInput } from '@/components/custom-time-picker';
-import { Mentor, Skill, Benefit, Session } from '@/types/events'; // Adjusted import path
-import { dummyMentors } from '@/data/dummyPartnershipData';
+import { Mentor, Skill, Benefit, Session } from '@/types/events';
+// import { dummyMentors } from '@/data/dummyPartnershipData';
+import apiService from '@/lib/apiService';
+import toast from 'react-hot-toast';
 
 const EventFormPage: React.FC = () => {
     const router = useRouter();
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [eventPhoto, setEventPhoto] = useState<File | null>(null);
     const [eventPhotoPreview, setEventPhotoPreview] = useState<string | null>(null);
     const [eventTitle, setEventTitle] = useState('');
@@ -38,12 +40,23 @@ const EventFormPage: React.FC = () => {
     const [sessions, setSessions] = useState<Session[]>([]);
 
     // State for potentially adding a new mentor (simple example)
-    const availableMentors = dummyMentors; 
-    const [showAddMentorForm, setShowAddMentorForm] = useState(false);
-    const [newMentorName, setNewMentorName] = useState('');
-
-    // Ref for hidden file input
+    const [availableMentors, setAvailableMentors] = useState<Mentor[]>([]);
+    
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const fetchMentors = async () => {
+            try {
+                const response = await apiService.get<Mentor[]>('/mentors');
+                setAvailableMentors(response.data);
+            } catch (err) {
+                toast.error("Could not load the list of available mentors.");
+                console.error("Failed to fetch mentors:", err);
+            }
+        };
+
+        fetchMentors();
+    }, []);
 
     // --- Handlers ---
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,6 +72,24 @@ const EventFormPage: React.FC = () => {
         } else {
             setEventPhoto(null);
             setEventPhotoPreview(null); // Clear preview
+        }
+    };
+
+    const uploadImage = async (): Promise<string | null> => {
+        if (!eventPhoto) return null;
+
+        const formData = new FormData();
+        formData.append("file", eventPhoto);
+
+        try {
+            const response = await apiService.post("/upload", formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            return response.data.url; // e.g., /static/images/abc.jpg
+        } catch (error) {
+            console.error("Image upload failed:", error);
+            toast.error("Image upload failed. Please try again.");
+            throw new Error("Image upload failed");
         }
     };
 
@@ -112,7 +143,8 @@ const EventFormPage: React.FC = () => {
 
     // Sessions (Timeline)
     const addSession = () => {
-        setSessions([...sessions, { id: `session_${Date.now()}`, topic: '', description: '', start: null, end: null }]);
+        const now = new Date().toISOString();
+        setSessions([...sessions, { id: Date.now(), topic: '', description: '', start: now, end: now }]);
     };
     const updateSession = (index: number, field: keyof Session, value: string | Date | null) => {
         const updatedSessions = [...sessions];
@@ -124,67 +156,66 @@ const EventFormPage: React.FC = () => {
         }
         setSessions(updatedSessions);
     };
-    const removeSession = (id: string) => {
+    const removeSession = (id: number) => {
         setSessions(sessions.filter(s => s.id !== id));
     };
 
     // Save Event
     const handleSaveEvent = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (isSubmitting) return;
 
         if (!startDate || !endDate || !startTime || !endTime) {
-            alert("Please select valid start/end date and time.");
+            toast.error("Please select valid start/end dates and times.");
             return;
         }
 
-        const combinedStart = new Date(startDate);
-        combinedStart.setHours(startTime.getHours(), startTime.getMinutes());
-
-        const combinedEnd = new Date(endDate);
-        combinedEnd.setHours(endTime.getHours(), endTime.getMinutes());
-
-        const payload = {
-            title: eventTitle,
-            description,
-            event_type: category.charAt(0).toUpperCase() + category.slice(1), // match backend enum
-            location,
-            start_date: combinedStart.toISOString(),
-            end_date: combinedEnd.toISOString(),
-            tools,
-            key_points: keyPoints,
-            mentors: selectedMentors.map((m) => m.id),
-            skills: skills.map((s) => ({ title: s.title, description: s.description })),
-            benefits: benefits.map((b) => ({ title: b.title, text: b.text })),
-            sessions: sessions.map((s) => ({
-                topic: s.topic,
-                description: s.description,
-                start: s.start ? new Date(s.start).toISOString() : null,
-                end: s.end ? new Date(s.end).toISOString() : null
-            }))
-        };
+        setIsSubmitting(true);
+        const toastId = toast.loading('Creating event...');
 
         try {
-            const res = await fetch("http://localhost:8000/events", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
-            });
+            const imageUrl = await uploadImage();
 
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.detail || "Failed to create event");
-            }
+            const combinedStart = new Date(startDate);
+            combinedStart.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
 
-            const data = await res.json();
-            console.log("Event created successfully:", data);
-            alert("Event created successfully!");
-            router.push("/admin/events"); // Or wherever you'd like to redirect
+            const combinedEnd = new Date(endDate);
+            combinedEnd.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
+
+            const payload = {
+                title: eventTitle,
+                description,
+                event_type: category, // Send the direct value
+                location,
+                start_date: combinedStart.toISOString(),
+                end_date: combinedEnd.toISOString(),
+                image_src: imageUrl,
+                image_alt: `Image for ${eventTitle}`,
+                group_link: whatsappLink,
+                tools: tools.split(',').map(t => ({ name: t.trim(), logo_src: '' })), // Match type
+                key_points: keyPoints.split(',').map(p => p.trim()),
+                mentors: selectedMentors.map((m) => m.id),
+                // Send only title/description, not client-side ID
+                skills: skills.map(({ title, description }) => ({ title, description })),
+                benefits: benefits.map(({ title, text }) => ({ title, text })),
+                sessions: sessions.map((s) => ({
+                    topic: s.topic,
+                    description: s.description,
+                    start: s.start ? new Date(s.start).toISOString() : new Date().toISOString(),
+                    end: s.end ? new Date(s.end).toISOString() : new Date().toISOString()
+                }))
+            };
+
+            await apiService.post("/events", payload);
+            
+            toast.success("Event created successfully!", { id: toastId });
+            router.push("/admin/events");
 
         } catch (error: any) {
+            toast.error(`Error: ${error.message || 'Failed to create event.'}`, { id: toastId });
             console.error("Event creation failed:", error);
-            alert("Error: " + error.message);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -689,7 +720,7 @@ const EventFormPage: React.FC = () => {
                             type="submit"
                             className="bg-blueSky hover:bg-blueSky/90 text-white font-semibold py-2.5 px-8 rounded-md cursor-pointer transition-colors" // Darker save button
                         >
-                            Add Event
+                            {isSubmitting ? 'Adding...' : 'Add Event'}
                         </Button>
                     </div>
                 </form>

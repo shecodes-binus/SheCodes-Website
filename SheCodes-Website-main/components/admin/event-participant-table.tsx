@@ -1,16 +1,8 @@
-// src/components/admin/event-participant-table.tsx
 "use client"
 
 import React from 'react';
-import Image from 'next/image'; // Use Next.js Image for optimization
-import type { Member } from '@/types/members'; // Import your base Member type
-
-// Define the combined participant type used in this table
-// (Alternatively, import from a central types file if defined there)
-interface ParticipantWithDetails extends Member {
-    registrationDate?: string;
-    participationStatus?: 'registered' | 'attended' | 'cancelled';
-}
+import Image from 'next/image';
+import type { EventParticipant } from '@/types/eventParticipant';
 
 // Helper function to format date string (e.g., YYYY-MM-DD to MM/DD/YYYY)
 const formatDateString = (dateString: string | undefined | null): string => {
@@ -33,38 +25,25 @@ const formatDateString = (dateString: string | undefined | null): string => {
     }
 };
 
-// Helper to format status labels
-const formatStatus = (status: 'registered' | 'attended' | 'cancelled' | undefined): string => {
-    if (!status) return 'Unknown';
-    switch (status) {
-        case 'registered': return 'Registered';
-        case 'attended': return 'Attended';
-        case 'cancelled': return 'Cancelled';
-        default: return 'Unknown';
-    }
-};
-
-
 interface EventParticipantTableProps {
-    participants: ParticipantWithDetails[];       // Use the combined type
-    selectedParticipants: number[];             // IDs are numbers
+    participants: EventParticipant[];
+    selectedParticipantIds: number[];
     onSelectParticipant: (id: number, checked: boolean) => void;
     onSelectAll: (checked: boolean) => void;
-    // Callback to handle status change in the parent component
     onChangeStatus: (participantId: number, newStatus: 'registered' | 'attended' | 'cancelled') => void;
 }
 
 const EventParticipantTable: React.FC<EventParticipantTableProps> = ({
     participants,
-    selectedParticipants,
+    selectedParticipantIds,
     onSelectParticipant,
     onSelectAll,
     onChangeStatus,
 }) => {
     // Calculate selection states for the header checkbox
     const currentParticipantIds = participants.map(p => p.id).filter((id): id is number => id !== undefined);
-    const allSelectedOnPage = participants.length > 0 && currentParticipantIds.every(id => selectedParticipants.includes(id));
-    const isIndeterminate = participants.length > 0 && currentParticipantIds.some(id => selectedParticipants.includes(id)) && !allSelectedOnPage;
+    const allSelectedOnPage = participants.length > 0 && currentParticipantIds.every(id => selectedParticipantIds.includes(id));
+    const isIndeterminate = participants.length > 0 && currentParticipantIds.some(id => selectedParticipantIds.includes(id)) && !allSelectedOnPage;
 
     const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
         onSelectAll(event.target.checked);
@@ -119,7 +98,7 @@ const EventParticipantTable: React.FC<EventParticipantTableProps> = ({
                                 <input
                                     type="checkbox"
                                     className="rounded border-gray-400 text-blueSky focus:ring-blueSky focus:ring-offset-0 h-4 w-4" // Adjusted styling
-                                    checked={selectedParticipants.includes(participant.id)}
+                                    checked={selectedParticipantIds.includes(participant.id)}
                                     onChange={(e) => onSelectParticipant(participant.id, e.target.checked)}
                                     aria-labelledby={`participant-name-${participant.id}`}
                                 />
@@ -127,28 +106,28 @@ const EventParticipantTable: React.FC<EventParticipantTableProps> = ({
                             <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 flex items-center space-x-4">
                                 <Image
                                     // Use a default/placeholder if profilePicUrl is missing
-                                    src={participant.profilePicUrl || '/default-avatar.png'}
-                                    alt={`${participant.fullName}'s profile picture`}
+                                    src={participant.user.profile_picture || '/default-avatar.png'}
+                                    alt={`${participant.user.name}'s profile picture`}
                                     width={40} // Specify width
                                     height={40} // Specify height
                                     className="w-10 h-10 rounded-full bg-gray-200 object-cover flex-shrink-0" // Added flex-shrink-0
                                 />
-                                <span id={`participant-name-${participant.id}`}>{participant.fullName}</span>
+                                <span id={`participant-name-${participant.id}`}>{participant.user.name}</span>
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-textMuted"> {/* Adjusted text color */}
-                                {participant.gmail || 'N/A'}
+                                {participant.user.email || 'N/A'}
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-textMuted">
-                                {formatDateString(participant.registrationDate)}
+                                {formatDateString(participant.registration_date)}
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                                 <div className='relative w-full'>
                                     {/* Status Dropdown */}
                                     <select
-                                        value={participant.participationStatus || ''}
+                                        value={participant.status || ''}
                                         onChange={(e) => handleStatusChange(participant.id, e.target.value)}
                                         className="appearance-none block w-full bg-white border border-gray-300 text-sm rounded-md shadow-sm py-1.5 pl-3 pr-10 focus:outline-none focus:ring-blueSky focus:border-blueSky"
-                                        aria-label={`Change status for ${participant.fullName}`}
+                                        aria-label={`Change status for ${participant.user.name}`}
                                     >
                                         <option value="registered">Registered</option>
                                         <option value="attended">Attended</option>

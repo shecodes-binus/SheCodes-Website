@@ -1,3 +1,5 @@
+"use client"
+
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +28,7 @@ import { useEffect, useState } from "react";
 
 // --- Sidebar Component (Reuse or adapt) ---
 const SidebarNav = () => {
-    const activePath = '/app/settings'; // Set active path for this page
+    const activePath = '/app/my-activity'; // Set active path for this page
     const { logout } = useAuth();
 
     const navItems = [
@@ -198,7 +200,7 @@ export default function EventDetailPage( { params }: { params: { id: string } })
 
             {/* --- Tools Section --- */}
             {eventData.tools && eventData.tools.length > 0 && (
-                <section className="text-left space-y-6">
+                <section className="text-left space-y-10">
                     <h2 className="text-4xl font-bold text-pink">Tools</h2>
                     <div className="flex justify-start items-start gap-8 md:gap-16 flex-wrap">
                     {eventData.tools.map((tool) => (
@@ -206,8 +208,8 @@ export default function EventDetailPage( { params }: { params: { id: string } })
                         <Image
                             src={tool.logo_src}
                             alt={`${tool.name} logo`}
-                            width={100}
-                            height={100}
+                            width={200}
+                            height={200}
                             className="object-contain"
                         />
                         </div>
@@ -297,7 +299,7 @@ export default function EventDetailPage( { params }: { params: { id: string } })
                                         <div className="space-y-4">
                                             <p className={cn(
                                                 "font-semibold text-sm",
-                                                    isFuture ? "text-gray-500" : "text-pink"
+                                                    isFuture ? "text-gray-500" : "text-black"
                                             )}>
                                                 {session.topic || "Session Topic"} {/* Fallback text */}
                                             </p>

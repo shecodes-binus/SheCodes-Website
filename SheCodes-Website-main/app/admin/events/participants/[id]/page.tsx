@@ -1,212 +1,123 @@
 "use client"
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { dummyMembers } from '@/data/dummyMembers';
-import { dummyEventParticipants } from '@/data/dummyParticipants';
-import { useParams } from 'next/navigation';
-import type { Member } from '@/types/members'; // Or from '@/types/events' if you put it there
-import type { EventParticipant } from '@/types/eventParticipant'; // Or from '@/types/participants'
+import { useParams, useRouter } from 'next/navigation';
+import type { EventParticipant } from '@/types/eventParticipant'; 
 import { DeleteConfirmationModal } from '@/components/admin/confirm-delete-modal';
 import EventParticipantTable from '@/components/admin/event-participant-table';
-import {
-    Dialog,
-    DialogTrigger,
-    // DialogContent, DialogHeader etc. are NOT needed here anymore for these modals
-  } from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { FiChevronDown } from 'react-icons/fi';
-import { PlusIcon, SearchIcon, DeleteIcon } from '@/components/admin/icon';
+import { DeleteIcon } from '@/components/admin/icon';
 import Pagination from '@/components/admin/pagination';
 import { IoMdSearch } from "react-icons/io";
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
+import apiService from '@/lib/apiService';
+import toast from 'react-hot-toast';
 
 const EventParticipantPage: React.FC = () => {
     const router = useRouter();
     const params = useParams();
-    const eventId = params.id ? parseInt(params.id as string, 10) : null;
-    const [currentParticipants, setCurrentParticipants] = useState<MemberWithParticipationStatus[]>([]);
+    const eventId = params.id as string;
 
-    type MemberWithParticipationStatus = Member & {
-        registrationDate: string;
-        participationStatus: 'registered' | 'cancelled' | 'attended';
-        id: number;
-    };
-
-    const [itemsPerPage, setItemsPerPage] = React.useState(10);
-    const [currentPage, setCurrentPage] = React.useState(1);
-    const [filterStatus, setFilterStatus] = React.useState<'All' | 'registered' | 'cancelled' | 'attended'>('All');
-    const [searchTerm, setSearchTerm] = React.useState('');
-    const [selectedParticipants, setSelectedParticipants] = useState<number[]>([]);
+    const [participants, setParticipants] = useState<EventParticipant[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isDeleting, setIsDeleting] = useState(false);
+    
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [filterStatus, setFilterStatus] = useState<'All' | 'registered' | 'cancelled' | 'attended'>('All');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedParticipantIds, setSelectedParticipantIds] = useState<number[]>([]);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); 
+    const [eventName, setEventName] = useState('');
 
-    // Filtering Logic
+    const fetchParticipants = useCallback(async () => {
+        if (!eventId) return;
+        setLoading(true);
+        try {
+            const response = await apiService.get<EventParticipant[]>(`/participants/event/${eventId}`);
+            setParticipants(response.data);
+            if (response.data.length > 0) {
+                setEventName(response.data[0].event.title); // Set event name from the first participant
+            }
+        } catch (error) {
+            toast.error("Could not load event participants.");
+        } finally {
+            setLoading(false);
+        }
+    }, [eventId]);
+
+    useEffect(() => {
+        fetchParticipants();
+    }, [fetchParticipants]);
+
     const filteredParticipants = useMemo(() => {
-        return currentParticipants.filter(participant => {
-            const statusMatch = filterStatus === 'All' || participant.participationStatus === filterStatus;
+        if (!participants) return [];
+        return participants.filter(participant => {
+            const statusMatch = filterStatus === 'All' || participant.status === filterStatus;
             const searchLower = searchTerm.toLowerCase();
-            const titleMatch = (participant.fullName ?? '').toLowerCase().includes(searchLower);
-            return statusMatch && titleMatch;
+            const nameMatch = participant.user?.name?.toLowerCase().includes(searchLower);
+            return statusMatch && nameMatch;
         });
-    }, [currentParticipants, searchTerm, filterStatus]);
+    }, [participants, searchTerm, filterStatus]);
 
-    // Pagination Logic (remains the same logic)
     const totalItems = filteredParticipants.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const paginatedParticipants = useMemo(() => { // Renamed variable for clarity
-        return filteredParticipants.slice(startIndex, endIndex);
-     }, [filteredParticipants, startIndex, endIndex]);
+    const paginatedParticipants = useMemo(() => {
+        return filteredParticipants.slice(startIndex, startIndex + itemsPerPage);
+     }, [filteredParticipants, startIndex, itemsPerPage]);
 
-    useEffect(() => {
-        if (!eventId) return;
-
-        const fetchParticipants = async () => {
-            try {
-                const res = await fetch(`/api/participants/event/${eventId}`);
-                const data = await res.json();
-
-                // Assuming each record has member inside or fetched separately:
-                const detailed = await Promise.all(data.map(async (p: any) => {
-                    const res = await fetch(`/api/members/${p.member_id}`);
-                    const member = await res.json();
-
-                    return {
-                        ...member,
-                        id: p.id, // participant record ID
-                        registrationDate: p.registration_date,
-                        participationStatus: p.status,
-                    };
-                }));
-
-                setCurrentParticipants(detailed);
-            } catch (err) {
-                console.error('Failed to fetch participants', err);
-            }
-    };
-
-        fetchParticipants();
-    }, [eventId]); 
-
-    // Handlers
     const handlePageChange = useCallback((page: number) => {
         setCurrentPage(page);
-        setSelectedParticipants([]); // Clear selection when changing page
+        setSelectedParticipantIds([]);
     }, []);
 
     const handleItemsPerPageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setItemsPerPage(Number(event.target.value));
         setCurrentPage(1);
-        setSelectedParticipants([]);
+        setSelectedParticipantIds([]);
     };
 
-    // Handler for selecting/deselecting a single event (ID is number)
     const handleSelectParticipant = useCallback((id: number, checked: boolean) => {
-        setSelectedParticipants(prev =>
-            checked ? [...prev, id] : prev.filter(participantId => participantId !== id)
-        );
+        setSelectedParticipantIds(prev => checked ? [...prev, id] : prev.filter(pId => pId !== id));
     }, []);
 
-    // Handler for the "Select All" checkbox in the header
-    const handleSelectAll = useCallback((checked: boolean) => {
-        if (checked) {
-            // Select all IDs *on the current page*
-            setSelectedParticipants(paginatedParticipants.map(participant => participant.id).filter((id): id is number => id !== undefined));
-        } else {
-            // Deselect all IDs *on the current page*
-            // Note: If you want "Select All" to truly select *all* filtered events across pages,
-            // you would need to adjust this logic to use `filteredEvents` instead of `paginatedEvents`.
-            // For simplicity matching most UI patterns, this selects/deselects current page.
-            const currentPageIds = paginatedParticipants.map(participant => participant.id);
-                // Keep selections from other pages
-                setSelectedParticipants(prev => prev.filter(id => !currentPageIds.includes(id)));
-            // Or simply clear all selections:
-            // setSelectedEvents([]);
-        }
-    }, [paginatedParticipants]); // Depend on paginatedEvents
+    const handleSelectAllOnPage = useCallback((checked: boolean) => {
+        setSelectedParticipantIds(checked ? paginatedParticipants.map(p => p.id) : []);
+    }, [paginatedParticipants]);
 
     const handleDeleteConfirmed = async () => {
-        if (selectedParticipants.length === 0) return;
-
+        if (selectedParticipantIds.length === 0) return;
+        setIsDeleting(true);
+        const toastId = toast.loading("Deleting participants...");
         try {
-            const res = await fetch(`/api/participants`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(selectedParticipants),
-            });
-
-            if (!res.ok) throw new Error('Failed to delete participants');
-
-            setCurrentParticipants(prev => prev.filter(p => !selectedParticipants.includes(p.id)));
-            setSelectedParticipants([]);
-            setIsDeleteModalOpen(false);
+            await apiService.post('/participants/delete-batch', selectedParticipantIds);
+            toast.success("Participants deleted successfully!", { id: toastId });
+            setSelectedParticipantIds([]);
+            fetchParticipants(); // Re-fetch data
         } catch (err) {
-            console.error('Delete Error:', err);
-            alert('Failed to delete participants.');
+            toast.error("Failed to delete participants.", { id: toastId });
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteModalOpen(false);
         }
     };
     
     const handleChangeStatus = async (participantId: number, newStatus: 'registered' | 'attended' | 'cancelled') => {
+        const toastId = toast.loading("Updating status...");
         try {
-            const res = await fetch(`/api/participants/${participantId}/status`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus }),
-            });
-
-            if (!res.ok) throw new Error('Failed to update status');
-
-            // Update frontend state
-            setCurrentParticipants(prev =>
-                prev.map(p => p.id === participantId ? { ...p, participationStatus: newStatus } : p)
-            );
-        } catch (err) {
-            console.error('API Status Update Error:', err);
-            alert('Failed to update status.');
+            await apiService.patch(`/participants/${participantId}/status`, { status: newStatus });
+            toast.success("Status updated successfully!", { id: toastId });
+            fetchParticipants(); // Re-fetch data to ensure consistency
+        } catch (error) {
+            toast.error("Failed to update status.", { id: toastId });
         }
     };
 
-    //const handleChangeStatus = (participantId: number, newStatus: 'registered' | 'attended' | 'cancelled') => {
-       // console.log(`Changing status for participant ${participantId} to ${newStatus}`);
-    
-        // --- Frontend State Update (Simulation) ---
-        //setCurrentParticipants(prevParticipants =>
-          //  prevParticipants.map(p =>
-           //     p.id === participantId
-           //         ? { ...p, participationStatus: newStatus }
-         //           : p
-       //     )
-       // );
+    console.log(participants);
 
-        // --- API Call Placeholder (Real Application) ---
-        // async function updateStatusAPI() {
-        // try {
-        //     const response = await fetch(`/api/participants/${participantId}/status`, {
-        //         method: 'PATCH', // or PUT
-        //         headers: { 'Content-Type': 'application/json' },
-        //         body: JSON.stringify({ status: newStatus }),
-        //     });
-        //     if (!response.ok) {
-        //         throw new Error('Failed to update status');
-        //     }
-        //     // If API is successful, the local state update above is correct.
-        //     // If API fails, you might want to revert the local state change or show an error.
-        //     console.log("Status updated via API successfully");
-        // } catch (error) {
-        //     console.error("API Status Update Error:", error);
-        //     // Revert state change on error
-        //      setCurrentParticipants(prevParticipants =>
-        //         prevParticipants.map(p =>
-        //             p.id === participantId
-        //                 ? { ...p, participationStatus: /* original status before change */ } // Need original status logic here
-        //                 : p
-        //         )
-        //      );
-        //      alert("Failed to update status.");
-        //   }
-        // }
-        // updateStatusAPI();
-   // };
+    if (loading) return <div className="p-10 text-center">Loading participants...</div>;
 
     return (
         <div className="px-10 py-6">
@@ -249,7 +160,7 @@ const EventParticipantPage: React.FC = () => {
                     <select
                         value={filterStatus}
                         // Update state and reset page on change
-                        onChange={(e) => { setFilterStatus(e.target.value as 'All' | 'attended' | 'registered' | 'cancelled'); setCurrentPage(1); setSelectedParticipants([]); }}
+                        onChange={(e) => { setFilterStatus(e.target.value as 'All' | 'attended' | 'registered' | 'cancelled'); setCurrentPage(1); setSelectedParticipantIds([]); }}
                         className="appearance-none w-32 py-3.5 px-3.5 pr-8 bg-white rounded-lg shadow-sm focus:border-blueSky focus:ring-blueSky text-sm"
                     >
                             <option value="All">All</option>
@@ -276,7 +187,7 @@ const EventParticipantPage: React.FC = () => {
                         placeholder="Search Participant Name" // Be more specific
                         value={searchTerm}
                         // Update state and reset page on change
-                        onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); setSelectedParticipants([]); }}
+                        onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); setSelectedParticipantIds([]); }}
                         className="w-full pl-9 pr-3 py-3.5 rounded-lg focus:ring-blueSky focus:border-blueSky text-sm bg-white shadow-sm placeholder:text-grey-2"
                     />
                 </div>
@@ -285,11 +196,11 @@ const EventParticipantPage: React.FC = () => {
             {/* Table Section */}
             <div className="bg-white rounded-lg shadow-card overflow-hidden border border-gray-200">
                 <EventParticipantTable
-                    participants={paginatedParticipants} // Pass paginated data
-                    selectedParticipants={selectedParticipants}
+                    participants={paginatedParticipants}
+                    selectedParticipantIds={selectedParticipantIds}
                     onSelectParticipant={handleSelectParticipant}
-                    onSelectAll={handleSelectAll}
-                    onChangeStatus={handleChangeStatus} // Pass the new handler
+                    onSelectAll={handleSelectAllOnPage}
+                    onChangeStatus={handleChangeStatus}
                 />
             </div>
 
@@ -299,20 +210,20 @@ const EventParticipantPage: React.FC = () => {
                      <DialogTrigger asChild>
                          <button
                             // Button is disabled if nothing is selected OR modal is open (prevent double click)
-                            disabled={selectedParticipants.length === 0 || isDeleteModalOpen}
+                            disabled={selectedParticipantIds.length === 0 || isDeleteModalOpen}
                             className={`flex items-center space-x-2 px-6 py-3.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-offset-1 ${
-                                selectedParticipants.length > 0
+                                selectedParticipantIds.length > 0
                                 ? 'bg-[#EE7373] text-white hover:bg-[#EE7373]/90 focus:ring-[#EE7373]/50'
                                 : 'bg-[#BFBFBF]/45 text-white cursor-not-allowed' // Adjusted disabled style
                             }`}
                         >
                             <DeleteIcon className="w-4 h-4"/>
-                            <span>Delete ({selectedParticipants.length})</span>
+                            <span>Delete ({selectedParticipantIds.length})</span>
                         </button>
                     </DialogTrigger>
                     {/* Render Modal Content when open */}
                     <DeleteConfirmationModal
-                        itemCount={selectedParticipants.length}
+                        itemCount={selectedParticipantIds.length}
                         itemName="participants"
                         onConfirm={handleDeleteConfirmed} // Pass the actual delete handler
                         onClose={() => setIsDeleteModalOpen(false)} // Ensure modal closes on cancel/X
@@ -327,7 +238,7 @@ const EventParticipantPage: React.FC = () => {
                     itemsPerPage={itemsPerPage}
                     totalItems={totalItems}
                     startIndex={startIndex}
-                    endIndex={endIndex}
+                    endIndex={startIndex + paginatedParticipants.length}
                 />
         </div>
     );

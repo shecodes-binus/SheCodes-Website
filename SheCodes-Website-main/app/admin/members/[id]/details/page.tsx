@@ -1,15 +1,12 @@
-// app/admin/members/view/[id]/page.tsx
 "use client";
 
-import * as React from 'react';
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation'; // Added useRouter for back button
+import React, { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button'; // For a potential "Back" button
-import type { Member } from '@/types/members';   // Your Member type
-import { dummyMembers } from '@/data/dummyMembers'; // Your dummy members data
-import { FaCalendarAlt } from 'react-icons/fa'; // For calendar icon if needed (optional)
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // For Occupation dropdown display
+import { Button } from '@/components/ui/button';
+import type { Member } from '@/types/members';
+import apiService from '@/lib/apiService';
+import toast from 'react-hot-toast';
 
 // Helper to format date string (e.g., ISO to DD/MM/YY)
 const formatDate = (dateString: string | null | undefined): string => {
@@ -29,28 +26,31 @@ const formatDate = (dateString: string | null | undefined): string => {
 const ViewMemberPage: React.FC = () => {
     const params = useParams();
     const router = useRouter(); // For back navigation
-    const memberId = params.id ? parseInt(params.id as string, 10) : null;
+    const memberId = params.id as string;
 
     const [memberData, setMemberData] = useState<Member | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (memberId === null) {
+        if (!memberId) {
             setError("Invalid Member ID.");
             setLoading(false);
             return;
         }
-
-        const foundMember = dummyMembers.find(member => member.id === memberId);
-
-        if (foundMember) {
-            setMemberData(foundMember);
-            setLoading(false);
-        } else {
-            setError(`Member with ID ${memberId} not found.`);
-            setLoading(false);
-        }
+        const fetchMember = async () => {
+            setLoading(true);
+            try {
+                const response = await apiService.get<Member>(`/users/${memberId}`);
+                setMemberData(response.data);
+            } catch (err) {
+                setError(`Member with ID ${memberId} not found.`);
+                toast.error("Could not load member data.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchMember();
     }, [memberId]);
 
     // --- Styles for displaying data (read-only) ---
@@ -85,10 +85,10 @@ const ViewMemberPage: React.FC = () => {
                     {/* Profile Picture */}
                     <div className="flex flex-col items-start">
                         <div className={imageContainerStyles}>
-                            {memberData.profilePicUrl ? (
+                            {memberData.profile_picture ? (
                                 <Image
-                                    src={memberData.profilePicUrl}
-                                    alt={`${memberData.fullName}'s profile`}
+                                    src={memberData.profile_picture}
+                                    alt={`${memberData.name}'s profile`}
                                     width={128}
                                     height={128}
                                     className="object-cover w-full h-full"
@@ -108,13 +108,23 @@ const ViewMemberPage: React.FC = () => {
                     {/* Full Name */}
                     <div>
                         <label className={labelStyles}>Full Name</label>
-                        <div className={valueDisplayStyles}>{memberData.fullName}</div>
+                        <div className={valueDisplayStyles}>{memberData.name}</div>
                     </div>
 
                     {/* About Me */}
                     <div>
                         <label className={labelStyles}>About Me</label>
-                        <div className={textAreaValueDisplayStyles}>{memberData.aboutMe}</div>
+                        <div className={textAreaValueDisplayStyles}>{memberData.about_me}</div>
+                    </div>
+
+                    {/* Status */}
+                    <div>
+                        <label className={labelStyles}>Status</label>
+                        <div className={valueDisplayStyles}>
+                            {/* <span className={`px-3 py-1 text-sm rounded-full ${memberData.is_verified ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}> */}
+                                {memberData.is_verified ? 'Active' : 'Inactive'}
+                            {/* </span> */}
+                        </div>
                     </div>
 
                     {/* Birth Date & Gender (Side-by-side) */}
@@ -122,7 +132,7 @@ const ViewMemberPage: React.FC = () => {
                         <div>
                             <label className={labelStyles}>Birth Date</label>
                             <div className={`${valueDisplayStyles} relative`}>
-                                {formatDate(memberData.birthDate)}
+                                {formatDate(memberData.birth_date)}
                                 {/* Optional: Calendar icon (if you want to keep visual cue) */}
                                 {/* <FaCalendarAlt className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" /> */}
                             </div>
@@ -180,9 +190,9 @@ const ViewMemberPage: React.FC = () => {
                     <div>
                         <label className={labelStyles}>CV Link</label>
                         <div className={`${valueDisplayStyles} text-blue-600 hover:underline`}>
-                            {memberData.cvLink ? (
-                                <a href={memberData.cvLink} target="_blank" rel="noopener noreferrer">
-                                    {memberData.cvLink}
+                            {memberData.cv_link ? (
+                                <a href={memberData.cv_link} target="_blank" rel="noopener noreferrer">
+                                    {memberData.cv_link}
                                 </a>
                             ) : (
                                 'N/A'
@@ -207,7 +217,7 @@ const ViewMemberPage: React.FC = () => {
                     {/* Email */}
                     <div>
                         <label className={labelStyles}>Email</label>
-                        <div className={valueDisplayStyles}>{memberData.gmail}</div>
+                        <div className={valueDisplayStyles}>{memberData.email}</div>
                     </div>
 
                 </div>

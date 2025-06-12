@@ -1,68 +1,68 @@
 "use client"
 
-import React, { useState, useMemo, useCallback } from 'react';
-// Import the new type and data
-import { Mentor } from '@/types/partnership';
-import { dummyMentors } from '@/data/dummyPartnershipData'; // Adjust path as needed
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import MentorTable from '@/components/admin/mentor-table';
 import Pagination from '@/components/admin/pagination';
-import { PlusIcon, SearchIcon, DeleteIcon } from '@/components/admin/icon';
+import { PlusIcon, DeleteIcon } from '@/components/admin/icon';
 import { FiChevronDown } from 'react-icons/fi';
 import { IoMdSearch } from "react-icons/io";
-import { useRouter } from 'next/navigation';
 import { DeleteConfirmationModal } from '@/components/admin/confirm-delete-modal';
-import {
-    Dialog,
-    DialogTrigger,
-    // DialogContent, DialogHeader etc. are NOT needed here anymore for these modals
-  } from "@/components/ui/dialog";
+import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
+import apiService from '@/lib/apiService';
+import { Mentor } from '@/types/partnership';
+import toast from 'react-hot-toast';
 
 
 const MentorPage: React.FC = () => {
     const router = useRouter();
-    // Use the imported dummy data and the correct type
-    const [allMentors] = useState<Mentor[]>(dummyMentors);
+    
+    const [allMentors, setAllMentors] = useState<Mentor[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isDeleting, setIsDeleting] = useState(false);
+    
     const [searchTerm, setSearchTerm] = useState('');
-    // Filter status now aligns with the 'status' field in your data
     const [filterStatus, setFilterStatus] = useState<'All' | 'active' | 'inactive'>('All');
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
-    // Selected events store numbers (IDs) now
+    
     const [selectedMentors, setSelectedMentors] = useState<number[]>([]);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); 
 
-    // Filtering Logic
+    const fetchMentors = useCallback(async () => {
+        setLoading(true);
+        try {
+            const response = await apiService.get<Mentor[]>('/mentors');
+            setAllMentors(response.data);
+        } catch (err) {
+            toast.error("Could not load mentors.");
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchMentors();
+    }, [fetchMentors]);
+
     const filteredMentors = useMemo(() => {
         return allMentors.filter(mentor => {
-            // Filter by status ('upcoming' or 'past')
             const statusMatch = filterStatus === 'All' || mentor.status === filterStatus;
-
-            // Filter by search term (checking the title)
-            const searchLower = searchTerm.toLowerCase();
-            const mentorName = mentor.name.toLowerCase().includes(searchLower);
-            // You could also add description or tags to search:
-            // const descriptionMatch = event.description.toLowerCase().includes(searchLower);
-            // const tagMatch = event.tags.some(tag => tag.toLowerCase().includes(searchLower));
-            // return statusMatch && (titleMatch || descriptionMatch || tagMatch);
-
-            return statusMatch && mentorName;
+            const searchMatch = mentor.name.toLowerCase().includes(searchTerm.toLowerCase());
+            return statusMatch && searchMatch;
         });
     }, [allMentors, searchTerm, filterStatus]);
 
-    // Pagination Logic (remains the same logic)
     const totalItems = filteredMentors.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const paginatedEvents = useMemo(() => {
-        return filteredMentors.slice(startIndex, endIndex);
-    }, [filteredMentors, startIndex, endIndex]);
+    const paginatedMentors = useMemo(() => {
+        return filteredMentors.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredMentors, startIndex, itemsPerPage]);
 
-
-    // Handlers
     const handlePageChange = useCallback((page: number) => {
         setCurrentPage(page);
-        setSelectedMentors([]); // Clear selection when changing page
+        setSelectedMentors([]);
     }, []);
 
     const handleItemsPerPageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -71,51 +71,42 @@ const MentorPage: React.FC = () => {
         setSelectedMentors([]);
     };
 
-     // Handler for selecting/deselecting a single event (ID is number)
-     const handleSelectMentor = useCallback((id: number, checked: boolean) => {
-        setSelectedMentors(prev =>
-            checked ? [...prev, id] : prev.filter(mentorsId => mentorsId !== id)
-        );
+    const handleSelectMentor = useCallback((id: number, checked: boolean) => {
+        setSelectedMentors(prev => checked ? [...prev, id] : prev.filter(mentorId => mentorId !== id));
     }, []);
 
-    // Handler for the "Select All" checkbox in the header
     const handleSelectAll = useCallback((checked: boolean) => {
-        if (checked) {
-            // Select all IDs *on the current page*
-            setSelectedMentors(paginatedEvents.map(mentor => mentor.id));
-        } else {
-            // Deselect all IDs *on the current page*
-            // Note: If you want "Select All" to truly select *all* filtered events across pages,
-            // you would need to adjust this logic to use `filteredEvents` instead of `paginatedEvents`.
-            // For simplicity matching most UI patterns, this selects/deselects current page.
-            const currentPageIds = paginatedEvents.map(mentor => mentor.id);
-             // Keep selections from other pages
-             setSelectedMentors(prev => prev.filter(id => !currentPageIds.includes(id)));
-            // Or simply clear all selections:
-            // setSelectedEvents([]);
-        }
-    }, [paginatedEvents]); // Depend on paginatedEvents
+        setSelectedMentors(checked ? paginatedMentors.map(mentor => mentor.id) : []);
+    }, [paginatedMentors]);
 
     const handleAddMentor = () => {
-        console.log("Add Mentor Clicked");
         router.push('/admin/mentors/add-mentor');
     };
 
-    // Handlers now receive number IDs
     const handleEditMentor = (id: number) => {
-        console.log("Edit Mentor Clicked:", id);
         router.push(`/admin/mentors/edit-mentor/${id}`);
     };
 
-    const handleDeleteConfirmed = () => {
+    const handleDeleteConfirmed = async () => {
         if (selectedMentors.length === 0) return;
-
-        console.log("Deleting Mentors:", selectedMentors);
-
-        setSelectedMentors([]);
-        setIsDeleteModalOpen(false); // Close the modal
-        console.log("Simulated Delete Complete. Selection cleared.");
+        setIsDeleting(true);
+        const toastId = toast.loading(`Deleting ${selectedMentors.length} mentor(s)...`);
+        try {
+            await Promise.all(
+                selectedMentors.map(id => apiService.delete(`/mentors/${id}`))
+            );
+            toast.success("Mentors deleted successfully!", { id: toastId });
+            setSelectedMentors([]);
+            fetchMentors();
+        } catch (err) {
+            toast.error("Failed to delete mentors.", { id: toastId });
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteModalOpen(false);
+        }
     };
+    
+    if (loading) return <div className="p-10 text-center">Loading mentors...</div>;
 
     return (
         <div className="px-10 py-6">
@@ -199,7 +190,7 @@ const MentorPage: React.FC = () => {
             <div className="bg-white rounded-lg shadow-card overflow-hidden border border-gray-200">
                 <MentorTable
                     // Pass the currently visible page of events
-                    mentors={paginatedEvents}
+                    mentors={paginatedMentors}
                     selectedMentor={selectedMentors}
                     onSelectMentor={handleSelectMentor}
                     onSelectAll={handleSelectAll}
@@ -241,7 +232,7 @@ const MentorPage: React.FC = () => {
                     itemsPerPage={itemsPerPage}
                     totalItems={totalItems}
                     startIndex={startIndex}
-                    endIndex={endIndex}
+                    endIndex={startIndex + paginatedMentors.length}
                 />
         </div>
     );

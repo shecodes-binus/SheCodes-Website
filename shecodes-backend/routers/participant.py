@@ -1,14 +1,15 @@
 # /shecodes-backend/routers/participant.py
 
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, File, UploadFile
 from sqlalchemy.orm import Session
 from typing import List
 
 import crud
 from models import user as user_model
-from schemas import participant as participant_schema
+from schemas import participant as participant_schema, common as common_schema
 from database import get_db
 from core.security import get_current_user
+from core.storage_service import upload_file_to_supabase
 
 router = APIRouter(
     prefix="/participants",
@@ -69,11 +70,12 @@ def update_participant_status(
     Updates the status of a participant (e.g., from 'registered' to 'attended').
     Requires authentication.
     """
+    if current_user.role != 'admin':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+        
     db_participant = crud.get_participant(db, participant_id=participant_id)
     if not db_participant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Participant not found")
-
-    # You could add authorization logic here to ensure only event organizers/admins can change status.
     
     return crud.update_participant_status(db, db_participant=db_participant, status=update.status)
 
@@ -88,6 +90,9 @@ def delete_participants_in_batch(
     is a common practice as DELETE with a request body can be ambiguous.
     Requires authentication.
     """
+    if current_user.role != 'admin':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+    
     if not ids:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No participant IDs provided.")
         
@@ -97,3 +102,32 @@ def delete_participants_in_batch(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No matching participants found for deletion.")
 
     return {"message": f"Successfully deleted {num_deleted} participant(s)."}
+
+@router.post("/{participant_id}/certificate", response_model=common_schema.Msg)
+def upload_certificate_for_participant(
+    participant_id: int,
+    certificate: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: user_model.User = Depends(get_current_user)
+):
+    """
+    Uploads a certificate for a specific event participation.
+    Requires admin authentication.
+    """
+    if current_user.role != 'admin':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+
+    db_participant = crud.get_participant(db, participant_id=participant_id)
+    if not db_participant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Participant record not found")
+
+    if not certificate.content_type.startswith("image/"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File must be an image.")
+
+    # Upload the file to cloud storage
+    certificate_url = upload_file_to_supabase(certificate)
+    
+    # Update the participant record with the new URL
+    crud.update_participant_certificate(db, db_participant=db_participant, certificate_url=certificate_url)
+    
+    return common_schema.Msg(msg="Certificate uploaded successfully")

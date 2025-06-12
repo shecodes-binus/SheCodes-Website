@@ -76,7 +76,7 @@ const AlumniTable: React.FC<AlumniTableProps> = ({
                                 />
                             </td>
                             <td className="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-gray-900 flex items-center space-x-3">
-                                <img src={alumni.imageSrc} alt={`${alumni.name}'s avatar`} className="w-10 h-10 rounded-full bg-gray-200 object-cover" />
+                                <img src={alumni.image_src} alt={`${alumni.name}'s avatar`} className="w-10 h-10 rounded-full bg-gray-200 object-cover" />
                                 <div>{alumni.name}</div>
                             </td>
                             <td className="pl-5 pr-4 py-3.5 whitespace-nowrap text-sm text-textMuted">
@@ -99,7 +99,7 @@ const AlumniTable: React.FC<AlumniTableProps> = ({
                             </td>
                         </tr>
                     ))}
-                     {alumni.length === 0 && (
+                    {alumni.length === 0 && (
                         <tr>
                             <td colSpan={5} className="text-center py-10 text-gray-500">
                                 No alumnis found.

@@ -5,6 +5,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { RiErrorWarningFill } from "react-icons/ri"; // Reusing the warning icon
+import { Trash2 } from 'lucide-react';
 
 interface DeleteConfirmationModalProps {
   itemCount: number;
@@ -44,32 +45,34 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
 
   return (
     // Apply similar styling as CloseRegisterModal
-    <DialogContent className="sm:max-w-[600px] bg-white rounded-2xl p-8">
+    <DialogContent className="sm:max-w-[600px] bg-white rounded-2xl p-16 text-center">
       {/* No form needed if it just triggers a callback */}
-      <div className="space-y-6">
-        <DialogHeader>
-          <div className="flex items-center gap-4">
-            <RiErrorWarningFill className="w-10 h-10 text-red-500" />
-            <DialogTitle className="text-2xl font-semibold text-black">
-              Confirm Deletion
-            </DialogTitle>
-          </div>
-        </DialogHeader>
+      <div className="flex flex-col items-center justify-center space-y-10">
+        
 
-        <p className="text-gray-700 text-md leading-relaxed">
-          Are you sure you want to delete{' '}
-          <span className="font-semibold">{itemCount}</span> {itemName}?
-          This action cannot be undone.
-        </p>
+        {/* Header */}
+        <DialogHeader className="flex flex-col items-center justify-center space-y-4">
+          {/* Icon */}
+          <div className="w-16 h-16 flex items-center justify-center rounded-full bg-pink-100">
+            <Trash2 className="w-8 h-8 text-pink" />
+          </div>
+          <DialogTitle className="text-2xl font-bold text-pink text-center tracking-normal">
+            Delete
+          </DialogTitle>
+          <p className="text-black text-sm max-w-xs mx-auto leading-relaxed">
+            Are you sure you want to delete {itemCount} {itemName}?
+            All associated data will be permanently lost.
+          </p>
+        </DialogHeader>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
-        <DialogFooter className="sm:justify-end pt-2"> {/* Added padding-top */}
+        <DialogFooter className="flex flex-col sm:flex-row gap-12 justify-center items-center mt-10"> {/* Added padding-top */}
           <DialogClose asChild>
             <Button
               type="button"
               variant="ghost"
-              className="rounded-lg px-6 py-2" // Adjusted padding
+              className="rounded-lg px-10 py-4 rounded-lg border-blueSky border text-blueSky hover:text-blueSky" // Adjusted padding
               disabled={isLoading}
               onClick={onClose} // Call onClose if provided when Cancel is clicked
             >
@@ -81,9 +84,9 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
             onClick={handleConfirmClick}
             disabled={isLoading || itemCount === 0} // Disable if loading or nothing selected
             // Use a destructive style for delete confirmation
-            className="bg-red-600 hover:bg-red-700 text-white rounded-lg px-6 py-2"
+            className="bg-blueSky text-white hover:bg-blueSky/90 rounded-lg px-10 py-4"
           >
-            {isLoading ? 'Deleting...' : `Delete ${itemCount} ${itemName}`}
+            {isLoading ? 'Deleting...' : `Delete`}
           </Button>
         </DialogFooter>
       </div>

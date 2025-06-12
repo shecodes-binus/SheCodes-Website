@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict
 from .event import EventResponse

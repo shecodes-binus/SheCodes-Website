@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import apiService from '@/lib/apiService';
 import { Member } from '@/types/members'; // Use your existing Member type
@@ -14,6 +14,7 @@ interface AuthContextType {
   loading: boolean;
   login: (token: string) => Promise<void>;
   logout: () => void;
+  revalidateUser: () => Promise<void>;
 }
 
 // 2. Create the context, telling TypeScript it can be the full type OR null
@@ -26,6 +27,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  const revalidateUser = useCallback(async () => {
+    console.log("Revalidating user data...");
+    try {
+      const response = await apiService.get<Member>('/users/me');
+      setUser(response.data);
+    } catch (error) {
+      console.error("Failed to revalidate user, logging out.", error);
+      // If revalidation fails, it might mean the token is invalid, so log out.
+      logout();
+    }
+  }, []);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -94,6 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loading,
     login,
     logout,
+    revalidateUser
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

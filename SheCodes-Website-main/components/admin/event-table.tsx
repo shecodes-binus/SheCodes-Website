@@ -130,11 +130,11 @@ const EventTable: React.FC<EventTableProps> = ({
                             </td>
                             <td className="pl-20 px-4 py-3.5 whitespace-nowrap text-sm text-textMuted">
                                 {/* Format the start date */}
-                                {formatDateString(event.startDate)}
+                                {formatDateString(event.start_date)}
                             </td>
                             <td className="px-4 py-3.5 whitespace-nowrap text-sm text-textMuted">
                                 {/* Format the end date */}
-                                {formatDateString(event.endDate)}
+                                {formatDateString(event.end_date)}
                             </td>
                             <td className="px-4 py-3.5 whitespace-nowrap text-sm font-medium">
                                 <div className="flex space-x-3">

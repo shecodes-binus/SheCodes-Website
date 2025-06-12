@@ -1,67 +1,67 @@
 "use client"
 
-import React, { useState, useMemo, useCallback } from 'react';
-// Import the new type and data
-import { BlogArticle } from '@/types/blog';
-import { dummyArticles } from '@/data/dummyBlogs'; // Adjust path as needed
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import BlogTable from '@/components/admin/blog-table';
 import Pagination from '@/components/admin/pagination';
-import { PlusIcon, SearchIcon, DeleteIcon } from '@/components/admin/icon';
+import { PlusIcon, DeleteIcon } from '@/components/admin/icon';
 import { FiChevronDown } from 'react-icons/fi';
 import { IoMdSearch } from "react-icons/io";
 import { DeleteConfirmationModal } from '@/components/admin/confirm-delete-modal';
-import {
-    Dialog,
-    DialogTrigger,
-    // DialogContent, DialogHeader etc. are NOT needed here anymore for these modals
-  } from "@/components/ui/dialog";
-import { useRouter } from 'next/navigation';
+import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
+import apiService from '@/lib/apiService';
+import type { BlogArticle, ArticleCategory } from '@/types/blog';
+import toast from 'react-hot-toast';
 
 const ArticlePage: React.FC = () => {
     const router = useRouter();
-    // Use the imported dummy data and the correct type
-    const [allBlogs] = useState<BlogArticle[]>(dummyArticles);
+    
+    const [allBlogs, setAllBlogs] = useState<BlogArticle[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isDeleting, setIsDeleting] = useState(false);
+    
     const [searchTerm, setSearchTerm] = useState('');
-    // Filter status now aligns with the 'status' field in your data
-    const [filterStatus, setFilterStatus] = useState<'All' | 'Tech & Innovation' | 'Career Growth' | 'Community' | 'Event' | 'Success Stories' | 'Others'>('All');
+    const [filterStatus, setFilterStatus] = useState<ArticleCategory | 'All'>('All');
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
-    // Selected events store numbers (IDs) now
+    
     const [selectedBlog, setSelectedBlog] = useState<number[]>([]);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); 
 
-    // Filtering Logic
+    const fetchBlogs = useCallback(async () => {
+        setLoading(true);
+        try {
+            const response = await apiService.get<BlogArticle[]>('/blogs');
+            setAllBlogs(response.data);
+        } catch (err) {
+            toast.error("Could not load articles.");
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchBlogs();
+    }, [fetchBlogs]);
+
     const filteredBlog = useMemo(() => {
         return allBlogs.filter(blog => {
-            // Filter by status ('upcoming' or 'past')
-            const statusMatch = filterStatus === 'All' || String(blog.category) === filterStatus;
-
-            // Filter by search term (checking the title)
-            const searchLower = searchTerm.toLowerCase();
-            const blogTitle = blog.title.toLowerCase().includes(searchLower);
-            // You could also add description or tags to search:
-            // const descriptionMatch = event.description.toLowerCase().includes(searchLower);
-            // const tagMatch = event.tags.some(tag => tag.toLowerCase().includes(searchLower));
-            // return statusMatch && (titleMatch || descriptionMatch || tagMatch);
-
-            return statusMatch && blogTitle;
+            const statusMatch = filterStatus === 'All' || blog.category === filterStatus;
+            const searchMatch = blog.title.toLowerCase().includes(searchTerm.toLowerCase());
+            return statusMatch && searchMatch;
         });
     }, [allBlogs, searchTerm, filterStatus]);
 
-    // Pagination Logic (remains the same logic)
     const totalItems = filteredBlog.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
     const paginatedEvents = useMemo(() => {
-        return filteredBlog.slice(startIndex, endIndex);
-    }, [filteredBlog, startIndex, endIndex]);
+        return filteredBlog.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredBlog, startIndex, itemsPerPage]);
 
-
-    // Handlers
     const handlePageChange = useCallback((page: number) => {
         setCurrentPage(page);
-        setSelectedBlog([]); // Clear selection when changing page
+        setSelectedBlog([]);
     }, []);
 
     const handleItemsPerPageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -70,51 +70,43 @@ const ArticlePage: React.FC = () => {
         setSelectedBlog([]);
     };
 
-     // Handler for selecting/deselecting a single event (ID is number)
-     const handleSelectBlog = useCallback((id: number, checked: boolean) => {
-        setSelectedBlog(prev =>
-            checked ? [...prev, id] : prev.filter(blogId => blogId !== id)
-        );
+    const handleSelectBlog = useCallback((id: number, checked: boolean) => {
+        setSelectedBlog(prev => checked ? [...prev, id] : prev.filter(blogId => blogId !== id));
     }, []);
 
-    // Handler for the "Select All" checkbox in the header
     const handleSelectAll = useCallback((checked: boolean) => {
-        if (checked) {
-            // Select all IDs *on the current page*
-            setSelectedBlog(paginatedEvents.map(blog => blog.id));
-        } else {
-            // Deselect all IDs *on the current page*
-            // Note: If you want "Select All" to truly select *all* filtered events across pages,
-            // you would need to adjust this logic to use `filteredEvents` instead of `paginatedEvents`.
-            // For simplicity matching most UI patterns, this selects/deselects current page.
-            const currentPageIds = paginatedEvents.map(blog => blog.id);
-             // Keep selections from other pages
-            setSelectedBlog(prev => prev.filter(id => !currentPageIds.includes(id)));
-            // Or simply clear all selections:
-            // setSelectedEvents([]);
-        }
-    }, [paginatedEvents]); // Depend on paginatedEvents
+        setSelectedBlog(checked ? paginatedEvents.map(blog => blog.id) : []);
+    }, [paginatedEvents]);
 
     const handleAddBlog = () => {
-        console.log("Add Article Clicked");
         router.push('/admin/articles/add-article'); 
     };
 
-    // Handlers now receive number IDs
     const onEditBlog = (id: number) => {
-        console.log("Edit Article Clicked:", id);
         router.push(`/admin/articles/edit-article/${id}`);
     };
 
-    const handleDeleteConfirmed = () => {
+    const handleDeleteConfirmed = async () => {
         if (selectedBlog.length === 0) return;
+        setIsDeleting(true);
+        const toastId = toast.loading(`Deleting ${selectedBlog.length} article(s)...`);
 
-        console.log("Deleting Articles:", selectedBlog);
-
-        setSelectedBlog([]);
-        setIsDeleteModalOpen(false); // Close the modal
-        console.log("Simulated Delete Complete. Selection cleared.");
+        try {
+            await Promise.all(
+                selectedBlog.map(id => apiService.delete(`/blogs/${id}`))
+            );
+            toast.success("Articles deleted successfully!", { id: toastId });
+            setSelectedBlog([]);
+            fetchBlogs(); // Refresh the list
+        } catch (err) {
+            toast.error("Failed to delete articles.", { id: toastId });
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteModalOpen(false);
+        }
     };
+    
+    if (loading) return <div className="p-10 text-center">Loading articles...</div>;
 
     return (
         <div className="px-10 py-6">
@@ -238,14 +230,14 @@ const ArticlePage: React.FC = () => {
             </div>
 
             <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                    itemsPerPage={itemsPerPage}
-                    totalItems={totalItems}
-                    startIndex={startIndex}
-                    endIndex={endIndex}
-                />
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                itemsPerPage={itemsPerPage}
+                totalItems={totalItems}
+                startIndex={startIndex}
+                endIndex={startIndex + paginatedEvents.length}
+            />
         </div>
     );
 };

@@ -16,7 +16,7 @@ router = APIRouter(prefix="/portfolio", tags=["Portfolio Projects"])
 def create_portfolio_project(
     name: str = Form(...),
     description: Optional[str] = Form(None),
-    projectUrl: Optional[str] = Form(None),
+    project_url: Optional[str] = Form(None),
     image: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: user_model.User = Depends(get_current_user)
@@ -25,21 +25,25 @@ def create_portfolio_project(
         raise HTTPException(status_code=400, detail="Uploaded file is not an image.")
     image_url = upload_file_to_supabase(image)
     project_data = portfolio_schema.PortfolioProjectCreate(
-        name=name, description=description, projectUrl=projectUrl, imageUrl=image_url
+        name=name, description=description, project_url=project_url, image_url=image_url
     )
-    return crud.create_generic_item(db, model=portfolio_model.PortfolioProject, schema=project_data)
+    # Use the new user-specific CRUD function
+    return crud.create_portfolio_project(db, schema=project_data, user_id=current_user.id)
 
-@router.get("/", response_model=List[portfolio_schema.PortfolioProjectResponse])
-def get_all_portfolio_projects(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    # Using the specific CRUD function we defined
-    return crud.get_all_generic_items(db, model=portfolio_model.PortfolioProject, skip=skip, limit=limit)
+@router.get("/me", response_model=List[portfolio_schema.PortfolioProjectResponse])
+def get_my_portfolio_projects(
+    skip: int = 0, limit: int = 100, db: Session = Depends(get_db),
+    current_user: user_model.User = Depends(get_current_user)
+):
+    """Fetches portfolio projects for the currently logged-in user."""
+    return crud.get_portfolio_projects_by_user_id(db, user_id=current_user.id, skip=skip, limit=limit)
 
 @router.put("/update/{project_id}", response_model=portfolio_schema.PortfolioProjectResponse)
 def update_portfolio_project(
     project_id: int,
     name: str = Form(...),
     description: Optional[str] = Form(None),
-    projectUrl: Optional[str] = Form(None),
+    project_url: Optional[str] = Form(None),
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: user_model.User = Depends(get_current_user)
@@ -47,16 +51,20 @@ def update_portfolio_project(
     db_project = crud.get_generic_item(db, model=portfolio_model.PortfolioProject, item_id=project_id)
     if not db_project:
         raise HTTPException(status_code=404, detail="Portfolio project not found")
+    
+    # Security Check: Ensure user owns the project
+    if db_project.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this project")
 
-    new_image_url = db_project.imageUrl
+    new_image_url = db_project.image_url
     if image:
         if not image.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="Uploaded file is not an image.")
-        delete_file_from_supabase(db_project.imageUrl)
+        delete_file_from_supabase(db_project.image_url)
         new_image_url = upload_file_to_supabase(image)
 
     update_data = portfolio_schema.PortfolioProjectUpdate(
-        name=name, description=description, projectUrl=projectUrl, imageUrl=new_image_url
+        name=name, description=description, project_url=project_url, image_url=new_image_url
     )
     return crud.update_generic_item(db, db_item=db_project, schema_in=update_data)
 
@@ -69,7 +77,11 @@ def delete_portfolio_project(
     db_project = crud.get_generic_item(db, model=portfolio_model.PortfolioProject, item_id=project_id)
     if not db_project:
         raise HTTPException(status_code=404, detail="Portfolio project not found")
+
+    # Security Check: Ensure user owns the project
+    if db_project.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this project")
     
-    delete_file_from_supabase(db_project.imageUrl)
+    delete_file_from_supabase(db_project.image_url)
     crud.delete_generic_item(db, model=portfolio_model.PortfolioProject, item_id=project_id)
     return {"message": "Portfolio project deleted"}

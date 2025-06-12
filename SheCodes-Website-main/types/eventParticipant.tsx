@@ -1,4 +1,5 @@
 import { CombinedEventData } from "./events";
+import { Member } from "./members";
 
 export interface EventParticipant {
     id: number;
@@ -8,5 +9,6 @@ export interface EventParticipant {
     status: 'registered' | 'attended' | 'cancelled'; // Status of the participation
     certificate_url?: string; 
     feedback?: string; 
-    event?: CombinedEventData; // MODIFIED: Make optional, as it's not present on creation
+    event: CombinedEventData; // MODIFIED: Make optional, as it's not present on creation
+    user: Member;
 }

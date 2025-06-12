@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,11 @@ import { cn } from '@/lib/utils';
 import { FaCalendar } from 'react-icons/fa';
 import DatePicker from 'react-datepicker';
 import { useAuth } from '@/contexts/AuthContext';
+import toast from 'react-hot-toast';
+import apiService from '@/lib/apiService';
+import { Skeleton } from '@/components/ui/skeleton';
+import { DialogContent } from '@radix-ui/react-dialog';
+import { SaveConfirmationModal } from '@/components/save-confirmation-modal';
 
 // --- Sidebar Component (Reuse or adapt) ---
 const SidebarNav = () => {
@@ -83,61 +88,91 @@ const SidebarNav = () => {
 
 // --- Main Settings Page Component ---
 export default function SettingsPage() {
-  // --- State for form fields ---
-  // Initialize with actual user data fetched from API in a real app
-  const [profilePic, setProfilePic] = React.useState<File | null>(null);
-  const [profilePicPreview, setProfilePicPreview] = React.useState<string | null>(null); // For preview
-  const [fileName, setFileName] = React.useState<string>("No file chosen");
-  const [fullName, setFullName] = React.useState<string>(""); // Placeholder
-  const [aboutMe, setAboutMe] = React.useState<string>(""); // Placeholder
-  const [birthDate, setBirthDate] = React.useState<Date | null>(null); // Use Date type for compatibility with DatePicker
-  const [gender, setGender] = React.useState<string>("");
-  const [phone, setPhone] = React.useState<string>("");
-  const [occupation, setOccupation] = React.useState<string>("");
-  const [cvLink, setCvLink] = React.useState<string>("");
-  const [linkedin, setLinkedin] = React.useState<string>("");
+  const { user: authUser, loading: authLoading, revalidateUser } = useAuth();
+    
+  // Form state
+  const [profilePicFile, setProfilePicFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [name, setName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [aboutMe, setAboutMe] = useState<string>("");
+  const [birthDate, setBirthDate] = useState<Date | null>(null);
+  const [gender, setGender] = useState<string>("");
+  const [phone, setPhone] = useState<string>("");
+  const [occupation, setOccupation] = useState<string>("");
+  const [cvLink, setCvLink] = useState<string>("");
+  const [linkedin, setLinkedin] = useState<string>("");
+  
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
 
-  // --- Handlers ---
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+        if (authUser) {
+            setName(authUser.name || "");
+            setEmail(authUser.email || "");
+            setAboutMe(authUser.about_me || "");
+            setBirthDate(authUser.birth_date ? new Date(authUser.birth_date) : null);
+            setGender(authUser.gender || "");
+            setPhone(authUser.phone || "");
+            setOccupation(authUser.occupation || "");
+            setCvLink(authUser.cv_link || "");
+            setLinkedin(authUser.linkedin || "");
+            setPreviewUrl(authUser.profile_picture || null);
+        }
+    }, [authUser]);
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setProfilePic(file);
-      setFileName(file.name);
-      // Generate preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfilePicPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setProfilePic(null);
-      setFileName("No file chosen");
-      setProfilePicPreview(null); // Clear preview
+      const file = event.target.files?.[0];
+      if (file) {
+          setProfilePicFile(file);
+          setPreviewUrl(URL.createObjectURL(file));
+      }
+  };
+
+   const handleSaveChanges = async () => {
+        // event.preventDefault();
+        setIsSaving(true);
+        const toastId = toast.loading("Saving changes...");
+
+        const formData = new FormData();
+        // Append data with snake_case keys to match backend
+        formData.append('name', name);
+        formData.append('about_me', aboutMe);
+        if (birthDate) formData.append('birth_date', birthDate.toISOString().split('T')[0]);
+        formData.append('gender', gender);
+        formData.append('phone', phone);
+        formData.append('occupation', occupation);
+        formData.append('cv_link', cvLink);
+        formData.append('linkedin', linkedin);
+        if (profilePicFile) {
+            formData.append('picture', profilePicFile);
+        }
+
+        try {
+            await apiService.put('/users/me', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            toast.success("Profile updated successfully!", { id: toastId });
+            revalidateUser(); // Refresh user context
+            setIsSaveModalOpen(false);
+        } catch (error) {
+            console.error("Failed to update profile:", error);
+            toast.error("Failed to save changes. Please try again.", { id: toastId });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const onFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault(); // Prevent the default form submission
+        setIsSaveModalOpen(true); // Open the confirmation modal instead
+    };
+
+    if (authLoading || !authUser) {
+        return <SettingsSkeleton />; // Show skeleton while loading
     }
-  };
-
-   // Trigger hidden file input click
-   const fileInputRef = React.useRef<HTMLInputElement>(null);
-   const handleChooseFileClick = () => {
-       fileInputRef.current?.click();
-   };
-
-  const handleSaveChanges = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    console.log("Saving settings:", {
-      profilePic, // In real app, upload this file
-      fullName,
-      aboutMe,
-      birthDate,
-      gender,
-      phone,
-      occupation,
-      cvLink,
-      linkedin,
-    });
-    // Add API call logic here
-    alert("Settings Saved (Placeholder)");
-  };
 
   return (
     <div className="flex min-h-screen w-full bg-gray-50"> {/* Light background */}
@@ -154,30 +189,30 @@ export default function SettingsPage() {
         
         <div className='bg-white rounded-lg space-y-8 p-10 rounded-xl shadow-md'>
           {/* Settings Form Container */}
-          <form onSubmit={handleSaveChanges} className="">
+          <form onSubmit={onFormSubmit} className="">
             <h1 className="text-3xl font-bold text-gray-800 mb-8">Profile Settings</h1>
             {/* Profile Picture Section */}
             <div className="flex flex-col items-start space-y-4">
               <Avatar className="h-24 w-24 border-2 border-gray-200">
-                  <AvatarImage src={profilePicPreview || "/placeholder-avatar.jpg"} alt="Profile Picture" /> {/* Show preview or placeholder */}
+                  <AvatarImage src={previewUrl || undefined} alt="Profile Picture" />
                   <AvatarFallback>
                       <User className="h-10 w-10 text-gray-400" />
                   </AvatarFallback>
               </Avatar>
               <div className="flex items-center gap-4">
-                <Button type="button" variant="outline" size="sm" onClick={handleChooseFileClick} className="text-sm border-none bg-grey-2/60 rounded-none hover:bg-grey-2/90">
+                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}  className="text-sm border-none bg-grey-2/60 rounded-none hover:bg-grey-2/90">
                   Choose file
                 </Button>
                 {/* Hidden file input */}
                 <input
                       ref={fileInputRef}
                       type="file"
-                      id="profilePicInput"
-                      accept="image/jpeg, image/png, image/jpg"
+                      // id="profilePicInput"
+                      accept="image/*"
                       onChange={handleFileChange}
                       className="hidden"
                   />
-                <span className="text-sm text-black">{fileName}</span>
+                <span className="text-sm text-black">{profilePicFile?.name || "No file chosen"}</span>
               </div>
               <p className="text-sm text-gray-500">Format file jpg, jpeg, png</p>
             </div>
@@ -188,14 +223,14 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6 mt-4">
               {/* Full Name */}
               <div className='md:col-span-2'>
-                <label htmlFor="fullName" className="block text-md font-semibold text-black mb-2">
+                <label htmlFor="name" className="block text-md font-semibold text-black mb-2">
                   Full Name
                 </label>
                 <Input
                   type="text"
-                  id="fullName"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   placeholder="Enter your full name here"
                   className="text-black border-[#bfbfbf] rounded-lg placeholder:text-[#bfbfbf] py-5 px-3 focus:ring-1 focus:ring-blueSky focus:ring-offset-1"
                   required
@@ -203,7 +238,20 @@ export default function SettingsPage() {
               </div>
 
               {/* Empty cell for alignment or next field */}
-              {/* Or span Full Name across 2 columns on mobile if needed */}
+              {/* Email */}
+              <div className='md:col-span-2'>
+                <label htmlFor="email" className="block text-md font-semibold text-black mb-2">
+                  Email
+                </label>
+                <Input
+                  type="text"
+                  id="email"
+                  value={email}
+                  disabled
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="text-black border-[#bfbfbf] rounded-lg placeholder:text-[#bfbfbf] py-5 px-3 focus:ring-1 focus:ring-blueSky focus:ring-offset-1"
+                />
+              </div>
 
               {/* About Me (Spans 2 cols) */}
               <div className="md:col-span-2">
@@ -359,7 +407,7 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <Button type="button" variant="outline" className="text-blueSky border-blueSky hover:bg-blueSky hover:text-white rounded-xl font-semibold text-sm px-6 py-5">
+                <Button type="submit" variant="outline" className="text-blueSky border-blueSky hover:bg-blueSky hover:text-white rounded-xl font-semibold text-sm px-6 py-5">
                   Save Changes
                 </Button>
               </div>
@@ -368,20 +416,7 @@ export default function SettingsPage() {
 
           {/* Action Buttons */}
           <div className='space-y-2'>
-              <h1 className="text-2xl font-bold text-gray-800 mb-4">Change Email</h1>
-              <Dialog>
-                  <DialogTrigger asChild>
-                      <Button type="button" variant="outline" className="text-blueSky border-blueSky hover:bg-blueSky hover:text-white rounded-xl font-semibold text-sm px-6 py-6">
-                          Change Email
-                      </Button>
-                  </DialogTrigger>
-                  {/* Render the modal component */}
-                  <ChangeEmailModal />
-              </Dialog>
-          </div>
-
-          <div className='space-y-2'>
-              <h1 className="text-2xl font-bold text-gray-800 mb-4">Change Password</h1>
+              <h1 className="text-2xl font-bold text-gray-800 mb-4">Account Security</h1>
               <Dialog>
                   <DialogTrigger asChild>
                       <Button type="button" variant="outline" className="text-blueSky border-blueSky hover:bg-blueSky hover:text-white rounded-xl font-semibold text-sm px-6 py-6">
@@ -392,12 +427,39 @@ export default function SettingsPage() {
                   <ChangePasswordModal />
               </Dialog>
           </div>
-          
         </div>
-
-          
-        
       </main>
+
+      <Dialog open={isSaveModalOpen} onOpenChange={setIsSaveModalOpen}>
+          <DialogContent>
+              <SaveConfirmationModal
+                  isSaving={isSaving}
+                  onConfirm={handleSaveChanges} // The "Yes" button in modal calls the real save function
+                  onClose={() => setIsSaveModalOpen(false)}
+              />
+          </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
+const SettingsSkeleton = () => (
+    <div className="p-10">
+        <Skeleton className="h-10 w-1/3 mb-8" />
+        <div className="space-y-6">
+            <div className="flex items-center gap-4">
+                <Skeleton className="h-24 w-24 rounded-full" />
+                <div className="space-y-2">
+                    <Skeleton className="h-8 w-32" />
+                    <Skeleton className="h-4 w-40" />
+                </div>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+                <Skeleton className="h-12 w-full col-span-2" />
+                <Skeleton className="h-24 w-full col-span-2" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+            </div>
+        </div>
+    </div>
+);

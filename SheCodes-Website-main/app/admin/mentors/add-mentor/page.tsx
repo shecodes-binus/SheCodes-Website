@@ -1,83 +1,74 @@
-// app/admin/mentors/edit/[id]/page.tsx
 "use client";
 
-import * as React from 'react';
-import { useState, useEffect, useRef } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import React, { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import type { Mentor } from '@/types/events'; // Adjust path to your Mentor type
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import apiService from '@/lib/apiService';
+import toast from 'react-hot-toast';
 
 const AddMentorPage: React.FC = () => {
     const router = useRouter();
-    const params = useParams();
-    const mentorId = params.id ? parseInt(params.id as string, 10) : null;
 
-    const [mentorData, setMentorData] = useState<Mentor | null>(null);
-    // const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    // --- Form State ---
     const [mentorPhoto, setMentorPhoto] = useState<File | null>(null);
     const [mentorPhotoPreview, setMentorPhotoPreview] = useState<string | null>(null);
-    const [existingImageSrc, setExistingImageSrc] = useState<string | null>(null);
     const [mentorName, setMentorName] = useState('');
     const [mentorOccupation, setMentorOccupation] = useState('');
     const [mentorDescription, setMentorDescription] = useState('');
-    const [mentorStatus, setMentorStatus] = useState('');
+    const [mentorStatus, setMentorStatus] = useState<'active' | 'inactive'>('active');
     const [mentorStory, setMentorStory] = useState('');
     const [instagramLink, setInstagramLink] = useState('');
     const [linkedinLink, setLinkedinLink] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // --- Handlers ---
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
             setMentorPhoto(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setMentorPhotoPreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-            setExistingImageSrc(null); // Clear existing image if new one is chosen
-        } else if (existingImageSrc) { // Revert to existing if selection is cancelled
-            setMentorPhoto(null);
-            setMentorPhotoPreview(existingImageSrc);
-        } else {
-            setMentorPhoto(null);
-            setMentorPhotoPreview(null);
+            setMentorPhotoPreview(URL.createObjectURL(file));
         }
     };
 
-    // Trigger hidden file input click when the "Choose file" button is clicked
     const handleChooseFileClick = () => {
         fileInputRef.current?.click();
     };
 
-    const handleUpdateMentor = (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        console.log("Updating Mentor Data (ID:", mentorId, "):", {
-            id: mentorId,
-            mentorPhoto, // New File object or null
-            existingImageSrc, // Original image URL if photo not changed
-            mentorName,
-            mentorStatus,
-            mentorOccupation,
-            mentorDescription,
-            mentorStory,
-            instagramLink,
-            linkedinLink,
-            // Preserve other fields not in the form from original mentorData
-            status: mentorData?.status,
-            story: mentorData?.story,
-        });
-        alert("Mentor Updated (Placeholder - Check Console)");
-        router.push('/admin/mentors');
+        if (!mentorPhoto) {
+            toast.error("Please upload a photo for the mentor.");
+            return;
+        }
+
+        setIsSubmitting(true);
+        const toastId = toast.loading("Adding new mentor...");
+
+        const formData = new FormData();
+        formData.append('name', mentorName);
+        formData.append('occupation', mentorOccupation);
+        formData.append('description', mentorDescription);
+        formData.append('story', mentorStory);
+        formData.append('status', mentorStatus);
+        formData.append('image', mentorPhoto);
+        if (instagramLink) formData.append('instagram', instagramLink);
+        if (linkedinLink) formData.append('linkedin', linkedinLink);
+
+        try {
+            await apiService.post('/mentors/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            toast.success("Mentor added successfully!", { id: toastId });
+            router.push('/admin/mentors');
+        } catch (err) {
+            toast.error("Failed to add mentor.", { id: toastId });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // --- Styles ---
@@ -86,10 +77,6 @@ const AddMentorPage: React.FC = () => {
     const inputStyles = "text-black border-[#bfbfbf] rounded-lg placeholder:text-[#bfbfbf] py-5 px-3 focus:ring-2 focus:ring-blueSky focus:ring-offset-1";
     const helperTextStyles = "mt-1 text-xs text-gray-500";
     const selectTriggerStyles = `${inputStyles} text-left`;
-
-    if (error) {
-        return <main className="flex-1 p-6 lg:p-10 bg-gray-50"><p className="text-red-600">{error}</p></main>;
-    }
 
     return (
         <main className="flex-1 px-10 py-6">
@@ -101,32 +88,25 @@ const AddMentorPage: React.FC = () => {
                     </Button>
                 </div>
 
-                <form onSubmit={handleUpdateMentor} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Photo Upload Section */}
                     <div>
                         <label className={`${labelStyles}`}>
                             Photo<span className="text-red-500">*</span>
                         </label>
-                        <div className="mt-1 flex flex-col items-start">
-                            <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 mb-3 flex items-center justify-center">
+                        <div className="mt-2 flex flex-col items-start">
+                            <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 mb-4 flex items-center justify-center">
                                 {mentorPhotoPreview ? (
                                     <Image src={mentorPhotoPreview} alt="Mentor Preview" width={128} height={128} className="object-cover w-full h-full" />
                                 ) : (
                                     <span className="text-gray-400 text-sm">Preview</span>
                                 )}
                             </div>
-                            <div className="flex items-center space-x-3">
-                                <Button
-                                    type="button"
-                                    onClick={handleChooseFileClick}
-                                    variant="outline"
-                                    className="px-4 py-2 text-sm border-gray-300 text-gray-700 hover:bg-gray-50"
-                                >
+                            <div className="flex items-center space-x-3 mb-1">
+                                <Button type="button" onClick={handleChooseFileClick} variant="outline" className="px-4 py-2 text-sm bg-grey-2/50 text-gray-700 hover:bg-grey-2/40 border-none rounded-none">
                                     Choose file
                                 </Button>
-                                <span className="text-sm text-gray-600">
-                                    {mentorPhoto ? mentorPhoto.name : (existingImageSrc ? "Current image" : "No file chosen")}
-                                </span>
+                                <span className="text-sm text-gray-600">{mentorPhoto ? mentorPhoto.name : "No file chosen"}</span>
                             </div>
                             <input
                                 ref={fileInputRef}
@@ -271,9 +251,9 @@ const AddMentorPage: React.FC = () => {
                         <Button
                             type="submit"
                             // Style to match the light gray button in the image
-                            className="bg-blueSky hover:bg-blueSky/90 text-white font-semibold py-2.5 px-8 rounded-md cursor-pointer transition-colors"
+                            className="bg-blueSky hover:bg-blueSky/90 text-white font-semibold py-3 px-8 rounded-md cursor-pointer transition-colors"
                         >
-                            Add
+                            {isSubmitting ? "Adding..." : "Add"}
                         </Button>
                     </div>
                 </form>
