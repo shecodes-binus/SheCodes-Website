@@ -36,6 +36,16 @@ const nextConfig = {
       },
     ];
   },
+
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/app',
+        permanent: true,
+      },
+    ];
+  }
 }
 
 if (userConfig) {
