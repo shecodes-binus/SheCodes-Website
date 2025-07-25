@@ -29,7 +29,10 @@ origins = [
     "http://localhost",
     "http://localhost:3000", 
     "http://localhost:5173", 
-    "https://your-frontend-domain.com", # Add your production frontend URL
+    "https://shecodes-society.org",
+    "https://www.shecodes-society.org",
+    "https://shecodessociety.org",
+    "https://www.shecodessociety.org"
 ]
 
 app.add_middleware(
