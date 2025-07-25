@@ -6,6 +6,8 @@ from database import engine
 from models.user import Base # Import Base from a model to link metadata
 from core.config import settings
 from core.supabase_client import supabase_client # To check initialization
+import os
+import uvicorn
 
 # Import all your routers
 from routers import (
@@ -64,3 +66,7 @@ app.include_router(upload_router.router)
 def read_root():
     """A welcome endpoint for the API."""
     return {"message": f"Welcome to {settings.PROJECT_NAME} API v{settings.PROJECT_VERSION}"}
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
