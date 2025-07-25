@@ -115,7 +115,7 @@ export default function Home() {
             </div> */}
             <div className="w-full relative rounded-lg overflow-hidden shadow-lg order-1 lg:order-2"> {/* Adjusted aspect ratio */}
                 <Image
-                    src={STORAGE_URL + "/photo2.png"}
+                    src={STORAGE_URL + "/documentation/documentation2.jpg"}
                     // src="/documentation/documentation2.jpg"
                     alt="SheCodes Society Binus"
                     fill
@@ -138,9 +138,9 @@ export default function Home() {
                     Our Vision
                   </h3>
                   <p className="max-w-[600px] text-gray-600 text-base/8">
-                  To create a world where women have equitable opportunities and representation in STEM fields, fostering innovation and 
-                  inclusive growth through diverse perspectives and talents by empowering them with cutting-edge skills and 
-                  leadership capabilities.
+                    To create a world where women have equitable opportunities and representation in STEM fields, fostering innovation and 
+                    inclusive growth through diverse perspectives and talents by empowering them with cutting-edge skills and 
+                    leadership capabilities.
                   </p>
                 </div>
             </div>
@@ -156,7 +156,8 @@ export default function Home() {
             </div> */}
             <div className="w-full h-96 relative rounded-lg overflow-hidden shadow-lg order-1 lg:order-2"> 
                 <Image
-                    src="/documentation/grandlaunchingphoto.jpg"
+                    src={STORAGE_URL + "/documentation/grandlaunchingphoto.jpg"}
+                    // src="/documentation/grandlaunchingphoto.jpg"
                     alt="SheCodes Society Binus"
                     fill
                     sizes="(max-width: 768px) 90vw, (max-width: 1200px) 50vw, 600px"
