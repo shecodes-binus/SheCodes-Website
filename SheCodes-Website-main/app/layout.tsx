@@ -1,14 +1,20 @@
 // src/app/layout.tsx (Modified - Minimal Root Layout)
 import type React from "react";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Poppins } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from 'react-hot-toast';
 // Removed Header and Footer imports
 
-const inter = Inter({ subsets: ["latin"] });
+const poppins = Poppins({
+  subsets: ["latin"],
+  // Add the weights and styles you want to use
+  weight: ["300", "400", "500", "600", "700", "800"],
+  // This is the key for Tailwind integration!
+  variable: "--font-poppins", 
+});
 
 export const metadata: Metadata = {
   title: "SheCodes Society Binus",
@@ -36,7 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={poppins.className}>
         <AuthProvider>
           {/* ThemeProvider wraps everything */}
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
