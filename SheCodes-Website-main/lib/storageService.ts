@@ -1,0 +1,1 @@
+export const STORAGE_URL = process.env.SUPABASE_URL_COMPLETE;

@@ -14,6 +14,7 @@ import { SuccessStoriesCarousel } from "@/components/success-story-carousel"
 import { useEffect, useState } from "react"
 import apiService from "@/lib/apiService";
 import { useAuth } from "@/contexts/AuthContext"
+import { STORAGE_URL } from "@/lib/storageService"
 
 export default function Home() {
   const [alumnis, setAlumnis] = useState<Alumni[]>([]);
@@ -114,7 +115,8 @@ export default function Home() {
             </div> */}
             <div className="w-full relative rounded-lg overflow-hidden shadow-lg order-1 lg:order-2"> {/* Adjusted aspect ratio */}
                 <Image
-                    src="/documentation/documentation2.jpg"
+                    src={STORAGE_URL + "/photo2.png"}
+                    // src="/documentation/documentation2.jpg"
                     alt="SheCodes Society Binus"
                     fill
                     sizes="(max-width: 768px) 90vw, (max-width: 1200px) 50vw, 600px"
