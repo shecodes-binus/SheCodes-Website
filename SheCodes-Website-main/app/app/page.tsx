@@ -156,7 +156,7 @@ export default function Home() {
             </div> */}
             <div className="w-full h-96 relative rounded-lg overflow-hidden shadow-lg order-1 lg:order-2"> 
                 <Image
-                    src={STORAGE_URL + "/documentation/grandlaunchingphoto.jpg"}
+                    src={`${STORAGE_URL}/documentation/grandlaunchingphoto.JPG`}
                     // src="/documentation/grandlaunchingphoto.jpg"
                     alt="SheCodes Society Binus"
                     fill
