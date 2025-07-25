@@ -115,7 +115,7 @@ export default function Home() {
             </div> */}
             <div className="w-full relative rounded-lg overflow-hidden shadow-lg order-1 lg:order-2"> {/* Adjusted aspect ratio */}
                 <Image
-                    src={STORAGE_URL + "/documentation/documentation2.jpg"}
+                    src={`${STORAGE_URL}/documentation/documentation2.jpg`}
                     // src="/documentation/documentation2.jpg"
                     alt="SheCodes Society Binus"
                     fill

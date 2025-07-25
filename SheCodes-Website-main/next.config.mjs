@@ -21,6 +21,13 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
+    remotePatterns: [
+        {
+            protocol: 'https',
+            hostname: 'bqylypmpqqlxilhjskvw.supabase.co',
+            pathname: '/storage/v1/object/public/images/**',
+        },
+    ],
   },
   experimental: {
     webpackBuildWorker: true,
@@ -32,7 +39,8 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8000/:path*',
+        // destination: 'http://localhost:8000/:path*',
+        destination: 'https://shecodes-website-production-37d9.up.railway.app/:path*',
       },
     ];
   },
