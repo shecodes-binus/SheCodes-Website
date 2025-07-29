@@ -113,13 +113,15 @@ export default function Home() {
                 priority
               />
             </div> */}
-            <div className="w-full relative rounded-lg overflow-hidden shadow-lg order-1 lg:order-2"> {/* Adjusted aspect ratio */}
+            <div className="w-full relative rounded-lg overflow-hidden shadow-lg order-1 lg:order-2"> 
                 <Image
                     src={`${STORAGE_URL}/documentation/documentation2.jpg`}
+                    // src={'https://bqylypmpqqlxilhjskvw.supabase.co/storage/v1/object/public/images/documentation/documentation2.jpg'}
                     // src="/documentation/documentation2.jpg"
                     alt="SheCodes Society Binus"
-                    fill
-                    sizes="(max-width: 768px) 90vw, (max-width: 1200px) 50vw, 600px"
+                    width={750}
+                    height={500}
+                    layout="responsive"
                     className="object-cover"
                     priority 
                 />

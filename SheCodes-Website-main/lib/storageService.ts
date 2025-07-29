@@ -1,1 +1,1 @@
-export const STORAGE_URL = process.env.SUPABASE_URL_COMPLETE;
+export const STORAGE_URL = "https://bqylypmpqqlxilhjskvw.supabase.co/storage/v1/object/public/images";
