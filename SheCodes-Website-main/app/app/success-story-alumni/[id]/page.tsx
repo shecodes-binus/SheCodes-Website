@@ -8,60 +8,62 @@ import type { Alumni } from '@/types/alumnis';
 
 import { SuccessStoriesCarousel } from "@/components/success-story-carousel";
 import { FaEnvelope, FaInstagram, FaLinkedin } from 'react-icons/fa'; 
+import apiService from "@/lib/apiService";
 
 export default function SuccessStory({ params }: { params: { id: string } }) {
     const [storyData, setStoryData] = useState<Alumni | null>(null);
     const [alumnis, setAlumnis] = useState<Alumni[]>([]);
     const [error, setError] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const iconSize = 20; 
     const iconColor = "border rounded-full cursor-pointer text-black hover:text-pink p-1"; 
 
     useEffect(() => {
-        const fetchAlumni = async () => {
+        const fetchData = async () => {
+            setLoading(true);
+            setError(false);
             try {
-            const res = await fetch(`http://localhost:8000/alumni/${params.id}`);
-            if (!res.ok) throw new Error("Not found");
-            const data = await res.json();
-            setStoryData(data);
-            } catch {
-            setError(true);
+                const [singleAlumniResponse, allAlumniResponse] = await Promise.all([
+                    apiService.get(`/alumni/${params.id}`),
+                    apiService.get('/alumni')
+                ]);
+
+                // If needed, store the single alumni data (you can update state here)
+                setStoryData(singleAlumniResponse.data);
+                setAlumnis(allAlumniResponse.data);
+
+            } catch (error) {
+                console.error("Failed to fetch alumni data:", error);
+                setError(true);
+            }  finally {
+                setLoading(false);
             }
         };
 
-        const fetchAllAlumnis = async () => {
-            const res = await fetch("http://localhost:8000/alumni");
-            const data = await res.json();
-            setAlumnis(data);
-        };
+        fetchData();
+    }, [params.id]);
 
-        fetchAlumni();
-        fetchAllAlumnis();
-    }, [params.id])
+    if (loading) {
+        return (
+            <div className="flex flex-col min-h-screen items-center justify-center space-y-4">
+                <h1 className="text-2xl font-bold text-blueSky">Loading...</h1>
+                <p className="text-gray-500">Please wait while we load the success story.</p>
+            </div>
+        );
+    }
 
-    if (error) {
+    if (error || !storyData) {
         return (
         <div className="flex flex-col min-h-screen items-center justify-center space-y-4">
             <h1 className="text-2xl font-bold text-red-600">Success Story Not Found</h1>
             <p className="text-gray-600">
                 Sorry, we couldn't find the story you were looking for.
             </p>
-            <Link href="/partnership-mentorship">
+            <Link href="/app">
             <Button variant="outline">Back to Homepage</Button>
             </Link>
         </div>
-        );
-    }
-
-    if (!storyData) {
-        return (
-            <div className="flex flex-col min-h-screen items-center justify-center space-y-4">
-                 <h1 className="text-2xl font-bold text-red-600">Success Story Not Found</h1>
-                 <p className="text-gray-600">Sorry, we couldn't find the story you were looking for.</p>
-                 <Link href="/partnership-mentorship"> {/* Link back to relevant page */}
-                     <Button variant="outline">Back to Homepage</Button>
-                 </Link>
-            </div>
         );
     }
 

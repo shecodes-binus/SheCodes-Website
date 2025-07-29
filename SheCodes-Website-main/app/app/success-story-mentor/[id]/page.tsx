@@ -8,6 +8,7 @@ import { dummyMentors } from '@/data/dummyPartnershipData'; // Use the same data
 import type { Mentor } from '@/types/partnership';
 import { SuccessStoriesCarousel } from "@/components/success-story-carousel";
 import { FaEnvelope, FaInstagram, FaLinkedin } from 'react-icons/fa'; 
+import apiService from "@/lib/apiService";
 
 function getStoryDataById(id: string): Mentor | undefined {
     const numericId = parseInt(id, 10);
@@ -23,53 +24,51 @@ export default function SuccessStory({ params }: { params: { id: string } }) {
     const [storyData, setStoryData] = useState<Mentor | null>(null);
     const [mentors, setMentors] = useState<Mentor[]>([]);
     const [error, setError] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const iconSize = 20; 
     const iconColor = "border rounded-full cursor-pointer text-black hover:text-pink p-1";
     
     useEffect(() => {
-        const fetchMentor = async () => {
-        try {
-            const res = await fetch(`http://localhost:8000/mentors/${params.id}`);
-            if (!res.ok) throw new Error("Not found");
-            const data = await res.json();
-            setStoryData(data);
-        } catch {
-            setError(true);
-        }
+        const fetchData = async () => {
+            setLoading(true);
+            setError(false);
+            try {
+                const [mentorResponse, allMentorsResponse] = await Promise.all([
+                    apiService.get(`/mentors/${params.id}`),
+                    apiService.get('/mentors')
+                ]);
+
+                setStoryData(mentorResponse.data);
+                setMentors(allMentorsResponse.data);
+            } catch (error) {
+                console.error("Failed to fetch mentor data:", error);
+                setError(true);
+            } finally {
+                setLoading(false);
+            }
         };
 
-        const fetchAllMentors = async () => {
-        const res = await fetch("http://localhost:8000/mentors");
-        const data = await res.json();
-        setMentors(data);
-        };
-
-        fetchMentor();
-        fetchAllMentors();
+        fetchData();
     }, [params.id]);
 
-    if (error) {
+    if (loading) {
         return (
-        <div className="flex flex-col min-h-screen items-center justify-center space-y-4">
-            <h1 className="text-2xl font-bold text-red-600">Success Story Not Found</h1>
-            <p className="text-gray-600">Sorry, we couldn't find the story you were looking for.</p>
-            <Link href="/partnership-mentorship">
-            <Button variant="outline">Back to Mentorship</Button>
-            </Link>
-        </div>
+            <div className="flex flex-col min-h-screen items-center justify-center space-y-4">
+                <h1 className="text-2xl font-bold text-blueSky">Loading...</h1>
+                <p className="text-gray-500">Please wait while we load the success story.</p>
+            </div>
         );
     }
 
-
-    if (!storyData) {
+    if (error || !storyData) {
         return (
             <div className="flex flex-col min-h-screen items-center justify-center space-y-4">
-                 <h1 className="text-2xl font-bold text-red-600">Success Story Not Found</h1>
-                 <p className="text-gray-600">Sorry, we couldn't find the story you were looking for.</p>
-                 <Link href="/partnership-mentorship"> {/* Link back to relevant page */}
-                     <Button variant="outline">Back to Mentorship</Button>
-                 </Link>
+                <h1 className="text-2xl font-bold text-red-600">Success Story Not Found</h1>
+                <p className="text-gray-600">Sorry, we couldn't find the story you were looking for.</p>
+                <Link href="/app">
+                    <Button variant="outline">Back to Homepage</Button>
+                </Link>
             </div>
         );
     }

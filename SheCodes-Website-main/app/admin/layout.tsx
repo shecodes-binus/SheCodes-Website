@@ -3,7 +3,7 @@
 import React, { useEffect } from "react"
 // import type { Metadata } from "next"
 import { usePathname } from 'next/navigation';
-import { Inter } from "next/font/google"
+import { Poppins } from "next/font/google"
 import "../globals.css"
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -11,7 +11,13 @@ import { ThemeProvider } from "@/components/theme-provider"
 import Sidebar from "@/components/admin/sidebar"
 import Header from "@/components/admin/header"
 
-const inter = Inter({ subsets: ["latin"] })
+const poppins = Poppins({
+  subsets: ["latin"],
+  // Add the weights and styles you want to use
+  weight: ["300", "400", "500", "600", "700", "800"],
+  // This is the key for Tailwind integration!
+  variable: "--font-poppins", 
+});
 
 // export const metadata: Metadata = {
 //   title: "SheCodes Society Binus",
@@ -49,7 +55,7 @@ export default function AdminLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={poppins.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <div className="flex min-h-screen flex-col ">
             <Sidebar />

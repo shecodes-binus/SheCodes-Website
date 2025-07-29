@@ -58,7 +58,12 @@ export default function PartnershipMentorshipPage() {
   const iconColor = "border rounded-full cursor-pointer text-black hover:text-pink p-1"; 
 
   if (!mentors.length || !partners.length) {
-    return <p className="text-center py-12">Loading...</p>;
+    return (
+        <div className="flex flex-col min-h-screen items-center justify-center space-y-4">
+            <h1 className="text-2xl font-bold text-blueSky">Loading...</h1>
+            <p className="text-gray-500">Please wait while we load the mentors.</p>
+        </div>
+    );
   }
 
   return (

@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import apiService from '@/lib/apiService';
 import type { Comment } from '@/types/comment';
 import { Skeleton } from '@/components/ui/skeleton';
+import { STORAGE_URL } from '@/lib/storageService';
 
 export default function AlumniDiscussionPage() {
     const { isAuthenticated, user } = useAuth();
@@ -148,11 +149,11 @@ export default function AlumniDiscussionPage() {
                                         <div className="flex items-center justify-between">
                                             <div className='flex gap-4'>
                                                 <button onClick={() => handleToggleLike(comment.id)} className={`flex items-center space-x-1 border rounded-full px-2.5 py-1 ${isLiked ? 'bg-pink-100 border-pink-300 text-pink-600' : 'border-purple-2 hover:border-pink-300'}`}>
-                                                    <img src="/icons/facebooklike.svg" alt="Like"/>
+                                                    <img src={`${STORAGE_URL}/icons/facebooklike.svg`} alt="Like"/>
                                                     <p className='font-bold text-sm'>{comment.like_count}</p>
                                                 </button>
                                                 <Link href={`/app/comment/${comment.id}`} className="flex items-center space-x-1 border rounded-full border-purple-2 px-2.5 py-1">
-                                                    <img src="/icons/comment.svg" alt="Comment"/>
+                                                    <img src={`${STORAGE_URL}/icons/comment.svg`} alt="Comment"/>
                                                     <p className='font-bold text-sm'>Reply</p>
                                                 </Link>
                                             </div>
