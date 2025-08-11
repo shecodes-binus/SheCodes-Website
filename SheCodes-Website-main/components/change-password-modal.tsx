@@ -129,7 +129,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = (/* props
           disabled={isLoading}
           className="bg-blueSky hover:bg-blueSky/90 text-white rounded-lg px-6 py-2"
         >
-          {isLoading ? 'Saving...' : 'Send'}
+          {isLoading ? 'Saving...' : 'Confirm'}
         </Button>
       </DialogFooter>
     </DialogContent>

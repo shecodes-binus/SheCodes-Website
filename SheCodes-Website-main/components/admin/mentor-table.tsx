@@ -83,7 +83,15 @@ const MentorTable: React.FC<MentorTableProps> = ({
                                 {mentor.occupation}
                             </td>
                             <td className="px-4 py-3.5 text-sm whitespace-nowrap text-textMuted">
-                                {mentor.status.charAt(0).toUpperCase() + mentor.status.slice(1)}
+                                <span
+                                    className={`px-3 py-1 text-xs font-medium rounded-full ${
+                                    mentor.status.toLowerCase() === 'active'
+                                        ? 'bg-green-100 text-green-800'
+                                        : 'bg-red-100 text-red-800'
+                                    }`}
+                                >
+                                    {mentor.status.charAt(0).toUpperCase() + mentor.status.slice(1)}
+                                </span>
                             </td>
                             <td className="pr-10 px-4 py-3.5 whitespace-nowrap text-sm font-medium">
                                 <div className="flex space-x-3">

@@ -55,6 +55,7 @@ class UserUpdate(BaseModel):
     cv_link: Optional[str] = None
     linkedin: Optional[str] = None
     # Note: Updating profile picture is handled by a separate endpoint.
+    profile_picture: Optional[str] = None
 
 # --- Password Reset Schemas ---
 class PasswordResetRequest(BaseModel):

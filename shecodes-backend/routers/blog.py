@@ -11,6 +11,7 @@ from models import blog as blog_model, user as user_model
 from database import get_db
 from core.security import get_current_user
 from core.storage_service import upload_file_to_supabase, delete_file_from_supabase
+from core.enums import UploadCategory
 
 router = APIRouter(prefix="/blogs", tags=["Blogs"])
 
@@ -34,7 +35,7 @@ def create_blog(
     if not image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Uploaded file is not an image.")
         
-    image_url = upload_file_to_supabase(image)
+    image_url = upload_file_to_supabase(image, category=UploadCategory.ARTICLES)
     blog_data = blog_schema.BlogArticleCreate(
         slug=slug, title=title, excerpt=excerpt, sections=sections, featured_image_url=image_url,
         category=category, author_name=author_name, author_avatar_url=author_avatar_url, published_at=published_at
@@ -100,7 +101,7 @@ def update_blog(
         if not image.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="Uploaded file is not an image.")
         delete_file_from_supabase(db_blog.featured_image_url)
-        new_image_url = upload_file_to_supabase(image)
+        new_image_url = upload_file_to_supabase(image, category=UploadCategory.ARTICLES)
     
     blog_update_data = blog_schema.BlogArticleUpdate(
         slug=slug, title=title, excerpt=excerpt, sections=sections, featured_image_url=new_image_url,

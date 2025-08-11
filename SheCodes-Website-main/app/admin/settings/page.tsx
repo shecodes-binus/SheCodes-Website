@@ -16,40 +16,48 @@ import {
 } from 'lucide-react';
 import { Admin } from '@/types/admin'
 import { dummyAdmin } from '@/data/dummyAdmin'; 
-
+import { useAuth } from '@/contexts/AuthContext';
+import { Member } from '@/types/members';
+import toast from 'react-hot-toast';
+import apiService from '@/lib/apiService';
 
 // --- Main Settings Page Component ---
 export default function SettingsPage() {
-    const [admin, setAdmin] = React.useState<Admin | null>(null);
+    const { user: authUser, revalidateUser} = useAuth();
+    // const [admin, setAdmin] = React.useState<Member | null>(null);
     // --- State for form fields ---
     // Initialize with actual user data fetched from API in a real app
     const [profilePic, setProfilePic] = React.useState<File | null>(null);
     const [profilePicPreview, setProfilePicPreview] = React.useState<string | null>(null);
     const [fileName, setFileName] = React.useState<string>("No file chosen");
     const [fullName, setFullName] = React.useState<string>(""); 
-    const [phoneNumber, setPhoneNumber] = React.useState<string>(""); 
+    const [email, setEmail] = React.useState<string>(""); 
     const [role, setRole] = React.useState<string>("");
+    const [isSaving, setIsSaving] = React.useState(false);
 
     React.useEffect(() => {
-        const currentAdmin = dummyAdmin[0];
-        if (currentAdmin) {
-          setAdmin(currentAdmin);
-          setFullName(currentAdmin.name);
-          setPhoneNumber(currentAdmin.phone || ""); 
-          setRole(currentAdmin.role);
-          if (currentAdmin.imageSrc) {
-            setProfilePicPreview(currentAdmin.imageSrc); 
-          }
+        if (authUser) {
+            // setAdmin(authUser);
+            setFullName(authUser.name || "");
+            setEmail(authUser.email || "");
+            setRole(authUser.role || ""); 
+            if (authUser.profile_picture) {
+                setProfilePicPreview(authUser.profile_picture); 
+            }
         }
-      }, []);
+    }, [authUser]);
 
     // --- Handlers ---
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
+            // Optional: Add file size validation
+            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                toast.error("File size cannot exceed 2MB.");
+                return;
+            }
             setProfilePic(file);
             setFileName(file.name);
-            // Generate preview
             const reader = new FileReader();
             reader.onloadend = () => {
                 setProfilePicPreview(reader.result as string);
@@ -58,7 +66,7 @@ export default function SettingsPage() {
         } else {
             setProfilePic(null);
             setFileName("No file chosen");
-            setProfilePicPreview(admin?.imageSrc || null);
+            setProfilePicPreview(authUser?.profile_picture || null);
         }
     };
 
@@ -68,16 +76,46 @@ export default function SettingsPage() {
         fileInputRef.current?.click();
     };
 
-    const handleSaveChanges = (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSaveChanges = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        console.log("Saving settings:", {
-            profilePic, // In real app, upload this file
-            fullName,
-            phoneNumber,
-        });
-        // Add API call logic here
-        alert("Settings Saved (Placeholder)");
+        setIsSaving(true);
+        const toastId = toast.loading("Saving changes...");
+
+        // The backend expects multipart/form-data for this endpoint
+        const formData = new FormData();
+
+        // Append the name. The backend user router expects 'name'.
+        formData.append('name', fullName);
+
+        // Only append the picture if a new one has been selected
+        if (profilePic) {
+            // The backend user router expects the file under the key 'picture'.
+            formData.append('picture', profilePic);
+        }
+
+        try {
+            // Make the PUT request to the /users/me endpoint
+            await apiService.put('/users/me', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            toast.success("Profile updated successfully!", { id: toastId });
+            
+            // Refresh user data in the context to update UI across the app
+            if (revalidateUser) {
+                await revalidateUser();
+            }
+
+        } catch (err: any) {
+            const errorMessage = err.response?.data?.detail || "Failed to update profile.";
+            toast.error(errorMessage, { id: toastId });
+        } finally {
+            setIsSaving(false);
+        }
     };
+
 
     return (
         <div className="flex min-h-screen w-full">
@@ -92,7 +130,7 @@ export default function SettingsPage() {
                         {/* Profile Picture Section */}
                         <div className="flex flex-col items-start space-y-4">
                             <Avatar className="h-24 w-24 border-2 border-gray-200">
-                                <AvatarImage src={profilePicPreview || "/placeholder-avatar.jpg"} alt={admin?.name || "User"} />
+                                <AvatarImage src={profilePicPreview || "/placeholder-avatar.jpg"} alt={authUser?.name || "User"} />
                                 <AvatarFallback>
                                     <User className="h-10 w-10 text-gray-400" />
                                 </AvatarFallback>
@@ -114,8 +152,6 @@ export default function SettingsPage() {
                             </div>
                             <p className="text-sm text-gray-500">Format file jpg, jpeg, png</p>
                         </div>
-
-                        
 
                         {/* Form Fields Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6 mt-4">
@@ -147,31 +183,29 @@ export default function SettingsPage() {
                             </div>
                         </div>
 
-                        {/* Phone Number */}
+                        {/* Email */}
                         <div className="md:col-span-2 mb-2">
-                            <label htmlFor="phoneNumber" className="block text-md font-semibold text-black mb-2">
-                            Phone Number
+                            <label htmlFor="email" className="block text-md font-semibold text-black mb-2">
+                                Email
                             </label>
-                            <Input
-                                type="tel"
-                                id="phoneNumber"
-                                value={phoneNumber}
-                                onChange={(e) => setPhoneNumber(e.target.value)}
-                                placeholder="Enter your phone number here"
-                                className="border-[#bfbfbf] rounded-lg placeholder:text-[#bfbfbf] py-5 px-3"
-                            />
+                            <div
+                                id="roleDisplay"
+                                className="text-black border border-[#bfbfbf] rounded-lg py-2 px-3 bg-gray-100 cursor-not-allowed text-sm"
+                                >
+                                {email || "N/A"} {/* Display fetched role or N/A */}
+                            </div>
                         </div>
 
                         <div>
-                            <Button type="button" variant="outline" className="text-blueSky border-blueSky hover:bg-blueSky hover:text-white rounded-xl font-semibold text-sm px-6 py-5">
-                            Save Changes
+                            <Button type="submit" variant="outline" className="text-blueSky border-blueSky hover:bg-blueSky hover:text-white rounded-xl font-semibold text-sm px-6 py-5" disabled={isSaving}>
+                                {isSaving ? 'Saving...' : 'Save Changes'}
                             </Button>
                         </div>
                         </div>
                     </form>
 
                     {/* Action Buttons */}
-                    <div className='space-y-2'>
+                    {/* <div className='space-y-2'>
                         <h1 className="text-2xl font-bold text-gray-800 mb-4">Change Email</h1>
                         <Dialog>
                             <DialogTrigger asChild>
@@ -179,10 +213,9 @@ export default function SettingsPage() {
                                     Change Email
                                 </Button>
                             </DialogTrigger>
-                            {/* Render the modal component */}
                             <ChangeEmailModal />
                         </Dialog>
-                    </div>
+                    </div> */}
 
                     <div className='space-y-2'>
                         <h1 className="text-2xl font-bold text-gray-800 mb-4">Change Password</h1>

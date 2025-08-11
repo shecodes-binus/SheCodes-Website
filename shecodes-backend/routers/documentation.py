@@ -10,6 +10,7 @@ from schemas import documentation as doc_schema
 from database import get_db
 from core.security import get_current_user
 from core.storage_service import upload_file_to_supabase, delete_file_from_supabase
+from core.enums import UploadCategory
 
 router = APIRouter(
     prefix="/documentations",
@@ -24,7 +25,7 @@ def create_documentation(
 ):
     if not image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Uploaded file is not an image.")
-    image_url = upload_file_to_supabase(image)
+    image_url = upload_file_to_supabase(image, category=UploadCategory.DOCUMENTATION)
     doc_data = doc_schema.DocumentationCreate(image_src=image_url)
     return crud.create_generic_item(db, model=doc_model.Documentation, schema=doc_data)
 
@@ -43,7 +44,7 @@ def update_documentation(
         raise HTTPException(status_code=400, detail="Uploaded file is not an image.")
         
     delete_file_from_supabase(db_doc.image_src)
-    new_image_url = upload_file_to_supabase(image)
+    new_image_url = upload_file_to_supabase(image, category=UploadCategory.DOCUMENTATION)
 
     doc_update_data = doc_schema.DocumentationUpdate(image_src=new_image_url)
     return crud.update_generic_item(db, db_item=db_doc, schema_in=doc_update_data)

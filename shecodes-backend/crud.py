@@ -18,7 +18,8 @@ from models import (
     mentor as mentor_model,
     participant as participant_model,
     portfolio as portfolio_model,
-    partner as partner_model
+    partner as partner_model,
+    tool as tool_model
 )
 from schemas import (
     user as user_schema,
@@ -32,7 +33,8 @@ from schemas import (
     mentor as mentor_schema,
     participant as participant_schema,
     portfolio as portfolio_schema,
-    partner as partner_schema
+    partner as partner_schema,
+    tool as tool_schema
 )
 
 from core.security import get_password_hash, verify_password
@@ -303,18 +305,37 @@ def get_all_events(db: Session, skip: int = 0, limit: int = 100) -> List[event_m
     return db.query(event_model.Event).offset(skip).limit(limit).all()
 
 def create_event(db: Session, event_data: event_schema.EventCreate) -> event_model.Event:
-    # Separate relational data from the main event data
-    event_base_data = event_data.model_dump(exclude={'mentors', 'skills', 'benefits', 'sessions'})
+    # --- START: New Tool Lookup Logic ---
+    tools_json = []
+    if event_data.tools:
+        for tool_name in event_data.tools:
+            # Find the tool in the database (case-insensitive)
+            tool_db = get_tool_by_name(db, name=tool_name.strip())
+            if tool_db:
+                # If found, use its name and logo
+                tools_json.append({"name": tool_db.name, "logo_src": tool_db.logo_src})
+            else:
+                # If not found, still include it but with a null/empty logo.
+                # This prevents event creation from failing.
+                tools_json.append({"name": tool_name.strip(), "logo_src": ""}) 
+    
+    # Replace the list of strings with the constructed JSON
+    event_dict = event_data.model_dump()
+    event_dict['tools'] = tools_json
+    # --- END: New Tool Lookup Logic ---
+
+    # Separate relational data
+    event_base_data = {k: v for k, v in event_dict.items() if k not in {'mentors', 'skills', 'benefits', 'sessions'}}
     
     # Create the main event object
     new_event = event_model.Event(**event_base_data)
     
-    # Fetch and associate existing mentors
+    # Fetch and associate existing mentors (Many-to-Many)
     if event_data.mentors:
         mentors = db.query(mentor_model.Mentor).filter(mentor_model.Mentor.id.in_(event_data.mentors)).all()
         new_event.mentors = mentors
     
-    # Create and associate new related objects
+    # Create and associate new related objects (One-to-Many)
     for skill_data in event_data.skills:
         new_event.skills.append(event_model.Skill(**skill_data.model_dump()))
         
@@ -337,16 +358,9 @@ def _update_one_to_many_relationship(
 ):
     """
     Synchronizes a one-to-many database collection with incoming data.
-
     - Deletes items from the database that are not in the incoming data.
     - Updates items that are in both the database and incoming data.
     - Creates new items from the incoming data that are not in the database.
-
-    Args:
-        db: The database session.
-        db_collection: The SQLAlchemy relationship collection from the parent object (e.g., db_event.skills).
-        incoming_data: The list of Pydantic models from the request.
-        model_class: The SQLAlchemy model class for the items (e.g., event_model.Skill).
     """
     db_items_map = {item.id: item for item in db_collection}
     incoming_ids = {item.id for item in incoming_data if item.id is not None}
@@ -367,6 +381,8 @@ def _update_one_to_many_relationship(
                 setattr(db_item, key, value)
         elif item_data.id is None:
             # Create new item
+            # The 'id' from the Pydantic model is not needed for creation
+            item_dict.pop('id', None) 
             new_item = model_class(**item_dict)
             db_collection.append(new_item)
 
@@ -383,7 +399,7 @@ def update_event(db: Session, db_event: event_model.Event, event_in: event_schem
         
     # 3. Handle relationship updates if they are provided in the payload
     
-    # Mentors (Many-to-Many): Clear and replace
+    # Mentors (Many-to-Many): Clear and replace is the simplest strategy
     if event_in.mentors is not None:
         mentors = db.query(mentor_model.Mentor).filter(mentor_model.Mentor.id.in_(event_in.mentors)).all()
         db_event.mentors = mentors
@@ -408,6 +424,9 @@ def update_event(db: Session, db_event: event_model.Event, event_in: event_schem
 def delete_event(db: Session, event_id: int) -> Optional[event_model.Event]:
     db_event = get_event(db, event_id)
     if db_event:
+        # Note: The 'delete-orphan' cascade on the relationships will handle
+        # deleting associated skills, benefits, and sessions automatically.
+        # The many-to-many association with mentors will also be handled.
         db.delete(db_event)
         db.commit()
     return db_event
@@ -498,3 +517,28 @@ def delete_participants_by_ids(db: Session, ids: List[int]) -> int:
     num_deleted = db.query(participant_model.Participant).filter(participant_model.Participant.id.in_(ids)).delete(synchronize_session=False)
     db.commit()
     return num_deleted
+
+# ===============================================
+#               Tool CRUD
+# ===============================================
+
+def get_tool_by_name(db: Session, name: str) -> Optional[tool_model.Tool]:
+    """
+    Finds a tool by its name (case-insensitive search).
+    """
+    return db.query(tool_model.Tool).filter(tool_model.Tool.name.ilike(name)).first()
+
+def get_tool(db: Session, tool_id: int) -> Optional[tool_model.Tool]:
+    return get_generic_item(db, model=tool_model.Tool, item_id=tool_id)
+
+def get_all_tools(db: Session, skip: int = 0, limit: int = 100) -> List[tool_model.Tool]:
+    return get_all_generic_items(db, model=tool_model.Tool, skip=skip, limit=limit)
+
+def create_tool(db: Session, tool: tool_schema.ToolCreate) -> tool_model.Tool:
+    return create_generic_item(db, model=tool_model.Tool, schema=tool)
+
+def update_tool(db: Session, db_tool: tool_model.Tool, tool_in: tool_schema.ToolUpdate) -> tool_model.Tool:
+    return update_generic_item(db, db_item=db_tool, schema_in=tool_in)
+
+def delete_tool(db: Session, tool_id: int) -> Optional[tool_model.Tool]:
+    return delete_generic_item(db, model=tool_model.Tool, item_id=tool_id)

@@ -8,6 +8,7 @@ from models import champion as champion_model, user as user_model
 from database import get_db
 from core.security import get_current_user
 from core.storage_service import upload_file_to_supabase, delete_file_from_supabase
+from core.enums import UploadCategory
 
 router = APIRouter(prefix="/champions", tags=["Champions (Team)"])
 
@@ -20,7 +21,7 @@ def create_champion(
     db: Session = Depends(get_db),
     current_user: user_model.User = Depends(get_current_user)
 ):
-    image_url = upload_file_to_supabase(image)
+    image_url = upload_file_to_supabase(image, category=UploadCategory.CHAMPIONS)
     champion_data = champion_schema.ChampionCreate(
         name=name, position=position, description=description, image_src=image_url
     )
@@ -47,7 +48,7 @@ def update_champion(
     new_image_url = db_champion.image_src
     if image:
         delete_file_from_supabase(db_champion.image_src)
-        new_image_url = upload_file_to_supabase(image)
+        new_image_url = upload_file_to_supabase(image, category=UploadCategory.CHAMPIONS)
 
     update_data = champion_schema.ChampionUpdate(
         name=name, position=position, description=description, image_src=new_image_url

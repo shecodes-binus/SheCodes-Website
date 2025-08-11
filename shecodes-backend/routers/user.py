@@ -14,6 +14,7 @@ from core.security import get_current_user
 from core.storage_service import upload_file_to_supabase, delete_file_from_supabase
 from schemas import common as common_schema 
 from core.security import verify_password
+from core.enums import UploadCategory
 
 router = APIRouter(
     prefix="/users",
@@ -43,9 +44,11 @@ def update_my_profile(
     if picture:
         if not picture.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="Uploaded file is not an image.")
-        # Delete the old picture if it exists before uploading the new one
-        delete_file_from_supabase(current_user.profile_picture)
-        new_picture_url = upload_file_to_supabase(picture)
+        
+        if current_user.profile_picture:
+            delete_file_from_supabase(current_user.profile_picture)
+        
+        new_picture_url = upload_file_to_supabase(picture, category=UploadCategory.USERS)
 
     # Create the Pydantic schema object with all the form data
     user_update_data = user_schema.UserUpdate(

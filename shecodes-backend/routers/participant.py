@@ -10,6 +10,7 @@ from schemas import participant as participant_schema, common as common_schema
 from database import get_db
 from core.security import get_current_user
 from core.storage_service import upload_file_to_supabase
+from core.enums import UploadCategory
 
 router = APIRouter(
     prefix="/participants",
@@ -125,7 +126,7 @@ def upload_certificate_for_participant(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File must be an image.")
 
     # Upload the file to cloud storage
-    certificate_url = upload_file_to_supabase(certificate)
+    certificate_url = upload_file_to_supabase(certificate, category=UploadCategory.CERTIFICATES)
     
     # Update the participant record with the new URL
     crud.update_participant_certificate(db, db_participant=db_participant, certificate_url=certificate_url)

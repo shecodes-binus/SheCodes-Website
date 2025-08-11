@@ -5,20 +5,22 @@ import mimetypes
 from urllib.parse import urlparse
 from fastapi import UploadFile, HTTPException, status
 from core.supabase_client import get_supabase_client
+from core.enums import UploadCategory
 
 # The name of the public bucket you created in the Supabase dashboard.
 BUCKET_NAME = "images"
 
-def upload_file_to_supabase(file: UploadFile, bucket_name: str = BUCKET_NAME) -> str:
+def upload_file_to_supabase(file: UploadFile, category: UploadCategory, bucket_name: str = BUCKET_NAME) -> str:
     """
-    Uploads a file to a specified Supabase storage bucket and returns its public URL.
+    Uploads a file to a specified category folder within a Supabase bucket 
+    and returns its public URL.
     """
     supabase = get_supabase_client()
     
     try:
         file_ext = mimetypes.guess_extension(file.content_type) or '.tmp'
         # The path inside the bucket. We'll add a 'public/' prefix for organization.
-        file_path_in_bucket = f"public/{uuid.uuid4()}{file_ext}"
+        file_path_in_bucket = f"{category.value}/{uuid.uuid4()}{file_ext}"
 
         file_content = file.file.read()
 

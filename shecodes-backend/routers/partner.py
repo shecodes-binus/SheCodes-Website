@@ -10,6 +10,7 @@ from schemas import partner as partner_schema
 from database import get_db
 from core.security import get_current_user
 from core.storage_service import upload_file_to_supabase, delete_file_from_supabase
+from core.enums import UploadCategory
 
 router = APIRouter(
     prefix="/partners",
@@ -29,7 +30,7 @@ def create_partner_with_upload(
     if not logo.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Uploaded file is not an image.")
 
-    logo_url = upload_file_to_supabase(logo)
+    logo_url = upload_file_to_supabase(logo, category=UploadCategory.LOGOS)
 
     partner_data = partner_schema.PartnerCreate(
         name=name,
@@ -68,7 +69,7 @@ def update_partner(
         
         # Delete the old logo from Supabase before uploading the new one
         delete_file_from_supabase(db_partner.logoSrc)
-        new_logo_url = upload_file_to_supabase(logo)
+        new_logo_url = upload_file_to_supabase(logo, category=UploadCategory.LOGOS)
 
     partner_update_data = partner_schema.PartnerUpdate(name=name, logoSrc=new_logo_url)
     return crud.update_generic_item(db, db_item=db_partner, schema_in=partner_update_data)

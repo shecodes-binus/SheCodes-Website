@@ -55,7 +55,7 @@ export interface Mentor {
   tags?: string[] | null;
   long_description?: string | null;
   register_link?: string | null;
-  tools?: { name: string; logo_src: string }[] | null;
+  tools: Tool[] | null;
   key_points?: string[] | null;
   group_link?: string;
 
@@ -64,4 +64,10 @@ export interface Mentor {
   skills: Skill[];
   benefits: Benefit[];
   sessions: Session[];
+}
+
+export interface Tool {
+    id: number;
+    name: string;
+    logo_src: string;
 }

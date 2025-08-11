@@ -12,10 +12,16 @@ import { Trash2, PlusCircle } from 'lucide-react';
 import "react-datepicker/dist/react-datepicker.css";
 import { CustomDateInput } from '@/components/custom-date-picker';
 import { CustomTimeInput } from '@/components/custom-time-picker';
-import { Mentor, Skill, Benefit, Session } from '@/types/events';
+import { Mentor, Skill, Benefit, Session, Tool } from '@/types/events';
 // import { dummyMentors } from '@/data/dummyPartnershipData';
 import apiService from '@/lib/apiService';
 import toast from 'react-hot-toast';
+
+const capitalizeFirstLetter = (string: string) => {
+    if (!string) return string;
+    const lowercased = string.toLowerCase();
+    return lowercased.charAt(0).toUpperCase() + lowercased.slice(1);
+};
 
 const EventFormPage: React.FC = () => {
     const router = useRouter();
@@ -38,6 +44,8 @@ const EventFormPage: React.FC = () => {
     const [skills, setSkills] = useState<Skill[]>([]);
     const [benefits, setBenefits] = useState<Benefit[]>([]);
     const [sessions, setSessions] = useState<Session[]>([]);
+    const [availableTools, setAvailableTools] = useState<Tool[]>([]);
+    const [selectedTools, setSelectedTools] = useState<Tool[]>([]);
 
     // State for potentially adding a new mentor (simple example)
     const [availableMentors, setAvailableMentors] = useState<Mentor[]>([]);
@@ -45,25 +53,32 @@ const EventFormPage: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        const fetchMentors = async () => {
+        const fetchPrerequisites = async () => {
             try {
-                const response = await apiService.get<Mentor[]>('/mentors');
-                setAvailableMentors(response.data);
+                const [mentorsRes, toolsRes] = await Promise.all([
+                    apiService.get<Mentor[]>('/mentors'),
+                    apiService.get<Tool[]>('/tools') // Fetch from the new /tools endpoint
+                ]);
+                setAvailableMentors(mentorsRes.data);
+                setAvailableTools(toolsRes.data);
             } catch (err) {
-                toast.error("Could not load the list of available mentors.");
-                console.error("Failed to fetch mentors:", err);
+                toast.error("Could not load prerequisites (mentors/tools).");
+                console.error("Failed to fetch prerequisites:", err);
             }
         };
 
-        fetchMentors();
+        fetchPrerequisites();
     }, []);
 
     // --- Handlers ---
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
+            if (file.size > 5 * 1024 * 1024) { // 5MB size limit
+                toast.error("File size should not exceed 5MB.");
+                return;
+            }
             setEventPhoto(file);
-            // Generate preview
             const reader = new FileReader();
             reader.onloadend = () => {
                 setEventPhotoPreview(reader.result as string);
@@ -71,7 +86,7 @@ const EventFormPage: React.FC = () => {
             reader.readAsDataURL(file);
         } else {
             setEventPhoto(null);
-            setEventPhotoPreview(null); // Clear preview
+            setEventPhotoPreview(null);
         }
     };
 
@@ -82,10 +97,11 @@ const EventFormPage: React.FC = () => {
         formData.append("file", eventPhoto);
 
         try {
-            const response = await apiService.post("/upload", formData, {
+            // Using the generic image upload endpoint
+            const response = await apiService.post("/upload/image", formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
-            return response.data.url; // e.g., /static/images/abc.jpg
+            return response.data.url; // The endpoint returns { "url": "..." }
         } catch (error) {
             console.error("Image upload failed:", error);
             toast.error("Image upload failed. Please try again.");
@@ -99,63 +115,67 @@ const EventFormPage: React.FC = () => {
     };
 
     // Mentors
-    const handleMentorSelect = (mentorId: string) => {
-        const id = parseInt(mentorId, 10); // Assuming IDs from select are numbers
-        const mentor = availableMentors.find(m => m.id === id);
-        if (mentor && !selectedMentors.some(m => m.id === id)) {
+    const handleMentorSelect = (mentorIdStr: string) => {
+        const mentorId = parseInt(mentorIdStr, 10);
+        const mentor = availableMentors.find(m => m.id === mentorId);
+        if (mentor && !selectedMentors.some(m => m.id === mentorId)) {
             setSelectedMentors([...selectedMentors, mentor]);
         }
     };
-    const removeMentor = (mentorId: number | string) => {
+
+    const removeMentor = (mentorId: number) => {
         setSelectedMentors(selectedMentors.filter(m => m.id !== mentorId));
     };
 
-    // Skills
+    const handleToolSelect = (toolIdStr: string) => {
+        const toolId = parseInt(toolIdStr, 10);
+        const tool = availableTools.find(t => t.id === toolId);
+        if (tool && !selectedTools.some(t => t.id === toolId)) {
+            setSelectedTools([...selectedTools, tool]);
+        }
+    };
+
+    const removeTool = (toolId: number) => {
+        setSelectedTools(selectedTools.filter(t => t.id !== toolId));
+    };
+
     const addSkill = () => {
-        setSkills([...skills, { id: Date.now(), title: '', description: '' }]);
+        // Use a negative number for the temporary ID to ensure it's a 'number' type
+        const tempId = -Date.now(); 
+        setSkills([...skills, { id: tempId, title: '', description: '' }]);
     };
-    const updateSkill = (index: number, field: keyof Skill, value: string) => {
-        const updatedSkills = [...skills];
-        // Ensure the field exists and is assignable before updating
-        if (field === 'title' || field === 'description') {
-            updatedSkills[index] = { ...updatedSkills[index], [field]: value };
-            setSkills(updatedSkills);
-        }
-    };
-    const removeSkill = (id: string) => {
-        setSkills(skills.filter(s => s.id !== Number(id)));
-    };
-
-    // Benefits
+    
     const addBenefit = () => {
-        setBenefits([...benefits, { id: Date.now(), title: '', text: '' }]);
-    };
-    const updateBenefit = (index: number, field: keyof Benefit, value: string) => {
-         const updatedBenefits = [...benefits];
-         if (field === 'title' || field === 'text') {
-             updatedBenefits[index] = { ...updatedBenefits[index], [field]: value };
-             setBenefits(updatedBenefits);
-         }
-    };
-    const removeBenefit = (id: string) => {
-        setBenefits(benefits.filter(b => b.id !== Number(id)));
+        const tempId = -Date.now();
+        setBenefits([...benefits, { id: tempId, title: '', text: '' }]);
     };
 
-    // Sessions (Timeline)
     const addSession = () => {
+        const tempId = -Date.now();
         const now = new Date().toISOString();
-        setSessions([...sessions, { id: Date.now(), topic: '', description: '', start: now, end: now }]);
+        setSessions([...sessions, { id: tempId, topic: '', description: '', start: now, end: now }]);
     };
-    const updateSession = (index: number, field: keyof Session, value: string | Date | null) => {
-        const updatedSessions = [...sessions];
-        // Type check needed for Date | null
-        if (field === 'start' || field === 'end') {
-            updatedSessions[index] = { ...updatedSessions[index], [field]: value instanceof Date ? value : null };
-        } else if (field === 'topic' || field === 'description') {
-            updatedSessions[index] = { ...updatedSessions[index], [field]: value as string };
-        }
-        setSessions(updatedSessions);
+
+    const updateSkill = (id: number, field: 'title' | 'description', value: string) => {
+        setSkills(skills.map(skill => skill.id === id ? { ...skill, [field]: value } : skill));
     };
+    
+    const removeSkill = (id: number) => {
+        setSkills(skills.filter(s => s.id !== id));
+    };
+    
+    const updateBenefit = (id: number, field: 'title' | 'text', value: string) => {
+        setBenefits(benefits.map(b => b.id === id ? { ...b, [field]: value } : b));
+    };
+    
+    const removeBenefit = (id: number) => {
+        setBenefits(benefits.filter(b => b.id !== id));
+    };
+
+    const updateSession = (id: number, field: keyof Omit<Session, 'id'>, value: any) => {
+        setSessions(sessions.map(s => s.id === id ? { ...s, [field]: value } : s));
+    };
+
     const removeSession = (id: number) => {
         setSessions(sessions.filter(s => s.id !== id));
     };
@@ -185,14 +205,14 @@ const EventFormPage: React.FC = () => {
             const payload = {
                 title: eventTitle,
                 description,
-                event_type: category, // Send the direct value
+                event_type: capitalizeFirstLetter(category), // Send the direct value
                 location,
                 start_date: combinedStart.toISOString(),
                 end_date: combinedEnd.toISOString(),
                 image_src: imageUrl,
                 image_alt: `Image for ${eventTitle}`,
                 group_link: whatsappLink,
-                tools: tools.split(',').map(t => ({ name: t.trim(), logo_src: '' })), // Match type
+                tools: selectedTools.map(t => t.name),
                 key_points: keyPoints.split(',').map(p => p.trim()),
                 mentors: selectedMentors.map((m) => m.id),
                 // Send only title/description, not client-side ID
@@ -201,8 +221,8 @@ const EventFormPage: React.FC = () => {
                 sessions: sessions.map((s) => ({
                     topic: s.topic,
                     description: s.description,
-                    start: s.start ? new Date(s.start).toISOString() : new Date().toISOString(),
-                    end: s.end ? new Date(s.end).toISOString() : new Date().toISOString()
+                    start: new Date(s.start).toISOString(),
+                    end: new Date(s.end).toISOString()
                 }))
             };
 
@@ -478,16 +498,37 @@ const EventFormPage: React.FC = () => {
                         <label htmlFor="tools" className={`${labelStyles}`}>
                             Tools<span className="text-red-500">*</span>
                         </label>
-                        <Input
-                            type="text"
-                            id="tools"
-                            name="tools"
-                            value={tools}
-                            onChange={(e) => setTools(e.target.value)}
-                            placeholder="Enter tools here (e.g., Zoom, Figma, VS Code)"
-                            className={inputStyles}
-                            required
-                        />
+                        {/* Display Selected Tools */}
+                        <div className="flex flex-wrap gap-2 mb-3">
+                            {selectedTools.map(tool => (
+                                <div key={tool.id} className="flex items-center gap-2 bg-gray-200 text-gray-800 text-sm font-medium px-3 py-1.5 rounded-full">
+                                    {tool.logo_src && <Image src={tool.logo_src} alt={tool.name} width={16} height={16} />}
+                                    <span>{tool.name}</span>
+                                    <button type="button" onClick={() => removeTool(tool.id)} className="text-gray-500 hover:text-gray-800">
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        {/* Select Existing Tool */}
+                        <Select onValueChange={handleToolSelect} value="">
+                            <SelectTrigger className={`${inputStyles} text-left`}>
+                                <SelectValue placeholder="Select a tool to add..." />
+                            </SelectTrigger>
+                            <SelectContent className='bg-white'>
+                                {availableTools
+                                    .filter(availTool => !selectedTools.some(selTool => selTool.id === availTool.id))
+                                    .map(tool => (
+                                        <SelectItem key={tool.id} value={String(tool.id)}>
+                                            {tool.name}
+                                        </SelectItem>
+                                    ))
+                                }
+                                {availableTools.filter(availTool => !selectedTools.some(selTool => selTool.id === availTool.id)).length === 0 && (
+                                    <div className="px-4 py-2 text-sm text-gray-500">All available tools selected</div>
+                                )}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     {/* Key Points */}
@@ -558,14 +599,14 @@ const EventFormPage: React.FC = () => {
                             </Button>
                         </div>
                          {skills.length === 0 && <p className='text-sm text-gray-500'>No skills added yet.</p>}
-                         {skills.map((skill, index) => (
+                         {skills.map((skill) => (
                             <div key={skill.id} className="space-y-3 relative p-4 rounded-lg border border-gray-200 bg-grey-1/40 shadow-sm">
                                 {skills.length > 1 && ( 
                                     <Button
                                         type="button"
                                         variant="ghost"
                                         size="icon"
-                                        onClick={() => removeSkill(String(skill.id))}
+                                        onClick={() => removeSkill(skill.id)}
                                         className={`${removeButtonStyles} h-7 w-7 p-1 absolute top-2 right-2`}
                                         aria-label="Remove skill"
                                     >
@@ -575,14 +616,14 @@ const EventFormPage: React.FC = () => {
                                 <Input
                                     type="text"
                                     value={skill.title}
-                                    onChange={(e) => updateSkill(index, 'title', e.target.value)}
+                                    onChange={(e) => updateSkill(skill.id, 'title', e.target.value)}
                                     placeholder="Skill Title (e.g., Problem Solving)"
                                     className={`${inputStyles} text-sm`}
                                     required
                                 />
                                 <Textarea
                                     value={skill.description}
-                                    onChange={(e) => updateSkill(index, 'description', e.target.value)}
+                                    onChange={(e) => updateSkill(skill.id, 'description', e.target.value)}
                                     placeholder="Skill Description (e.g., Debugging simple code issues)"
                                     className={`${inputStyles} min-h-[60px] text-sm`}
                                     rows={2}
@@ -601,14 +642,14 @@ const EventFormPage: React.FC = () => {
                             </Button>
                          </div>
                          {benefits.length === 0 && <p className='text-sm text-gray-500'>No benefits added yet.</p>}
-                         {benefits.map((benefit, index) => (
+                         {benefits.map((benefit) => (
                              <div key={benefit.id} className="space-y-3 relative p-4 rounded-lg border border-gray-200 bg-grey-1/40 shadow-sm">
                                 {benefits.length > 1 && ( 
                                     <Button
                                         type="button"
                                         variant="ghost"
                                         size="icon"
-                                        onClick={() => removeBenefit(String(benefit.id))}
+                                        onClick={() => removeBenefit(benefit.id)}
                                         className={`${removeButtonStyles} h-7 w-7 p-1 absolute top-2 right-2`}
                                         aria-label="Remove benefit"
                                     >
@@ -618,14 +659,14 @@ const EventFormPage: React.FC = () => {
                                 <Input
                                     type="text"
                                     value={benefit.title}
-                                    onChange={(e) => updateBenefit(index, 'title', e.target.value)}
+                                    onChange={(e) => updateBenefit(benefit.id, 'title', e.target.value)}
                                     placeholder="Benefit Title (e.g., Build Your First Website)"
                                     className={`${inputStyles} text-sm`}
                                     required
                                 />
                                 <Textarea
                                     value={benefit.text}
-                                    onChange={(e) => updateBenefit(index, 'text', e.target.value)}
+                                    onChange={(e) => updateBenefit(benefit.id, 'text', e.target.value)}
                                     placeholder="Benefit Text (e.g., Gain practical experience...)"
                                     className={`${inputStyles} min-h-[60px] text-sm`}
                                     rows={2}
@@ -645,7 +686,7 @@ const EventFormPage: React.FC = () => {
                              </Button>
                          </div>
                          {sessions.length === 0 && <p className='text-sm text-gray-500'>No sessions added yet.</p>}
-                         {sessions.map((session, index) => (
+                         {sessions.map((session) => (
                             <div key={session.id} className="space-y-3 relative p-4 rounded-lg border border-gray-200 bg-grey-1/40 shadow-sm">
                                 {sessions.length > 1 && ( 
                                     <Button
@@ -662,14 +703,14 @@ const EventFormPage: React.FC = () => {
                                 <Input
                                     type="text"
                                     value={session.topic}
-                                    onChange={(e) => updateSession(index, 'topic', e.target.value)}
+                                    onChange={(e) => updateSession(session.id, 'topic', e.target.value)}
                                     placeholder="Session Topic (e.g., HTML Basics)"
                                     className={`${inputStyles} text-sm`}
                                     required
                                 />
                                  <Textarea
                                     value={session.description}
-                                    onChange={(e) => updateSession(index, 'description', e.target.value)}
+                                    onChange={(e) => updateSession(session.id, 'description', e.target.value)}
                                     placeholder="Session Description (e.g., Learn the structure...)"
                                     className={`${inputStyles} min-h-[60px] text-sm`}
                                     rows={2}
@@ -680,7 +721,7 @@ const EventFormPage: React.FC = () => {
                                          <label className="block text-xs font-medium text-gray-600 mb-1">Start Date and Time</label>
                                          <DatePicker
                                             selected={session.start ? new Date(session.start) : null}
-                                            onChange={(date) => updateSession(index, 'start', date)}
+                                            onChange={(date) => updateSession(session.id, 'start', date)}
                                             placeholderText="Select start date and time"
                                             showTimeSelect
                                             timeIntervals={15}
@@ -696,13 +737,13 @@ const EventFormPage: React.FC = () => {
                                         <label className="block text-xs font-medium text-gray-600 mb-1">End Date and Time</label>
                                         <DatePicker
                                             selected={session.end ? new Date(session.end) : null}
-                                            onChange={(date) => updateSession(index, 'end', date)}
+                                            onChange={(date) => updateSession(session.id, 'end', date)}
                                             placeholderText="Select end date and time"
                                             showTimeSelect
                                             timeIntervals={15}
                                             timeCaption="End"
                                             dateFormat="MMMM d, yyyy h:mm aa"
-                                            minTime={session.start ? new Date(session.start) : undefined} // Basic validation
+                                            minDate={session.start ? new Date(session.start) : undefined}
                                             customInput={<CustomDateInput placeholder="Select end date and time" />}
                                             wrapperClassName="w-full"
                                             autoComplete="off"

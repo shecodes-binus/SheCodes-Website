@@ -4,6 +4,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from models import user as user_model
 from core.security import get_current_user
 from core.storage_service import upload_file_to_supabase # <-- IMPORT THE NEW SERVICE
+from core.enums import UploadCategory
 
 router = APIRouter(
     prefix="/upload",
@@ -22,6 +23,6 @@ def upload_image(
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File provided is not an image.")
 
-    image_url = upload_file_to_supabase(file)
+    image_url = upload_file_to_supabase(file, category=UploadCategory.EVENTS)
     
     return {"url": image_url}

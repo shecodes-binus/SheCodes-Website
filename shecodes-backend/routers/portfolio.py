@@ -9,6 +9,7 @@ from models import portfolio as portfolio_model, user as user_model
 from database import get_db
 from core.security import get_current_user
 from core.storage_service import upload_file_to_supabase, delete_file_from_supabase
+from core.enums import UploadCategory
 
 router = APIRouter(prefix="/portfolio", tags=["Portfolio Projects"])
 
@@ -23,7 +24,7 @@ def create_portfolio_project(
 ):
     if not image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Uploaded file is not an image.")
-    image_url = upload_file_to_supabase(image)
+    image_url = upload_file_to_supabase(image, category=UploadCategory.PROJECTS)
     project_data = portfolio_schema.PortfolioProjectCreate(
         name=name, description=description, project_url=project_url, image_url=image_url
     )
@@ -61,7 +62,7 @@ def update_portfolio_project(
         if not image.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="Uploaded file is not an image.")
         delete_file_from_supabase(db_project.image_url)
-        new_image_url = upload_file_to_supabase(image)
+        new_image_url = upload_file_to_supabase(image, category=UploadCategory.PROJECTS)
 
     update_data = portfolio_schema.PortfolioProjectUpdate(
         name=name, description=description, project_url=project_url, image_url=new_image_url

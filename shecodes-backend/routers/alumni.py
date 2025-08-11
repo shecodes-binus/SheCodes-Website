@@ -8,6 +8,7 @@ from schemas import alumni as alumni_schema
 from database import get_db
 from core.security import get_current_user
 from core.storage_service import upload_file_to_supabase, delete_file_from_supabase
+from core.enums import UploadCategory
 
 router = APIRouter(
     prefix="/alumni",
@@ -32,7 +33,7 @@ def create_alumni_with_upload(
         raise HTTPException(status_code=400, detail="File is not an image.")
         
     # Use the new service to upload to Supabase
-    image_url = upload_file_to_supabase(image)
+    image_url = upload_file_to_supabase(image, category=UploadCategory.ALUMNIS)
 
     # Create the schema object to pass to the CRUD function
     alumni_data = alumni_schema.AlumniCreate(
@@ -81,13 +82,13 @@ def update_alumni(
     if not db_alumni:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alumni not found")
 
-    new_image_url = db_alumni.imageSrc
+    new_image_url = db_alumni.image_src
 
     if image:
         if not image.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="Uploaded file is not an image.")
-        delete_file_from_supabase(db_alumni.imageSrc)
-        new_image_url = upload_file_to_supabase(image)
+        delete_file_from_supabase(db_alumni.image_src)
+        new_image_url = upload_file_to_supabase(image, category=UploadCategory.ALUMNIS)
 
     alumni_update_data = alumni_schema.AlumniUpdate(
         name=name, batch=batch, story=story, university=university, instagram=instagram,
@@ -105,6 +106,6 @@ def delete_alumni(
     if not db_alumni:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alumni not found")
 
-    delete_file_from_supabase(db_alumni.imageSrc)
+    delete_file_from_supabase(db_alumni.image_src)
     crud.delete_alumni(db, alumni_id=alumni_id)
     return {"message": "Alumni and associated image deleted successfully"}

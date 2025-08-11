@@ -9,6 +9,8 @@ import { IoGlassesOutline } from "react-icons/io5"
 import { MdOutlineAssignmentInd, MdOutlineSettings, MdLogout } from "react-icons/md";
 import { GrArticle } from "react-icons/gr";
 import { PiGraduationCapBold } from "react-icons/pi";
+import { useRouter } from 'next/router';
+import { useAuth } from '@/contexts/AuthContext';
 
 const LogoPlaceholder = () => (
     <div className="flex items-center space-x-2 mx-auto mb-5">
@@ -20,6 +22,8 @@ const LogoPlaceholder = () => (
 
 const Sidebar: React.FC = () => {
     const pathname = usePathname();
+    // const router = useRouter();
+    const { logout } = useAuth();
     
     const menuItems = [
         { name: 'Events', link: "/admin/events", icon: MdOutlineEventNote },
@@ -34,12 +38,31 @@ const Sidebar: React.FC = () => {
         { name: 'Sign Out', link: "/auth/signout", icon: MdLogout, isSignOut: true }, 
     ];
 
+    const handleSignOut = (e: React.MouseEvent) => {
+        e.preventDefault();
+        logout();
+    };
+
     const renderMenuItem = (item: any, isBottomItem: boolean = false) => {
         const isActive = item.isSignOut 
             ? false 
             : (pathname === item.link || pathname.startsWith(`${item.link}/`));
         
         const IconComponent = item.icon;
+
+        if (item.isSignOut) {
+            return (
+                <li key={item.name} className="px-6 py-1">
+                    <button
+                        onClick={handleSignOut}
+                        className="flex items-center space-x-5 px-3.5 py-3 rounded-lg transition-colors duration-200 text-grey-3 font-semibold w-full text-left"
+                    >
+                        <IconComponent className="w-5 h-5 text-grey-3" />
+                        <span>{item.name}</span>
+                    </button>
+                </li>
+            );
+        }
 
         return (
             <li key={item.name} className="px-6 py-1"> 

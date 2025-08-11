@@ -10,6 +10,7 @@ from schemas import mentor as mentor_schema
 from database import get_db
 from core.security import get_current_user
 from core.storage_service import upload_file_to_supabase, delete_file_from_supabase
+from core.enums import UploadCategory
 
 router = APIRouter(
     prefix="/mentors",
@@ -22,6 +23,9 @@ def create_mentor_with_upload(
     occupation: str = Form(...),
     description: str = Form(...),
     story: str = Form(...),
+    status: str = Form(...), 
+    instagram: Optional[str] = Form(None),
+    linkedin: Optional[str] = Form(None),
     image: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: user_model.User = Depends(get_current_user) # Protected
@@ -32,14 +36,17 @@ def create_mentor_with_upload(
     if not image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Uploaded file is not an image.")
 
-    image_url = upload_file_to_supabase(image)
+    image_url = upload_file_to_supabase(image, category=UploadCategory.MENTORS)
 
     mentor_data = mentor_schema.MentorCreate(
         name=name,
         occupation=occupation,
         description=description,
         story=story,
-        imageSrc=image_url
+        status=status,        
+        instagram=instagram,  
+        linkedin=linkedin,
+        image_src=image_url
     )
     return crud.create_generic_item(db, model=mentor_model.Mentor, schema=mentor_data)
 
@@ -62,6 +69,9 @@ def update_mentor(
     description: str = Form(...),
     story: str = Form(...),
     image: Optional[UploadFile] = File(None),
+    status: str = Form(...), # <-- ADDED
+    instagram: Optional[str] = Form(None), # <-- ADDED
+    linkedin: Optional[str] = Form(None), # <-- ADDED
     db: Session = Depends(get_db),
     current_user: user_model.User = Depends(get_current_user)
 ):
@@ -69,16 +79,16 @@ def update_mentor(
     if not db_mentor:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mentor not found")
 
-    new_image_url = db_mentor.imageSrc
+    new_image_url = db_mentor.image_src
 
     if image:
         if not image.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="Uploaded file is not an image.")
-        delete_file_from_supabase(db_mentor.imageSrc)
-        new_image_url = upload_file_to_supabase(image)
+        delete_file_from_supabase(db_mentor.image_src)
+        new_image_url = upload_file_to_supabase(image, category=UploadCategory.MENTORS)
 
     mentor_update_data = mentor_schema.MentorUpdate(
-        name=name, occupation=occupation, description=description, story=story, imageSrc=new_image_url
+        name=name, occupation=occupation, description=description, story=story, image_src=new_image_url, status=status, instagram=instagram, linkedin=linkedin,
     )
     return crud.update_generic_item(db, db_item=db_mentor, schema_in=mentor_update_data)
 
@@ -92,6 +102,6 @@ def delete_mentor(
     if not db_mentor:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mentor not found")
 
-    delete_file_from_supabase(db_mentor.imageSrc)
+    delete_file_from_supabase(db_mentor.image_src)
     crud.delete_generic_item(db, model=mentor_model.Mentor, item_id=mentor_id)
     return {"message": "Mentor and associated image deleted successfully"}

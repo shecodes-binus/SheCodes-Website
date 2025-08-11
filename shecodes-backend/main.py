@@ -15,7 +15,8 @@ from routers import (
     partner, alumni, faq, contact, blog, comment, participant,
     upload as upload_router,
     champion as champion_router,
-    portfolio as portfolio_router
+    portfolio as portfolio_router,
+    tool as tool_router
 )
 
 # This single line ensures all tables inheriting from Base are created.
@@ -61,6 +62,7 @@ app.include_router(blog.router)
 app.include_router(comment.router)
 app.include_router(participant.router)
 app.include_router(upload_router.router)
+app.include_router(tool_router.router)
 
 @app.get("/", tags=["Root"])
 def read_root():
