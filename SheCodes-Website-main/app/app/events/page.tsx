@@ -187,8 +187,8 @@ export default function EventsPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="py-6 px-4">
-                    <CardTitle className="text-pink mb-4">{event.title}</CardTitle>
-                    <CardDescription className="leading-relaxed mb-4">{event.description}</CardDescription>
+                    <CardTitle className="text-pink mb-4 leading-[1.25]">{event.title}</CardTitle>
+                    <CardDescription className="leading-relaxed mb-4 line-clamp-3">{event.description}</CardDescription>
                     <div className="space-y-2 text-sm text-gray-600">
                       <div className="flex items-center">
                         <Calendar className="mr-2 shrink-0 h-4 w-4" />
