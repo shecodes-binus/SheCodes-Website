@@ -331,8 +331,8 @@ const EventFormPage: React.FC = () => {
                                 {/* Add actual categories here */}
                                 <SelectItem value="workshop">Workshop</SelectItem>
                                 <SelectItem value="webinar">Webinar</SelectItem>
-                                <SelectItem value="bootcamp">Seminar</SelectItem>
-                                <SelectItem value="meetup">Mentorship</SelectItem>
+                                <SelectItem value="seminar">Seminar</SelectItem>
+                                <SelectItem value="mentorship">Mentorship</SelectItem>
                                 <SelectItem value="conference">Conference</SelectItem>
                                 <SelectItem value="hackathon">Hackathon</SelectItem>
                             </SelectContent>
