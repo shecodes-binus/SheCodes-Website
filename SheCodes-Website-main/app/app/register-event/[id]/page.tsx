@@ -130,6 +130,8 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
         );
     }
 
+    const isEventPast = new Date() > new Date(eventData.start_date);
+
   return (
     <div className="container mx-auto py-8 md:py-16 space-y-16 md:space-y-24">
 
@@ -170,16 +172,21 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
             <Button 
                 size="lg" 
                 className={`w-full text-white text-base rounded-full transition-colors duration-300 ${
-                  (isRegistering || isRegistered) ? '' : 'hover:bg-blueSky/90'
+                  isEventPast ? 'bg-grey-3/80' : 
+                  isRegistered ? 'bg-green-500' : // Using a green for success as an example
+                  'hover:bg-blueSky/90 bg-blueSky'
                 }`}
                 onClick={handleRegister}
-                disabled={isRegistering || isRegistered}
+                disabled={isEventPast || isRegistering || isRegistered}
                 style={{
-                    backgroundColor: isRegistered ? '#28a745' : (isRegistering ? '#a1c4fd' : '#72A1E0'), // Green for success
+                    // backgroundColor: isRegistered ? '#28a745' : (isRegistering ? '#a1c4fd' : '#72A1E0'), // Green for success
                     cursor: (isRegistering || isRegistered) ? 'not-allowed' : 'pointer'
                 }}
             >
-                {isRegistering ? 'Registering...' : (isRegistered ? 'Successfully Registered!' : 'Register Now')}
+                {isEventPast ? 'Event Finished' : 
+                isRegistering ? 'Registering...' : 
+                isRegistered ? 'Successfully Registered!' : 
+                'Register Now'}
             </Button>
             {isRegistered && (
                 <div className="text-center mt-2 space-y-2">

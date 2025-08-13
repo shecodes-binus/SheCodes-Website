@@ -20,8 +20,8 @@ export const getEventStatus = (event: CombinedEventData): EventStatusInfo => {
   const todayNormalized = normalizeDate(now);
 
   // Ensure dates are valid before proceeding
-  const eventEndDate = event.endDate ? parseISO(event.endDate) : null;
-  const eventStartDate = event.startDate ? parseISO(event.startDate) : null;
+  const eventEndDate = event.end_date ? parseISO(event.end_date) : null;
+  const eventStartDate = event.start_date ? parseISO(event.start_date) : null;
 
   if (!eventEndDate || !eventStartDate) {
     // Handle cases with missing dates, default to upcoming or error state
@@ -53,14 +53,14 @@ export const getEventStatus = (event: CombinedEventData): EventStatusInfo => {
         // Check if the session is ongoing *right now*
         if (isAfter(now, sessionStartDate) && isBefore(now, sessionEndDate)) {
              currentSessionTopic = session.topic || `Session ${session.id}`; // Use topic or a default
-             latestRelevantSession = session; // This session is currently active
+             latestRelevantSession = { ...session, id: String(session.id) }; // This session is currently active
              break; // Found the current session, no need to check further
         }
 
         // If not currently ongoing, check if it's a past session from today or earlier
          if (isBefore(sessionEndDate, now)) {
             // This session has already finished
-             latestRelevantSession = session; // Keep track of the latest finished session
+             latestRelevantSession = { ...session, id: String(session.id) }; // Keep track of the latest finished session
          }
          // If the session starts after 'now', we stop looking for a 'current' session
          if (isAfter(sessionStartDate, now)) {
