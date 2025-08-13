@@ -20,7 +20,7 @@ class Comment(Base):
     author = Column(String, nullable=False)
     text = Column(Text, nullable=False)
     avatar = Column(String, nullable=True)
-    date = Column(DateTime, default=datetime.utcnow, server_default=func.now())
+    date = Column(DateTime(timezone=True), default=datetime.utcnow, server_default=func.now())
     
     replies = relationship(
         "Comment", 

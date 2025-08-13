@@ -9,7 +9,7 @@ class Participant(Base):
     id = Column(Integer, primary_key=True, index=True)
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
     member_id = Column(String, ForeignKey("users.id"), nullable=False) 
-    registration_date = Column(DateTime, default=datetime.utcnow, server_default=func.now())
+    registration_date = Column(DateTime(timezone=True), default=datetime.utcnow, server_default=func.now())
     status = Column(Enum("registered", "attended", "cancelled", name="participant_status_enum"), default="registered")
     
     certificate_url = Column(String, nullable=True) 

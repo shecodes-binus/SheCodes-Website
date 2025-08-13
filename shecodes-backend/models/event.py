@@ -20,10 +20,10 @@ class Event(Base):
     title = Column(String, nullable=False)
     description = Column(Text, nullable=False)
     event_type = Column(Enum("Workshop", "Seminar", "Webinar", "Mentorship", name="event_type_enum"), nullable=False)
-    start_date = Column(DateTime, nullable=False)
-    end_date = Column(DateTime, nullable=False)
+    start_date = Column(DateTime(timezone=True), nullable=False)
+    end_date = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     location = Column(String, nullable=False)
-    created_at = Column(DateTime, default=func.now(), nullable=False)
     
     # --- Updated Fields ---
     status = Column(Enum("upcoming", "past", "ongoing", name="event_status_enum"), nullable=False, default="upcoming")
@@ -62,6 +62,6 @@ class Session(Base):
     id = Column(Integer, primary_key=True, index=True)
     topic = Column(String, nullable=False)
     description = Column(Text, nullable=False)
-    start = Column(DateTime, nullable=False)
-    end = Column(DateTime, nullable=False)
+    start = Column(DateTime(timezone=True), nullable=False)
+    end = Column(DateTime(timezone=True), nullable=False)
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
