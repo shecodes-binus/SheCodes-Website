@@ -26,6 +26,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import apiService from "@/lib/apiService";
 import { useEffect, useState } from "react";
 
+const capitalizeFirstLetter = (string: string) => {
+    if (!string) return string;
+    const lowercased = string.toLowerCase();
+    return lowercased.charAt(0).toUpperCase() + lowercased.slice(1);
+};
+
 // --- Sidebar Component (Reuse or adapt) ---
 const SidebarNav = () => {
     const activePath = '/app/my-activity'; // Set active path for this page
@@ -98,6 +104,13 @@ export default function EventDetailPage( { params }: { params: { id: string } })
         setLoading(true);
         try {
           const response = await apiService.get(`/events/${params.id}`);
+          const event: CombinedEventData = response.data;
+        
+        if (event.sessions && event.sessions.length > 0) {
+                event.sessions.sort((a, b) => 
+                    new Date(a.start).getTime() - new Date(b.start).getTime()
+                );
+            }
           setEventData(response.data);
         } catch (err) {
           console.error("Failed to fetch event:", err);
@@ -219,34 +232,36 @@ export default function EventDetailPage( { params }: { params: { id: string } })
             )}
 
             {/* --- About Mentors Section --- */}
-            <section className="bg-gradient-to-b from-blueSky to-purple-2 py-10 md:py-12 px-6 md:px-10 rounded-xl">
-                <h2 className="text-3xl font-bold text-left mb-8 text-white text-left">About Mentors</h2>
-                {/* Inner layout already uses flex correctly */}
-                <div className="space-y-6 mx-auto">
-                    {eventData.mentors.map((mentor) => (
-                        <div key={mentor.id} className="bg-white p-6 rounded-lg shadow-md flex flex-col sm:flex-row items-start sm:items-start gap-6 border border-purple-2/30">
-                            <Image
-                                src={mentor.image_src || "/photo.png"}
-                                alt={mentor.name} // More specific alt text
-                                width={100}
-                                height={100}
-                                className="rounded-lg object-cover flex-shrink-0" // Prevent image shrinking
-                                priority={false} // Only hero image should be priority usually
-                            />
-                            <div className="space-y-2 flex-grow"> {/* Allow text content to grow */}
-                                <h3 className="text-xl font-semibold text-gray-900">{mentor.name}</h3>
-                                <p className="text-sm font-medium text-pink">{mentor.occupation}</p>
-                                <p className="text-gray-600 text-sm leading-relaxed">{mentor.description}</p>
+            {eventData.mentors && eventData.mentors.length > 0 && (
+                <section className="bg-gradient-to-b from-blueSky to-purple-2 py-10 md:py-12 px-6 md:px-10 rounded-xl">
+                    <h2 className="text-3xl font-bold text-left mb-8 text-white text-left">About Mentors</h2>
+                    {/* Inner layout already uses flex correctly */}
+                    <div className="space-y-6 mx-auto">
+                        {eventData.mentors.map((mentor) => (
+                            <div key={mentor.id} className="bg-white p-6 rounded-lg shadow-md flex flex-col sm:flex-row items-start sm:items-start gap-6 border border-purple-2/30">
+                                <Image
+                                    src={mentor.image_src || "/photo.png"}
+                                    alt={mentor.name} // More specific alt text
+                                    width={100}
+                                    height={100}
+                                    className="rounded-lg object-cover flex-shrink-0" // Prevent image shrinking
+                                    priority={false} // Only hero image should be priority usually
+                                />
+                                <div className="space-y-2 flex-grow"> {/* Allow text content to grow */}
+                                    <h3 className="text-xl font-semibold text-gray-900">{mentor.name}</h3>
+                                    <p className="text-sm font-medium text-pink">{mentor.occupation}</p>
+                                    <p className="text-gray-600 text-sm leading-relaxed">{mentor.description}</p>
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
-            </section>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {/* --- Workshop Timeline Section --- */}
             {eventData.sessions && eventData.sessions.length > 0 && (
                 <section className="space-y-10">
-                    <h2 className="text-3xl font-bold text-pink text-left">Workshop Timeline</h2>
+                    <h2 className="text-3xl font-bold text-pink text-left">{capitalizeFirstLetter(eventData.event_type)} Timeline</h2>
                     {/* Relative container with left padding for the line/dots */}
                     <div className="relative pl-6 sm:pl-8">
                         {/* The Timeline Line (Optional: single line, or rely on item borders) */}

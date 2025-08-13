@@ -56,7 +56,7 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
                         new Date(a.start).getTime() - new Date(b.start).getTime()
                     );
                 }
-                
+
                 setEventData(event);
             } catch (err) {
                 console.error("Failed to fetch event data:", err);
@@ -263,101 +263,109 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
       </section>
 
        {/* --- About Mentors Section --- */}
-      <section className="bg-gradient-to-b from-blueSky to-purple-2 py-10 md:py-12 px-6 md:px-10 rounded-xl">
-          <h2 className="text-3xl font-bold text-left mb-8 text-white">About Mentors</h2>
-          <div className="space-y-6 mx-auto">
-              {eventData.mentors.map((mentor) => (
-                  <div key={mentor.id} className="bg-white p-6 rounded-lg shadow-md flex flex-col sm:flex-row items-start sm:items-center gap-6 border border-purple-2/30">
-                      <Image
-                        src={mentor.image_src || "/photo.png"}
-                        alt="SheCodes Society Binus"
-                        width={100}
-                        height={100}
-                        className="rounded-lg object-cover"
-                        priority />
-                      <div className="space-y-2">
-                          <h3 className="text-xl font-semibold text-gray-900">{mentor.name}</h3>
-                          <p className="text-sm font-medium text-pink">{mentor.occupation}</p>
-                          <p className="text-gray-600 text-sm leading-relaxed">{mentor.description}</p>
-                      </div>
-                  </div>
-              ))}
-          </div>
-      </section>
-
-       {/* --- Why Do You Need These Skills Section --- */}
-      <section className="space-y-8">
-        <h2 className="text-4xl font-bold text-pink text-center">Why Do You Need These Skills?</h2>
-        <div className="flex flex-wrap justify-center gap-16 md:gap-20">
-          {eventData.skills.map((skill, index) => {
-            const IconComponent = numberIcons[index];
-
-            return (
-              <div key={skill.id} className="flex flex-col items-center text-center space-y-10 p-6 max-w-xs">
-                <div className="h-32 w-32 flex items-center justify-center text-blueSky">
-                  {IconComponent ? (
-                    <IconComponent size={120} /> 
-                  ) : (
-                    <span className="text-8xl font-bold">{index + 1}</span>
-                  )}
-                </div>
-                <div className="space-y-4">
-                  <h3 className="text-2xl font-semibold text-gray-800">{skill.title}</h3>
-                  <p className="text-lg text-gray-600">{skill.description}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-       {/* --- Benefits Section --- */}
-      <section className="space-y-8">
-        <h2 className="text-4xl font-bold text-pink text-center">Benefits</h2>
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            {/* Image */}
-            <div className="relative aspect-[3/2] w-full rounded-lg overflow-hidden shadow-lg">
-                <Image
-                    src="/documentation/documentation2.jpg" // Make sure image exists
-                    alt="Event benefits illustration"
-                    fill
-                    sizes="(max-width: 768px) 90vw, (max-width: 1200px) 50vw, 600px"
-                    className="object-cover shadow-lg"
-                />
-            </div>
-            {/* Text Content */}
-            <div className="space-y-6">
-                <div className="space-y-6">
-                {eventData.benefits.map((benefit) => (
-                    <div key={benefit.id} className="flex items-start gap-6">
-                        <CheckCircle2 className="h-12 w-12 text-blueSky mt-1 flex-shrink-0" />
-                        <div className="flex flex-col gap-6">
-                            <p className="text-gray-700 text-3xl font-bold">{benefit.title}</p>
-                            <p className="text-gray-700 text-base">{benefit.text}</p>
+       {eventData.mentors && eventData.mentors.length > 0 && (
+        <section className="bg-gradient-to-b from-blueSky to-purple-2 py-10 md:py-12 px-6 md:px-10 rounded-xl">
+            <h2 className="text-3xl font-bold text-left mb-8 text-white">About Mentors</h2>
+            <div className="space-y-6 mx-auto">
+                {eventData.mentors.map((mentor) => (
+                    <div key={mentor.id} className="bg-white p-6 rounded-lg shadow-md flex flex-col sm:flex-row items-start sm:items-center gap-6 border border-purple-2/30">
+                        <Image
+                          src={mentor.image_src || "/photo.png"}
+                          alt="SheCodes Society Binus"
+                          width={100}
+                          height={100}
+                          className="rounded-lg object-cover"
+                          priority />
+                        <div className="space-y-2">
+                            <h3 className="text-xl font-semibold text-gray-900">{mentor.name}</h3>
+                            <p className="text-sm font-medium text-pink">{mentor.occupation}</p>
+                            <p className="text-gray-600 text-sm leading-relaxed">{mentor.description}</p>
                         </div>
                     </div>
                 ))}
-                </div>
             </div>
-        </div>
-      </section>
+        </section>
+      )}
+
+       {/* --- Why Do You Need These Skills Section --- */}
+       {eventData.skills && eventData.skills.length > 0 && (
+        <section className="space-y-8">
+          <h2 className="text-4xl font-bold text-pink text-center">Why Do You Need These Skills?</h2>
+          <div className="flex flex-wrap justify-center gap-16 md:gap-20">
+            {eventData.skills.map((skill, index) => {
+              const IconComponent = numberIcons[index];
+
+              return (
+                <div key={skill.id} className="flex flex-col items-center text-center space-y-10 p-6 max-w-xs">
+                  <div className="h-32 w-32 flex items-center justify-center text-blueSky">
+                    {IconComponent ? (
+                      <IconComponent size={120} /> 
+                    ) : (
+                      <span className="text-8xl font-bold">{index + 1}</span>
+                    )}
+                  </div>
+                  <div className="space-y-4">
+                    <h3 className="text-2xl font-semibold text-gray-800">{skill.title}</h3>
+                    <p className="text-lg text-gray-600">{skill.description}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+       {/* --- Benefits Section --- */}
+       {eventData.benefits && eventData.benefits.length > 0 && (
+        <section className="space-y-8">
+          <h2 className="text-4xl font-bold text-pink text-center">Benefits</h2>
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+              {/* Image */}
+              <div className="relative aspect-[3/2] w-full rounded-lg overflow-hidden shadow-lg">
+                  <Image
+                      src="/documentation/documentation2.jpg" // Make sure image exists
+                      alt="Event benefits illustration"
+                      fill
+                      sizes="(max-width: 768px) 90vw, (max-width: 1200px) 50vw, 600px"
+                      className="object-cover shadow-lg"
+                  />
+              </div>
+              {/* Text Content */}
+              <div className="space-y-6">
+                  <div className="space-y-6">
+                  {eventData.benefits.map((benefit) => (
+                      <div key={benefit.id} className="flex items-start gap-6">
+                          <CheckCircle2 className="h-12 w-12 text-blueSky mt-1 flex-shrink-0" />
+                          <div className="flex flex-col gap-6">
+                              <p className="text-gray-700 text-3xl font-bold">{benefit.title}</p>
+                              <p className="text-gray-700 text-base">{benefit.text}</p>
+                          </div>
+                      </div>
+                  ))}
+                  </div>
+              </div>
+          </div>
+        </section>
+      )}
 
       {/* --- Workshop Timeline Section --- */}
-      <section className="space-y-8">
-        <h2 className="text-3xl font-bold text-pink text-center">{capitalizeFirstLetter(eventData.event_type)} Timeline</h2>
-        <div className="max-w-3xl mx-auto space-y-6">
-          {/* Simple card list implementation for timeline */}
-          {eventData.sessions?.map((session) => (
-            <div key={session.id} className="p-6 rounded-xl border border-gray-200 bg-white shadow-md space-y-3">
-              <p className="font-semibold text-2xl text-gray-800">{formatStartDate(session.start)} ({formatEventDateTime(session.start, session.end).timeRange})</p>
-              <div className="space-y-5">
-                <p className="font-semibold text-black text-base ">{session.topic}</p>
-                <p className="text-gray-600 text-base">{session.description}</p>
+      {eventData.sessions && eventData.sessions.length > 0 && (
+        <section className="space-y-8">
+          <h2 className="text-3xl font-bold text-pink text-center">{capitalizeFirstLetter(eventData.event_type)} Timeline</h2>
+          <div className="max-w-3xl mx-auto space-y-6">
+            {/* Simple card list implementation for timeline */}
+            {eventData.sessions?.map((session) => (
+              <div key={session.id} className="p-6 rounded-xl border border-gray-200 bg-white shadow-md space-y-3">
+                <p className="font-semibold text-2xl text-gray-800">{formatStartDate(session.start)} ({formatEventDateTime(session.start, session.end).timeRange})</p>
+                <div className="space-y-5">
+                  <p className="font-semibold text-black text-base ">{session.topic}</p>
+                  <p className="text-gray-600 text-base">{session.description}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* --- Scroll Up Button --- */}
       <div className="text-center">
