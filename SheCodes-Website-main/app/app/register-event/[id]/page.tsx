@@ -21,6 +21,12 @@ import {
   PiNumberCircleFourLight
 } from "react-icons/pi";
 
+const capitalizeFirstLetter = (string: string) => {
+    if (!string) return string;
+    const lowercased = string.toLowerCase();
+    return lowercased.charAt(0).toUpperCase() + lowercased.slice(1);
+};
+
 
 export default function RegisterEventPage( { params }: { params: { id: string } }) {
     const router = useRouter();
@@ -44,6 +50,13 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
             try {
                 const response = await apiService.get(`/events/${params.id}`);
                 const event: CombinedEventData = response.data;
+
+                if (event.sessions && event.sessions.length > 0) {
+                    event.sessions.sort((a, b) => 
+                        new Date(a.start).getTime() - new Date(b.start).getTime()
+                    );
+                }
+                
                 setEventData(event);
             } catch (err) {
                 console.error("Failed to fetch event data:", err);
@@ -331,7 +344,7 @@ export default function RegisterEventPage( { params }: { params: { id: string } 
 
       {/* --- Workshop Timeline Section --- */}
       <section className="space-y-8">
-        <h2 className="text-3xl font-bold text-pink text-center">Workshop Timeline</h2>
+        <h2 className="text-3xl font-bold text-pink text-center">{capitalizeFirstLetter(eventData.event_type)} Timeline</h2>
         <div className="max-w-3xl mx-auto space-y-6">
           {/* Simple card list implementation for timeline */}
           {eventData.sessions?.map((session) => (

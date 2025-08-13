@@ -17,7 +17,7 @@ import {
     // DialogContent, DialogHeader etc. are NOT needed here anymore for these modals
   } from "@/components/ui/dialog";
 import apiService from '@/lib/apiService';
-
+import toast from 'react-hot-toast';
 
 const EventPage: React.FC = () => {
     const router = useRouter();
@@ -32,18 +32,25 @@ const EventPage: React.FC = () => {
     const [selectedEvents, setSelectedEvents] = useState<number[]>([]);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); 
 
-    useEffect(() => {
-        const fetchEvents = async () => {
-            try {
-                const response = await apiService.get<CombinedEventData[]>('/events');
-                setAllEvents(response.data);
-            } catch (err) {
-                console.error('Failed to fetch events:', err);
-            }
-        };
-        fetchEvents();
+    const [loading, setLoading] = useState(true);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const fetchEvents = useCallback(async () => {
+        setLoading(true);
+        try {
+            const response = await apiService.get<CombinedEventData[]>('/events');
+            setAllEvents(response.data);
+        } catch (err) {
+            toast.error("Could not load events.");
+            console.error('Failed to fetch events:', err);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
+    useEffect(() => {
+        fetchEvents();
+    }, [fetchEvents]);
 
     const now = new Date();
     const computedEvents: CombinedEventData[]= useMemo(() =>
@@ -127,21 +134,37 @@ const EventPage: React.FC = () => {
     };
 
     const handleDeleteConfirmed = async () => {
+        if (selectedEvents.length === 0) return;
+
+        setIsDeleting(true);
+        const toastId = toast.loading(`Deleting ${selectedEvents.length} event(s)...`);
+
         try {
+            // Send a delete request for each selected event
             await Promise.all(
-                selectedEvents.map(id =>
-                    fetch(`/api/events/${id}`, { method: 'DELETE' })
-                )
+                selectedEvents.map(id => apiService.delete(`/events/${id}`))
             );
-            setAllEvents(prev => prev.filter(e => !selectedEvents.includes(e.id)));
+            
+            toast.success("Events deleted successfully!", { id: toastId });
+            
+            // Clear the selection and refetch the data from the server
             setSelectedEvents([]);
-            setIsDeleteModalOpen(false);
+            fetchEvents();
+
         } catch (err) {
             console.error('Failed to delete:', err);
-            alert('Error deleting events.');
+            toast.error("Failed to delete events.", { id: toastId });
+        } finally {
+            // Reset loading state and close the modal
+            setIsDeleting(false);
+            setIsDeleteModalOpen(false);
         }
     };
-
+    
+    // CHANGE: Add a loading state for the entire page
+    if (loading) {
+        return <div className="p-10 text-center">Loading events...</div>;
+    }
 
     return (
         <div className="px-10 py-6">
