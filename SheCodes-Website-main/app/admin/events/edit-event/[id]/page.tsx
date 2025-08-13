@@ -209,10 +209,13 @@ const EditEventPage: React.FC = () => {
             formData.append("file", eventPhoto);
             try {
                 // CHANGE: Use the correct, specific endpoint for image uploads.
-                const response = await apiService.post("/upload/image", formData);
+                const response = await apiService.post("/upload/image", formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
                 return response.data.url;
             } catch (error) {
                 toast.error("New image upload failed.");
+                console.error("Image upload error:", error);
                 throw new Error("Image upload failed");
             }
         }
@@ -248,6 +251,7 @@ const EditEventPage: React.FC = () => {
                 start_date: combinedStart.toISOString(),
                 end_date: combinedEnd.toISOString(),
                 group_link: whatsappLink,
+                
                 // CHANGE: The field name must match the backend schema: `image_src`.
                 image_src: imageUrl,
                 image_alt: `Image for ${eventTitle}`, // It's good practice to update alt text too
